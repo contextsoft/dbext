@@ -1,0 +1,45 @@
+Dear Friends,
+
+I'm happy to announce the new update of 
+DBISAM Extensions Suite (v. 1.22). 
+
+Changes from the previous version:
+- Bugs fixed in Schema Editor.
+
+DBISAM Extensions support DBISAM v3.17 
+and later and is also compatible with v4.x.
+
+The most important features are:
+ - Build-in database schema ***diagramming tool*** 
+  (accessible from Delphi IDE) 
+ - Database version control, including incremental
+   updates (SQL Script).
+ - Database manipulations (export/import to disk file) 
+ - Macroses in SQL
+ - Referential integrity constraints
+ - Triggers (SQL Script)
+ - Replications 
+ - Centralized Events & Errors handling 
+ - Automatic Pascal declarations for tables defined 
+   in the database schema and much more. 
+
+The package also includes component & diagram editor 
+help files and demos, explaining most of its functionality.
+
+Fully functional trial version (with part of source 
+code included) is available at:
+http://www.retaildecision.com/products/dbisamext/download.htm
+
+You can order the source code for only $49.00 at:
+http://www.retaildecision.com/products/dbisamext/ordering.htm
+(this is required for use in commercial applications)
+
+For more details, please go to
+http://www.retaildecision.com/products/dbisamext
+and refer to the included help files and demos.
+
+
+Best regards,
+Michael Baytalsky
+e-mail: mike@retaildecision.com
+http://www.retaildecision.com

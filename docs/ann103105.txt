@@ -1,0 +1,124 @@
+ANN: Context Database Extensions v.2.01 beta is now available!
+
+Dear Friends,
+
+First fully functional beta version of Context Database
+Extension v.2 has been realeased and is available for
+download at:
+
+  http://www.contextsoft.com/products/ctxdbext/downloads.jsp. 
+
+Please, make sure to also download and install Context
+Database Designer, which is listed as a separate download -
+is is used as a component designer for TDatabaseSchema
+component. Context Database Designer now comes as a part of
+Database Extensions Suite and will be included in the
+license price. With addition of Context Database Designer,
+this release takes Database Extensions Suite to the next
+level of sophistication!
+
+For more information about Context Database Designer, please 
+visit our web site at: 
+  http://www.contextsoft.com/products/dbdesign
+
+Great screenshots are availble at:
+  http://www.contextsoft.com/products/dbdesign/screenshots.jsp
+
+Context Database Extensions Suite is desinged to enhance
+database related functionality provided by Borland Delphi
+VCL library. It contains some generic imporvements as well
+as the improvements pertaining to the specific
+implementations of base VCL classes designed for
+navigational database access. Context Database Extensions
+now supports two types of database adapters: generic &
+extended. Generic adapters provide basic database access
+functionality, like transaction management, SQL query
+execution or creating an instance of engine-specific
+TDataSet descendant. We now support the following generic
+adapters:
+
+  - BDE (Borland Database Engine, see BDEExt.pas unit);
+  - ADO (Access Data Objects, see ADOExt.pas unit);
+  - DBX (DBExpress, see SQLExt.pas unit);
+  - and IB (Interbase components, see IBExt.pas unit);
+
+Extended adapters, beside basic functionality, also provide
+client-side implementation of referential integrity (RI)
+constraints, client-side triggers, change logging (used for
+database replications), additional events and properties and
+more. This functionality is being partially deprecated and
+we slowely phasing it out as more and more databases begin
+to support native server-side RI constraints, triggers,
+stored procs and such. Currently, extended adapters are
+provided for:
+
+  - DBISAM Database Engine by Elevate Software (www.elevatesoft.com)
+  - NexusDB by Nexus Database Systems Pty Ltd. (www.nexusdb.com)
+
+For compatibility with different versions of database engines,
+these adapters come in source code and located under DBISAM and NX
+subfolders.
+
+The main features, provided by Context Database Extensions are:
+
+  - Persistent Database Schema. Database Schema contains the
+  description of tables, relations between them as well as triggers,
+  domains, views, stored procedures, generators/sequences
+  and sql statements that should be executed to update a database to 
+  the latest version required by the application. Database
+  Schema may be stored within application, in the database
+  (System tables) or as an external file.
+
+  - Integrated Database Designer is registered as a component
+  editor for TDatabaseSchema component. It gives access for 
+  feature-rich diagramming tool right from Delphi IDE. 
+
+  - Includes a number of usefull database components, like
+  memory tables, enumerations and sequences.
+
+  - Provides engine-specific highly customzable SQL generation 
+  functionality via TDBEngineProfile component.
+
+  - Provides classes for business logic incapsulation, like
+  TDataSetReference, TDBDocument, TDBDocumentType & TDBJournal.
+   
+
+Extended adapters also provide the following additional functionality:
+
+  - RI Constraints. Relations between tables, defined within
+  database schema, allows to implement various types of referential
+  integrity (RI) constrains (Error, Cascade and Nullify for delete
+  & update operations). Please, note, that processing of RI
+  constraints might sometimes considerably slow down some delete
+  and update operations. 
+  
+  - Replications. All changes made to records can be automatically
+  written into a separate table ('Objects' tables) and used for
+  database replications. Replication & serialization functionality
+  is encapsulated into TDBManager component, using TxxDatabaseExt
+  components as database adapters.
+  
+  - Additional events and properties provided for database, table
+  and query components (see ctxdbext.hlp for more details).
+
+
+The day of the final release as well as the pricing will soon 
+be announced. Everybody, who has purchased Context Database 
+Extensions v.1 within past 3 month, will receive the upgrade 
+free of charge. The owners of Context Database Extensions v.1
+as well as the owners of other Context Software products 
+will receive generous discounts.
+
+Fully functional trial version (with part of source 
+code included) is available at:
+http://www.contextsoft.com/products/ctxdbext/downloads.jsp
+
+For more details, please go to
+http://www.contextsoft.com/products/ctxdbext
+and refer to the included help files, demos and screenshots.
+
+
+Best regards,
+Michael Baytalsky
+e-mail: mike@contextsoft.com
+http://www.contextsoft.com

@@ -1,0 +1,75 @@
+ANN: Context Database Extensions v.1.50 is now available!
+
+Dear Friends,
+
+Context Software is proud to announce a long awaited release of Context Database
+Extensions Suite (v.1.50) - a replacement product for DBISAM Extensions
+Suite.
+
+Context Database Extensions Suite has been refactored in order to 
+support more database engines. It currently supports:
+
+ - DBISAM Database Engine by Elevate Software (www.elevatesoft.com)
+ - NexusDB by Nexus Database Systems Pty Ltd. (www.nexusdb.com)
+
+Context Database Extensions Suite (v. 1.50) is now available for
+download. 
+
+Owners of DBISAM Extensions Suite have beed automatically upgraded
+to this product free of charge and can download it from:
+http://www.contextsoft.com/myaccount/downloads.jsp
+
+The following issues are addressed in this release:
+
+  #252. Incompatibility with DBISAM v 4.14 due to missing defines.
+  
+  #254. Bug in GetFieldData method of TDBEnumeration causing A/V with DevExpress Controls.
+
+The following improvements are made:
+
+  #253. Added ShortDescription property to enumerations.
+  
+  #255. Improved table resizing in Schema Editor.
+  
+  #256. Added extendable custom properties to field definitions declared in TDatabaseSchema.
+  
+  #257. Added support for NexusDB Database Engine
+  
+  #258. Added database related functions (like Reverse Enineering, Restructure, etc.) to Schema Editor.
+
+
+The most important features of Context Database Extensions Suite are:
+
+  - Build-in database schema ***diagramming tool*** 
+   (accessible from Delphi IDE) 
+  - Database version control, including incremental
+    updates (SQL Script).
+  - Database manipulations (export/import to disk file) 
+  - Macroses in SQL
+  - Referential integrity constraints
+  - Triggers (SQL Script)
+  - Replications 
+  - Centralized Events & Errors handling 
+  - Automatic Pascal declarations for tables defined 
+    in the database schema and much more. 
+
+The package also includes component & diagram editor 
+help files and demos, explaining most of its functionality.
+
+Fully functional trial version (with part of source 
+code included) is available at:
+http://www.contextsoft.com/products/ctxdbext/download.htm
+
+You can order the source code at:
+http://www.contextsoft.com/products/ctxdbext/ordering.htm
+(this is required for use in commercial applications)
+
+For more details, please go to
+http://www.contextsoft.com/products/ctxdbext
+and refer to the included help files and demos.
+
+
+Best regards,
+Michael Baytalsky
+e-mail: mike@contextsoft.com
+http://www.contextsoft.com

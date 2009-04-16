@@ -1,0 +1,64 @@
+package dbExtPkgD5;
+
+{$R *.RES}
+{$R '..\source\dbExtReg.dcr'}
+{$R '..\source\dbRecord.dcr'}
+{$R '..\source\dbSequence.dcr'}
+{$R '..\source\BDEExt.dcr'}
+{$R '..\source\dbManager.dcr'}
+{$R '..\source\CtxDBDesigner_TLB.dcr'}
+{$ALIGN ON}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO ON}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION ON}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES OFF}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST ON}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DESCRIPTION 'Context Database Extensions'}
+{$DESIGNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  vcl50,
+  dsnide50,
+  vclx50,
+  vcldb50,
+  Vclbde50,
+  VCLIB50;
+
+contains
+  BDEExt in '..\source\BDEExt.pas',
+  CtxDataTypes in '..\source\CtxDataTypes.pas',
+  CtxDBIntf in '..\source\CtxDBIntf.pas',
+  CtxDBDesigner_TLB in '..\source\CtxDBDesigner_TLB.pas',
+  dbDocument in '..\source\dbDocument.pas',
+  dbEngProfile in '..\source\dbEngProfile.pas',
+  dbEnum in '..\source\dbEnum.pas',
+  dbExtParser in '..\source\dbExtParser.pas',
+  dbExtReg in '..\source\dbExtReg.pas',
+  dbExtUtils in '..\source\dbExtUtils.pas',
+  dbManager in '..\source\dbManager.pas',
+  dbRecord in '..\source\dbRecord.pas',
+  dbSchema in '..\source\dbSchema.pas',
+  dbSchemaEnum in '..\source\dbSchemaEnum.pas',
+  dbSchemaTest in '..\source\dbSchemaTest.pas',
+  dbSequence in '..\source\dbSequence.pas',
+  fSelFields in '..\source\designtime\fSelFields.pas' {frmSelectFields},
+  CtxDataSetCommand in '..\source\CtxDataSetCommand.pas',
+  dbSQLLexer in '..\source\dbSQLLexer.pas';
+
+end.
