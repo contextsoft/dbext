@@ -29,6 +29,7 @@ type
   TGenerateStatement = (gsCreate, gsAlter, gsDrop, gsAdd, gsNone);
 
   TExecSQLProc = procedure (const SQL: String; ResultSet: Pointer = nil) of object;
+  TOnReverseEvent = procedure (Tag: integer; const LogStr: string = '') of object;
 
   TDBEngineProfile = class (TComponent)
   protected
@@ -263,6 +264,7 @@ const
 
 var
   DBEngineProfiles: TList;
+  OnReverse: TOnReverseEvent;
 
 resourcestring
   SCapabilityNotSupported = 'Capability not supported';
@@ -1854,7 +1856,7 @@ end;
 
 procedure TDBEngineProfile.ReverseEngineer(Schema: TDatabaseSchema; ExecSQLProc: TExecSQLProc);
 var
-  I: Integer;
+  I,ImpCnt: Integer;
   SQL, ObjPath: String;
   ResultSet: TDataSet;
   LastObj: TSchemaCollectionItem;
@@ -1911,16 +1913,27 @@ begin
 {$ENDIF}
     for I := 0 to FInfoSchemaSQL.Count - 1 do
     begin
+      ImpCnt := 0;
       ObjPath := Trim(FInfoSchemaSQL.Names[I]);
       SQL := Trim(ValueFromIndex(FInfoSchemaSQL, I));
       if (ObjPath = '') or (SQL = '') or CharInSet(ObjPath[1], ['*', ';']) then continue;
       // Execute SQL
       ResultSet := nil;
+      if Assigned(OnReverse) then
+        OnReverse(1, 'Importing '+FInfoSchemaSQL.Names[I] + '...');
       try
         ExecSQLProc(SQL, @ResultSet);
       except
         // eat exception - import log???
-        FreeAndNil(ResultSet);
+        on E:Exception do
+        begin
+          FreeAndNil(ResultSet);
+          if Assigned(OnReverse) then
+          begin
+            OnReverse(-1, 'Importing '+FInfoSchemaSQL.Names[I] + ' hase error:');
+            OnReverse(-1, E.Message);
+          end;
+        end;
       end;
       if ResultSet <> nil then
       try
@@ -1933,13 +1946,17 @@ begin
             if not ((LastCol is TTableDefinitions) and AnsiSameText(Trim(ResultSet.Fields[0].AsString), 'systable')) then
             begin
               LastObj := LastCol.Add;
+              inc(ImpCnt);
               ObjectFound := True;
             end;
           end;
           if ObjectFound then
             AssignObject(LastObj, ResultSet, ObjPath);
+
           ResultSet.Next;
         end;
+      if Assigned(OnReverse) then
+        OnReverse(2, Format('Importing %s done. %d object(s) imported.', [FInfoSchemaSQL.Names[I], ImpCnt]));
       finally
         FreeAndNil(ResultSet);
       end;
@@ -2086,8 +2103,12 @@ begin
     FldName := FieldName;
     if Pos('_', FldName) <> 1 then
     begin
-      V := Trim(AsString);
-      if V = '' then continue;
+      V := AsString;
+      if not (AnsiSameText('AddDefinition', FldName) or AnsiSameText('Definition', FldName)) then
+      begin
+        V := Trim(V);
+        if V = '' then continue;
+      end;
       // Handle field type synonyms right here
       if AnsiSameText(FldName, 'SQLFieldType') and not IsValidFieldType(V) then
       begin

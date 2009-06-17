@@ -1455,14 +1455,14 @@ begin
       begin
         if coPartialKey in Options then
         begin
-          I := Length(PString(P1)^);
-          P := copy(PString(P2)^, 1, I);
+          I := Length(PAnsiString(P1)^);
+          P := copy(PAnsiString(P2)^, 1, I);
         end else
-          P := PString(P2)^;
+          P := PAnsiString(P2)^;
         if coCaseInsensitive in Options then
-          Result := AnsiCompareText(PString(P1)^, P)
+          Result := AnsiCompareText(PAnsiString(P1)^, P)
         else
-          Result := AnsiCompareStr(PString(P1)^, P);
+          Result := AnsiCompareStr(PAnsiString(P1)^, P);
         if Result < 0 then
           Result := -1 else
         if Result > 0 then
@@ -3050,19 +3050,19 @@ begin
 
   if ValueBuffer = nil then
     case Column.FDataType of
-      cdtString: PString(P)^ := '';
+      cdtString: PAnsiString(P)^ := '';
       cdtWideString: PWideString(P)^ := '';
-      cdtMemo: PString(P)^ := '';
-      cdtBlob: PString(P)^ := '';
+      cdtMemo: PAnsiString(P)^ := '';
+      cdtBlob: PAnsiString(P)^ := '';
       cdtReference: PObject(P)^ := nil;
     end
   else
   begin
     case Column.DataType of
-      cdtString: PString(P)^ := PString(ValueBuffer)^;
+      cdtString: PAnsiString(P)^ := PAnsiString(ValueBuffer)^;
       cdtWideString: PWideString(P)^ := PWideString(ValueBuffer)^;
-      cdtMemo: PString(P)^ := PString(ValueBuffer)^;
-      cdtBlob: PString(P)^ := PString(ValueBuffer)^;
+      cdtMemo: PAnsiString(P)^ := PAnsiString(ValueBuffer)^;
+      cdtBlob: PAnsiString(P)^ := PAnsiString(ValueBuffer)^;
       cdtReference: PObject(P)^ := nil;
       else Move(ValueBuffer^, P^, Column.BufSize);
     if Column.DataType = cdtDate then
@@ -3084,10 +3084,10 @@ begin
   begin
     P := InternalGetDataPtr(DataBuffer, Column, False);
     case Column.DataType of
-      cdtString: PString(ValueBuffer)^ := PString(P)^;
+      cdtString: PAnsiString(ValueBuffer)^ := PAnsiString(P)^;
       cdtWideString: PWideString(ValueBuffer)^ := PWideString(P)^;
-      cdtBlob: PString(ValueBuffer)^ := PString(P)^;
-      cdtMemo: PString(ValueBuffer)^ := PString(P)^;
+      cdtBlob: PAnsiString(ValueBuffer)^ := PAnsiString(P)^;
+      cdtMemo: PAnsiString(ValueBuffer)^ := PAnsiString(P)^;
       cdtReference: PObject(ValueBuffer)^ := PObject(P)^;
       else Move(P^, ValueBuffer^, Column.BufSize);
     end;
@@ -3359,7 +3359,7 @@ begin
           cdtInteger: Writer.WriteInteger(PInteger(P)^);
           cdtFloat: Writer.WriteFloat(PDouble(P)^);
           cdtDateTime, cdtDate, cdtTime: Writer.WriteDate(PDateTime(P)^);
-          cdtString, cdtMemo, cdtBlob: Writer.WriteString(PString(P)^);
+          cdtString, cdtMemo, cdtBlob: Writer.WriteString(PAnsiString(P)^);
           cdtWideString: Writer.WriteWideString(PWideString(P)^);
         end;
       end;
@@ -3410,7 +3410,7 @@ begin
               cdtInteger: PInteger(P)^ := Reader.ReadInteger;
               cdtFloat: PDouble(P)^ := Reader.ReadFloat;
               cdtDateTime, cdtDate, cdtTime: PDateTime(P)^ := Reader.ReadDate;
-              cdtString, cdtMemo, cdtBlob: PString(P)^ := Reader.ReadString;
+              cdtString, cdtMemo, cdtBlob: PAnsiString(P)^ := Reader.ReadString;
               cdtWideString: PWideString(P)^ := Reader.ReadWideString;
             end;
           end;
@@ -3524,7 +3524,7 @@ begin
       cdtDateTime, cdtDate, cdtTime:
         Result := VarFromDateTime(PDateTime(P)^);
       cdtString, cdtMemo, cdtBlob:
-        Result := PString(P)^;
+        Result := PAnsiString(P)^;
       else
         raise Exception.CreateFmt(SUnableToCastValueToVariant, [DataTable.Name, Column.Name]);
     end;
@@ -3558,7 +3558,7 @@ begin
       cdtDateTime, cdtDate, cdtTime:
         PDateTime(P)^ := VarToDateTime(Value);
       cdtString, cdtMemo, cdtBlob:
-        PString(P)^ := VarToStr(Value);
+        PAnsiString(P)^ := VarToStr(Value);
       cdtWideString:
         PWideString(P)^ := VarToWideStr(Value);
       else
@@ -3566,7 +3566,7 @@ begin
     end;
     SetColumnData(Column, P);
     if Column.DataType in cdtStringTypes then
-      PString(P)^ := ''
+      PAnsiString(P)^ := ''
     else if Column.DataType in cdtWideStringTypes then
       PWideString(P)^ := '';
   end;
@@ -3591,10 +3591,10 @@ begin
       cdtDateTime: Result := DateTimeToStr(PDateTime(P)^);
       cdtDate: Result := DateToStr(PDateTime(P)^);
       cdtTime: Result := TimeToStr(PDateTime(P)^);      
-      cdtString: Result := PString(P)^;
+      cdtString: Result := PAnsiString(P)^;
       cdtWideString: Result := PWideString(P)^;
       cdtGuid: Result := GUIDToString(PGuid(P)^);
-      cdtMemo: Result := PString(P)^;
+      cdtMemo: Result := PAnsiString(P)^;
       cdtBlob: Result := '{BLOB}';
       cdtReference: Result := '{ROW}';
     end;
@@ -3617,17 +3617,17 @@ begin
     cdtDateTime: PDateTime(P)^ := StrToDateTime(Value);
     cdtDate: PDateTime(P)^ := StrToDate(Value);
     cdtTime: PDateTime(P)^ := StrToTime(Value);
-    cdtString: PString(P)^ := Value;
+    cdtString: PAnsiString(P)^ := Value;
     cdtWideString: PWideString(P)^ := Value;
     cdtGuid: PGuid(P)^ := StringToGUID(Value);
-    cdtMemo: PString(P)^ := Value;
-    cdtBlob: PString(P)^ := Value;
+    cdtMemo: PAnsiString(P)^ := Value;
+    cdtBlob: PAnsiString(P)^ := Value;
     else
       raise Exception.CreateFmt(SUnableToAssignValueAsVariant, [DataTable.Name, Column.Name]);
   end;
   SetColumnData(Column, P);
   if Column.DataType in cdtStringTypes then
-    PString(P)^ := ''
+    PAnsiString(P)^ := ''
   else if Column.DataType in cdtWideStringTypes then
     PWideString(P)^ := '';
 end;

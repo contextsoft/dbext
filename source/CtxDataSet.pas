@@ -434,7 +434,7 @@ begin
       P := AData + FOffsets[I];
       if Fields[I].DataType = ftWideString then
         PWideString(P)^ := ''
-      else PString(P)^ := '';
+      else PAnsiString(P)^ := '';
     end;
 end;
 
@@ -617,7 +617,7 @@ function TCtxDataSet.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
 var
   I,S: integer;
   B,P: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
-  StrValue: String;
+  StrValue: AnsiString;
 begin
   Result := False;
   if not GetActiveRecBuf(B) then
@@ -649,11 +649,11 @@ begin
       // We don't handle blob type fields here, because
       // VCL does not allow for caluclated blob fields
       if Field.DataType = ftString then
-        StrPLCopy(Buffer, PString(P)^, Field.DataSize)
+        StrPLCopy(Buffer, PAnsiString(P)^, Field.DataSize)
       else if Field.DataType = ftWideString then
         PWideString(Buffer)^ := PWideString(P)^
       else if Field.DataType in ARefTypes then
-        PString(Buffer)^ := PString(P)^
+        PAnsiString(Buffer)^ := PAnsiString(P)^
       else
         Move(P^, Buffer^, S);
     end;
@@ -665,7 +665,7 @@ var
   I, S: integer;
   P: Pointer;
   B: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
-  StrValue: String;
+  StrValue: AnsiString;
 begin
   if State = dsBrowse then
     Edit;
@@ -679,7 +679,7 @@ begin
   begin
     if (Buffer <> nil) and (Field.DataType = ftString) then
     begin
-      StrValue := PChar(Buffer);
+      StrValue := PAnsiChar(Buffer);
       PRecInfo(B).Obj.SetColumnData(FColumns[I], @StrValue);
     end else
       PRecInfo(B).Obj.SetColumnData(FColumns[I], Buffer);
@@ -695,11 +695,11 @@ begin
       // We don't handle blob type fields here, because
       // VCL does not allow for caluclated blob fields
       if Field.DataType = ftString then
-        PString(P)^ := PChar(Buffer)
+        PAnsiString(P)^ := PAnsiChar(Buffer)
       else if Field.DataType = ftWideString then
         PWideString(P)^ := PWideString(Buffer)^
       else if Field.DataType in ARefTypes then
-        PString(P)^ := PString(Buffer)^
+        PAnsiString(P)^ := PAnsiString(Buffer)^
       else
         Move(Buffer^, P^, S);
     end;

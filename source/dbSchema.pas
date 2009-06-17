@@ -217,7 +217,7 @@ type
     function GetItemID: Integer; virtual;
     procedure SetItemID(const Value: Integer); virtual;
 
-    function  GetDisplayLabel: string; virtual;
+    function  GetDisplayLabel: AnsiString; virtual;
   public
     constructor Create(Collection: TCollection); override;
     destructor Destroy; override;
@@ -247,7 +247,7 @@ type
     property Schema: TDatabaseSchema read GetSchema;
     property ItemID: Integer read GetItemID write SetItemID;
     property FullName: AnsiString read GetFullName;
-    property DisplayLabel: string read GetDisplayLabel;
+    property DisplayLabel: AnsiString read GetDisplayLabel;
   published
     {:$ Specifies the category this object belongs to. }
     property Category: AnsiString read FCategory write FCategory;
@@ -286,7 +286,7 @@ type
     function GetVersionLabel: AnsiString;
     procedure SetVersion(const Value: TSchemaVersion);
     procedure SetVersionLabel(const Value: AnsiString);
-    function  GetDisplayLabel: string; override;    
+    function  GetDisplayLabel: AnsiString; override;
   public
     {:$ Creates an instance of TDatabaseUpdate object. }
     {:: This method should never be used directly. }
@@ -612,7 +612,7 @@ type
     procedure SetDataType(const Value: TFieldDataType);
     function GetRequired: Boolean;
     procedure SetRequired(const Value: Boolean);
-    function GetDisplayLabel: AnsiString;
+    function GetDisplayLabel: AnsiString; override;
     procedure ObjectRenamed(const OldName: AnsiString); override;
     procedure SetDomain(const Value: AnsiString);
   public
@@ -1460,7 +1460,7 @@ type
     procedure SetShortDescriptions(const Value: TStrings);
     procedure SetItems(const Value: TStrings);
     procedure ObjectRenamed(const OldName: AnsiString); override;
-    function  GetDisplayLabel: AnsiString;
+    function  GetDisplayLabel: AnsiString; override;
   public
     function GetDisplayName: String; override;
     procedure Assign(ASource: TPersistent); override;
@@ -2398,10 +2398,11 @@ var
   Query: TDataSet;
   STable: AnsiString;
 begin
-  if Database.GetSchema = nil then
-    STable := Database.GetSystemTableName
-  else
+  STable := '';
+  if Database.GetSchema <> nil then
     STable := Database.GetSchema.SystemTableName;
+  if Trim(STable) = '' then
+    STable := Database.GetSystemTableName;
   Query := Database.CreateQuery('');
   try
     try
@@ -4337,7 +4338,7 @@ begin
   Result := Name;
 end;
 
-function TSchemaCollectionItem.GetDisplayLabel: string;
+function TSchemaCollectionItem.GetDisplayLabel: AnsiString;
 begin
   Result := Name;
 end;
@@ -4668,7 +4669,7 @@ begin
   Changed(False);
 end;
 
-function TDatabaseUpdate.GetDisplayLabel: string;
+function TDatabaseUpdate.GetDisplayLabel: AnsiString;
 begin
   Result := 'Version update #'+ VersionLabel;
 end;
