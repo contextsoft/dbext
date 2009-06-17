@@ -318,7 +318,7 @@ object frmVersionDemo: TfrmVersionDemo
     DatabaseName = 'MainDB'
     DriverName = 'STANDARD'
     Params.Strings = (
-      'PATH=E:\D7\SDK\Context\DBExt\demos\SchemaVersions\Data')
+      'PATH=Data')
     SessionName = 'Default'
     Schema = DatabaseSchema
     SystemTableName = 'SysTable'

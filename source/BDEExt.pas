@@ -33,8 +33,8 @@ type
   TBDERangeCursor = class (TDBRangeCursor)
   public
     constructor Create(Database: TDatabaseExt; Relation: TRelation; KeyValues: Variant);
-    constructor CreateExt(Database: TDatabaseExt; const TableName, KeyFields, TableFilter: AnsiString;
-      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: AnsiString = '');
+    constructor CreateExt(Database: TDatabaseExt; const TableName, KeyFields, TableFilter: String;
+      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: String = '');
     destructor Destroy; override;
   end;
 
@@ -43,23 +43,23 @@ type
   protected
     { Protected declarations }
     FSchema: TDatabaseSchema;
-    FSystemTableName: AnsiString;
-    FVersionStr: AnsiString;
+    FSystemTableName: String;
+    FVersionStr: String;
 
-    function GetDatabaseName: AnsiString;
-    procedure SetDatabaseName(const Value: AnsiString);
-    function GetVersionLabel: AnsiString;
-    procedure SetVersionLabel(const Value: AnsiString);
+    function GetDatabaseName: String;
+    procedure SetDatabaseName(const Value: String);
+    function GetVersionLabel: String;
+    procedure SetVersionLabel(const Value: String);
 
     { Replication support }
     function GetSchema: TDatabaseSchema;
     procedure SetSchema(Value: TDatabaseSchema);
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
 
-    function GetDatabaseURL: AnsiString;
-    procedure SetDatabaseURL(const Value: AnsiString);
+    function GetDatabaseURL: String;
+    procedure SetDatabaseURL(const Value: String);
 
-    function GetDriverName: AnsiString;
+    function GetDriverName: String;
 
     { Checks if the database is connected }
     procedure CheckActive;
@@ -73,10 +73,10 @@ type
     destructor Destroy; override;
 
     {:: Creates TTableExt component, corresponding to TableName. }
-    function CreateTable(const TableName: AnsiString): TDataSet; virtual;
+    function CreateTable(const TableName: String): TDataSet; virtual;
 
     {:: Creates TQueryExt component, corresponding to Statement. }
-    function CreateQuery(const Statement: AnsiString): TDataSet;
+    function CreateQuery(const Statement: String): TDataSet;
 
     { Schema related methods. Schema must be assigned for them to work }
     {:$ Updates database schema from the physical database tables. }
@@ -97,27 +97,27 @@ type
 
     function FindKey(Table: TDataSet; const KeyValues: array of const): Boolean;
 
-    function GetRangeCursor(const TableName, KeyFields, TableFilter: AnsiString;
-      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: AnsiString = ''): TDBRangeCursor; overload;
+    function GetRangeCursor(const TableName, KeyFields, TableFilter: String;
+      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: String = ''): TDBRangeCursor; overload;
     function GetRangeCursor(Relation: TRelation; KeyValues: Variant): TDBRangeCursor; overload;
 
     { Returns assignable SQL property. }
-    function GetQuerySQL(Query: TDataSet): AnsiString;
-    procedure SetQuerySQL(Query: TDataSet; const Statement: AnsiString);
+    function GetQuerySQL(Query: TDataSet): String;
+    procedure SetQuerySQL(Query: TDataSet; const Statement: String);
     { Returns assignable Params property. }
     procedure GetQueryParams(Query: TDataSet; Params: TParams);
     procedure SetQueryParams(Query: TDataSet; Params: TParams);
     { Executes query that does not return result set. }
     procedure ExecSQL(Query: TDataSet);
     { Executes statement that may return result set. }
-    function ExecuteStatement(SQL: AnsiString; ResultSet: Pointer = nil): Integer;
+    function ExecuteStatement(SQL: String; ResultSet: Pointer = nil): Integer;
 
     function CreateCommand: TCtxDataCommand;
 
     { Parent object is always a table or schema. }
     procedure GetTableNames(List: TStrings; SystemTables: Boolean = False);
     function GetIndexDefs(DataSet: TDataSet): TIndexDefs;
-    function GetSystemTableName: AnsiString;
+    function GetSystemTableName: String;
   published
     { Published properties }
     {:$ Reference to a TDatabaseSchema component. }
@@ -126,25 +126,25 @@ type
     property Schema: TDatabaseSchema read FSchema write SetSchema;
     {:$ Text presentation of the database version. }
     {:: This property is effectively read-only. Any text assigned to it will be ignored. }
-    property VersionLabel: AnsiString read GetVersionLabel write SetVersionLabel stored False;
+    property VersionLabel: String read GetVersionLabel write SetVersionLabel stored False;
     {:$ The name of the System table. }
     {:: The default value of this property is 'system'. }
-    property SystemTableName: AnsiString read GetSystemTableName write FSystemTableName;
+    property SystemTableName: String read GetSystemTableName write FSystemTableName;
     {:$ Specifies the uniform path to the database for both local and C/S types of access. }
     {:: This parameter is usefull for displaying or storing database and session parameters }
     {:: for the specific database. It may also be used with TBDEOpenDatabase dialog.<br> }
     {:: Attention! Assigning DatabaseURL may change the parameters of the session component }
     {:: the database is attached to. }
-    property DatabaseURL: AnsiString read GetDatabaseURL write SetDatabaseURL stored false;
-    property DatabaseName: AnsiString read GetDatabaseName write SetDatabaseName;
+    property DatabaseURL: String read GetDatabaseURL write SetDatabaseURL stored false;
+    property DatabaseName: String read GetDatabaseName write SetDatabaseName;
   end;
 
   {:$ Retrieves database URL from the TDatabase component and the connected Session component. }
-  function GetDatabaseURL(BDEDatabase: TDatabase): AnsiString;
+  function GetDatabaseURL(BDEDatabase: TDatabase): String;
   {:$ Assigned database and session parameters accoriding to the provided database URL. }
-  procedure SetDatabaseURL(BDEDatabase: TDatabase; DatabaseURL: AnsiString);
+  procedure SetDatabaseURL(BDEDatabase: TDatabase; DatabaseURL: String);
 
-  function GetBDEKeyParam(ParamList: TStrings): AnsiString;
+  function GetBDEKeyParam(ParamList: TStrings): String;
 
   procedure Register;
 
@@ -165,9 +165,9 @@ begin
   RegisterComponents('Database Extensions', [TDatabaseExt]);
 end;
 
-function GetBDEKeyParam(ParamList: TStrings): AnsiString;
+function GetBDEKeyParam(ParamList: TStrings): String;
 const
-  KeyParamNames: array [1..4] of AnsiString = ('ODBC DSN', 'PATH', 'DATABASE NAME', 'SERVER NAME');
+  KeyParamNames: array [1..4] of String = ('ODBC DSN', 'PATH', 'DATABASE NAME', 'SERVER NAME');
 var
   I: Integer;
 begin
@@ -179,9 +179,9 @@ begin
     end;
 end;
 
-function GetDatabaseURL(BDEDatabase: TDatabase): AnsiString;
+function GetDatabaseURL(BDEDatabase: TDatabase): String;
 var
-  ConnectionType, RemoteHost, DatabaseName: AnsiString;
+  ConnectionType, RemoteHost, DatabaseName: String;
 begin
   if BDEDatabase.AliasName <> '' then
   begin
@@ -197,9 +197,9 @@ begin
   Result := EncodeDatabaseURL(ConnectionType, RemoteHost, DatabaseName);
 end;
 
-procedure SetDatabaseURL(BDEDatabase: TDatabase; DatabaseURL: AnsiString);
+procedure SetDatabaseURL(BDEDatabase: TDatabase; DatabaseURL: String);
 var
-  ConnectionType, RemoteHost, DatabaseName: AnsiString;
+  ConnectionType, RemoteHost, DatabaseName: String;
 begin
   DecodeDatabaseURL(DatabaseURL, ConnectionType, RemoteHost, DatabaseName);
   if AnsiSameText(ConnectionType, 'BDE') then
@@ -221,12 +221,12 @@ begin
 end;
 
 constructor TBDERangeCursor.CreateExt(Database: TDatabaseExt;
-  const TableName, KeyFields, TableFilter: AnsiString;
+  const TableName, KeyFields, TableFilter: String;
   CaseInsensitive: Boolean; KeyValues: Variant;
-  const ExtraKeyFields: AnsiString = '');
+  const ExtraKeyFields: String = '');
 var
   IdxDef: TIndexDef;
-  RangeFilter: AnsiString;
+  RangeFilter: String;
   Table: TTable;
 begin
   if (TableName = '') then
@@ -322,7 +322,7 @@ begin
   SetDatabaseVersion(Self, Value);
 end;
 
-function TDatabaseExt.GetVersionLabel: AnsiString;
+function TDatabaseExt.GetVersionLabel: String;
 begin
   if Connected then
   begin
@@ -353,7 +353,7 @@ begin
   FSchema := Value;
 end;
 
-procedure TDatabaseExt.SetVersionLabel(const Value: AnsiString);
+procedure TDatabaseExt.SetVersionLabel(const Value: String);
 begin
   // Ignore this.
 end;
@@ -378,24 +378,24 @@ begin
   Result := InTransaction;
 end;
 
-function TDatabaseExt.GetDriverName: AnsiString;
+function TDatabaseExt.GetDriverName: String;
 begin
   Result := 'BDE';
 end;
 
-function TDatabaseExt.GetDatabaseURL: AnsiString;
+function TDatabaseExt.GetDatabaseURL: String;
 begin
   Result := BDEExt.GetDatabaseURL(Self);
 end;
 
-procedure TDatabaseExt.SetDatabaseURL(const Value: AnsiString);
+procedure TDatabaseExt.SetDatabaseURL(const Value: String);
 begin
   BDEExt.SetDatabaseURL(Self, Value);
 end;
 
 function TDatabaseExt.GetRangeCursor(const TableName, KeyFields,
-  TableFilter: AnsiString; CaseInsensitive: Boolean; KeyValues: Variant;
-  const ExtraKeyFields: AnsiString): TDBRangeCursor;
+  TableFilter: String; CaseInsensitive: Boolean; KeyValues: Variant;
+  const ExtraKeyFields: String): TDBRangeCursor;
 begin
   Result := TBDERangeCursor.CreateExt(Self, TableName, KeyFields,
     TableFilter, CaseInsensitive, KeyValues, ExtraKeyFields);
@@ -412,18 +412,18 @@ begin
   Result := FSchema;
 end;
 
-function TDatabaseExt.GetDatabaseName: AnsiString;
+function TDatabaseExt.GetDatabaseName: String;
 begin
   Result := inherited DatabaseName;
 end;
 
-procedure TDatabaseExt.SetDatabaseName(const Value: AnsiString);
+procedure TDatabaseExt.SetDatabaseName(const Value: String);
 begin
   inherited DatabaseName := Value;
   RegisterCtxDataProvider(Self)
 end;
 
-function TDatabaseExt.CreateTable(const TableName: AnsiString): TDataSet;
+function TDatabaseExt.CreateTable(const TableName: String): TDataSet;
 begin
   Result := TTable.Create(nil);
   try
@@ -436,7 +436,7 @@ begin
   end;
 end;
 
-function TDatabaseExt.CreateQuery(const Statement: AnsiString): TDataSet;
+function TDatabaseExt.CreateQuery(const Statement: String): TDataSet;
 begin
   Result := TQuery.Create(nil);
   with TQuery(Result) do
@@ -466,13 +466,13 @@ begin
   TQuery(Query).Params.AssignValues(Params);
 end;
 
-function TDatabaseExt.GetQuerySQL(Query: TDataSet): AnsiString;
+function TDatabaseExt.GetQuerySQL(Query: TDataSet): String;
 begin
   Result := TQuery(Query).SQL.Text;
 end;
 
 procedure TDatabaseExt.SetQuerySQL(Query: TDataSet;
-  const Statement: AnsiString);
+  const Statement: String);
 begin
   TQuery(Query).SQL.Text := Statement;
 end;
@@ -499,7 +499,7 @@ var
   I, J, Idx, DefIdx: Integer;
   Table: TTable;
   Tables: TStringList;
-  FileExt, LogicalTableName: AnsiString;
+  FileExt, LogicalTableName: String;
 begin
   CheckActive;
   CheckSchema;
@@ -605,7 +605,7 @@ begin
   end;
 end;
 
-function TDatabaseExt.GetSystemTableName: AnsiString;
+function TDatabaseExt.GetSystemTableName: String;
 begin
   if Trim(FSystemTableName) = '' then
     Result := defSysTableName else
@@ -618,7 +618,7 @@ begin
   FVersionStr := '';
 end;
 
-function TDatabaseExt.ExecuteStatement(SQL: AnsiString;
+function TDatabaseExt.ExecuteStatement(SQL: String;
   ResultSet: Pointer): Integer;
 var
   Q: TQuery;

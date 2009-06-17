@@ -105,7 +105,7 @@ object frmDataContainerEditor: TfrmDataContainerEditor
             Borders = bsSingle
             ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soAlwaysShowEditor, soTextAutoSelect, soAutoWidth, soRowMoved]
             TabOrder = 0
-            AutoAddRow = False
+            AutoAddRow = arNone
             ReadOnly = False
             Columns.Sorted = False
             Columns = <
@@ -124,9 +124,9 @@ object frmDataContainerEditor: TfrmDataContainerEditor
                 TextColor = clWindowText
                 Visible = True
                 ValueListSorted = False
-                AutoWidth = False
                 SortOption = isoNone
                 Width = 80
+                Nullable = False
               end
               item
                 Custom = False
@@ -143,9 +143,9 @@ object frmDataContainerEditor: TfrmDataContainerEditor
                 TextColor = clWindowText
                 Visible = True
                 ValueListSorted = False
-                AutoWidth = False
                 SortOption = isoNone
                 Width = 80
+                Nullable = False
               end
               item
                 Custom = False
@@ -162,9 +162,9 @@ object frmDataContainerEditor: TfrmDataContainerEditor
                 TextColor = clWindowText
                 Visible = True
                 ValueListSorted = False
-                AutoWidth = False
                 SortOption = isoNone
                 Width = 50
+                Nullable = False
               end
               item
                 Custom = False
@@ -181,9 +181,9 @@ object frmDataContainerEditor: TfrmDataContainerEditor
                 TextColor = clWindowText
                 Visible = True
                 ValueListSorted = False
-                AutoWidth = False
                 SortOption = isoNone
                 Width = 50
+                Nullable = False
               end
               item
                 Custom = False
@@ -200,9 +200,28 @@ object frmDataContainerEditor: TfrmDataContainerEditor
                 TextColor = clWindowText
                 Visible = True
                 ValueListSorted = False
-                AutoWidth = False
                 SortOption = isoNone
                 Width = 40
+                Nullable = False
+              end
+              item
+                Custom = False
+                Alignment = taLeftJustify
+                TextAlignment = taLeftJustify
+                DefaultColors = False
+                Caption = 'Calc.'
+                Color = clWindow
+                EditType = etCheck
+                Name = 'Calculated'
+                ReadOnly = False
+                Empty = False
+                Disabled = False
+                TextColor = clWindowText
+                Visible = True
+                ValueListSorted = False
+                SortOption = isoNone
+                Width = 40
+                Nullable = False
               end
               item
                 Custom = False
@@ -219,10 +238,12 @@ object frmDataContainerEditor: TfrmDataContainerEditor
                 TextColor = clWindowText
                 Visible = True
                 ValueListSorted = False
-                AutoWidth = True
+                SizingOption = csoAutoWidth
                 SortOption = isoNone
-                Width = 229
+                Width = 189
+                Nullable = False
               end>
+            MarkerWidth = 16
             ScrollBars = ssVertical
             PopupMenu = popColumns
             DragCursor = crHandPoint
@@ -300,7 +321,7 @@ object frmDataContainerEditor: TfrmDataContainerEditor
           Borders = bsSingle
           ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soRowSelect, soAlwaysShowEditor, soAutoWidth, soRowMoved]
           TabOrder = 0
-          AutoAddRow = False
+          AutoAddRow = arNone
           ReadOnly = True
           Columns.Sorted = False
           Columns = <
@@ -319,9 +340,9 @@ object frmDataContainerEditor: TfrmDataContainerEditor
               TextColor = clWindowText
               Visible = True
               ValueListSorted = False
-              AutoWidth = False
               SortOption = isoNone
               Width = 70
+              Nullable = False
             end
             item
               Custom = False
@@ -338,9 +359,10 @@ object frmDataContainerEditor: TfrmDataContainerEditor
               TextColor = clWindowText
               Visible = True
               ValueListSorted = False
-              AutoWidth = True
+              SizingOption = csoAutoWidth
               SortOption = isoNone
-              Width = 116
+              Width = 104
+              Nullable = False
             end
             item
               Custom = False
@@ -357,9 +379,10 @@ object frmDataContainerEditor: TfrmDataContainerEditor
               TextColor = clWindowText
               Visible = True
               ValueListSorted = False
-              AutoWidth = True
+              SizingOption = csoAutoWidth
               SortOption = isoNone
-              Width = 97
+              Width = 101
+              Nullable = False
             end
             item
               Custom = False
@@ -376,9 +399,10 @@ object frmDataContainerEditor: TfrmDataContainerEditor
               TextColor = clWindowText
               Visible = True
               ValueListSorted = False
-              AutoWidth = True
+              SizingOption = csoAutoWidth
               SortOption = isoNone
-              Width = 97
+              Width = 101
+              Nullable = False
             end
             item
               Custom = False
@@ -395,9 +419,10 @@ object frmDataContainerEditor: TfrmDataContainerEditor
               TextColor = clWindowText
               Visible = True
               ValueListSorted = False
-              AutoWidth = True
+              SizingOption = csoAutoWidth
               SortOption = isoNone
-              Width = 97
+              Width = 101
+              Nullable = False
             end
             item
               Custom = False
@@ -414,9 +439,9 @@ object frmDataContainerEditor: TfrmDataContainerEditor
               TextColor = clWindowText
               Visible = True
               ValueListSorted = False
-              AutoWidth = False
               SortOption = isoNone
               Width = 70
+              Nullable = False
             end
             item
               Custom = False
@@ -433,9 +458,9 @@ object frmDataContainerEditor: TfrmDataContainerEditor
               TextColor = clWindowText
               Visible = True
               ValueListSorted = False
-              AutoWidth = False
               SortOption = isoNone
               Width = 70
+              Nullable = False
             end
             item
               Custom = False
@@ -452,10 +477,11 @@ object frmDataContainerEditor: TfrmDataContainerEditor
               TextColor = clWindowText
               Visible = True
               ValueListSorted = False
-              AutoWidth = False
               SortOption = isoNone
               Width = 70
+              Nullable = False
             end>
+          MarkerWidth = 16
           ScrollBars = ssVertical
           PopupMenu = popRelations
           OnDrawMarker = grdRelationsDrawMarker

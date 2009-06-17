@@ -1,6 +1,8 @@
 *.dcu
 *.~*
 *.map
+__history
+__history\**
 -releases
 -work
 -releases\**
