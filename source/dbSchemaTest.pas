@@ -851,12 +851,12 @@ begin
 
     FIdentifiers.Add(TypePrefix + TableName);
 
-    if (not IsView or FDBEngineProfile.ViewSupport(FieldDefs.ClassType)) and
+    if (not IsView{ or FDBEngineProfile.ViewSupport(FieldDefs.ClassType)}) and
       (FieldDefs.Count = 0) then
       AddResult(smcTableNoFieldsDefined, smoTable, smsError, TableDef);
 
 
-    if (not IsView or (FDBEngineProfile.ViewSupport(Relations.ClassType) and FDBEngineProfile.ViewSupport(IndexDefs.ClassType))) and
+    if (not IsView {or (FDBEngineProfile.ViewSupport(Relations.ClassType) and FDBEngineProfile.ViewSupport(IndexDefs.ClassType))}) and
       (Replicate or (Relations.Count > 0)) and (GetPrimaryIndex = nil) then
       AddResult(smcTableNoPrimaryIndex, smoTable, smsWarning, TableDef);
 

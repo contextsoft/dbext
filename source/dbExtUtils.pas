@@ -1493,6 +1493,8 @@ begin
         ReverseEngineer;
         Data := StrToVarArray(Schema.SaveToStr);
       end;
+      dvGetSystemTableName: Data := Schema.SystemTableName;
+      dvSetSystemTableName: Schema.SystemTableName := VarToStr(Data);
       dvGetVersion: Data := VersionToStr(GetVersion);
       dvSetVersion: SetVersion(StrToVersion(Data));
       dvExecuteSQL: begin

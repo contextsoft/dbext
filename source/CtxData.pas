@@ -3576,7 +3576,7 @@ end;
 procedure TCtxDataRow.SetValue(Column: TCtxDataColumn;
   const Value: Variant);
 var
-  Buffer: array [0..128] of char;
+  Buffer: array [0..128] of AnsiChar;
   P: Pointer;
 begin
   ASSERT(Column <> nil);
@@ -3646,7 +3646,7 @@ end;
 procedure TCtxDataRow.SetAsString(Column: TCtxDataColumn; Value: String);
 var
   P: Pointer;
-  Buffer: array [0..64] of char;
+  Buffer: array [0..128] of AnsiChar;
 begin
   ASSERT(Column <> nil);
   P := @Buffer[0];

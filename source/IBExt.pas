@@ -150,6 +150,9 @@ implementation
 
 uses IBCustomDataSet, Math;
 
+const
+  defSysTableName = 'SysTable';
+
 procedure Register;
 begin
   RegisterComponents('Database Extensions', [TIBDatabaseExt]);
@@ -224,7 +227,7 @@ constructor TIBDatabaseExt.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FSchema := nil;
-  FSystemTableName := 'SysTable';
+  FSystemTableName := defSysTableName;
   FVersionStr := '';
 end;
 
@@ -559,7 +562,9 @@ end;
 
 function TIBDatabaseExt.GetSystemTableName: String;
 begin
-  Result := FSystemTableName;
+  if Trim(FSystemTableName) = '' then
+    Result := defSysTableName else
+    Result := FSystemTableName;
 end;
 
 procedure TIBDatabaseExt.DoConnect;

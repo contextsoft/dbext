@@ -684,7 +684,7 @@ begin
         StrPLCopy(Buffer, PAnsiString(P)^, Field.DataSize)
       else if Field.DataType = ftWideString then
         {$IFDEF D2009_ORLATER}
-        WideString(Buffer) := PWideString(P)^
+        StrPLCopy(Buffer, PWideString(P)^, Field.DataSize)
         {$ELSE}
         PWideString(Buffer)^ := PWideString(P)^
         {$ENDIF}
@@ -745,7 +745,7 @@ begin
         PAnsiString(P)^ := PAnsiChar(Buffer)
       else if Field.DataType = ftWideString then
         {$IFDEF D2009_ORLATER}
-        PWideString(P)^ := WideString(Buffer)
+        PWideString(P)^ := PWideChar(Buffer)
         {$ELSE}
         PWideString(P)^ := PWideString(Buffer)^
         {$ENDIF}

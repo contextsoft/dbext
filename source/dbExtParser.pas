@@ -46,17 +46,17 @@ type
 
   TLexer = class
   private
-    FText: string;
+    FText: String;
     FSymbols: TStringList;
     FKeywords: TStringList;
     FBehavior: TLexerBehavior;
-    FStringQuotes: string;
-    FIdentQuotes: string;
-    FIdentQuoteBegin: string;
-    FIdentQuoteEnd: string;
-    FInlineComment: string;
-    FCommentBegin: string;
-    FCommentEnd: string;
+    FStringQuotes: String;
+    FIdentQuotes: String;
+    FIdentQuoteBegin: String;
+    FIdentQuoteEnd: String;
+    FInlineComment: String;
+    FCommentBegin: String;
+    FCommentEnd: String;
     FCurrent: TToken;
     FPrevious: TToken;
     FPrevPrev: TToken;
@@ -73,18 +73,18 @@ type
     procedure SetQuotedString(const value: boolean);
     procedure SetUpperedIdent(const value: boolean);
     function PeekNextToken: TToken;
-    procedure SetText(const Value: string);
+    procedure SetText(const Value: String);
     function GetCurrent: TToken;
     function GetPrevious: TToken;
     function GetPrevPrev: TToken;
   public
-    constructor Create(atext: string; behavior: TLexerBehavior); overload;
-    constructor Create(atext: string; asymbols: TStringList; akeywords: TStringList;
+    constructor Create(atext: String; behavior: TLexerBehavior); overload;
+    constructor Create(atext: String; asymbols: TStringList; akeywords: TStringList;
       behavior: TLexerBehavior); overload;
     procedure Reset;
     function MoveNext: TToken;
     function GetNextToken(var from: TToken): TToken;
-    property Text: string read FText write SetText;
+    property Text: String read FText write SetText;
     property Symbols: TStringList read FSymbols;
     property Keywords: TStringList read FKeywords;
     property OmitBlank: boolean read GetOmitBlank write SetOmitBlank;
@@ -92,13 +92,13 @@ type
     property QuotedString: boolean read GetQuotedString write SetQuotedString;
     property QuotedIdent: boolean read GetQuotedIdent write SetQuotedIdent;
     property UpperedIdent: boolean read GetUpperedIdent write SetUpperedIdent;
-    property StringQuotes: string read FStringQuotes write FStringQuotes;
-    property IdentQuotes: string read FIdentQuotes write FIdentQuotes;
-    property IdentQuoteBegin: string read FIdentQuoteBegin write FIdentQuoteBegin;
-    property IdentQuoteEnd: string read FIdentQuoteEnd write FIdentQuoteEnd;
-    property InlineComment: string read FInlineComment write FInlineComment;
-    property CommentBegin: string read FCommentBegin write FCommentBegin;
-    property CommentEnd: string read FCommentEnd write FCommentEnd;
+    property StringQuotes: String read FStringQuotes write FStringQuotes;
+    property IdentQuotes: String read FIdentQuotes write FIdentQuotes;
+    property IdentQuoteBegin: String read FIdentQuoteBegin write FIdentQuoteBegin;
+    property IdentQuoteEnd: String read FIdentQuoteEnd write FIdentQuoteEnd;
+    property InlineComment: String read FInlineComment write FInlineComment;
+    property CommentBegin: String read FCommentBegin write FCommentBegin;
+    property CommentEnd: String read FCommentEnd write FCommentEnd;
     property PrevPrev: TToken read GetPrevPrev;
     property Previous: TToken read GetPrevious;
     property Current: TToken read GetCurrent;
@@ -129,8 +129,8 @@ type
   TContextClass = class of TExpressionContext;
   TExpressionContext = class
   public
-    class function GetItem(context: pointer; const name: string): variant; virtual;
-    class function GetSubContext(context: pointer; const name: string; out contextClass: TContextClass): pointer; virtual;
+    class function GetItem(context: pointer; const name: String): variant; virtual;
+    class function GetSubContext(context: pointer; const name: String; out contextClass: TContextClass): pointer; virtual;
   end;
 
   TEvaluator = class
@@ -138,16 +138,16 @@ type
     FRoot: PExpression;
     FItems: array of TExpression;
     FContext: pointer;
-    FExpression: string;
+    FExpression: String;
     FItemCount: integer;
     FFunctions: TStringList;
     FContextClass: TContextClass;
-    function Like(const st, Mask: string): boolean;
+    function Like(const st, Mask: String): boolean;
     function ContextPath(expr: PExpression): variant;
-    procedure Error(const Msg: string);
+    procedure Error(const Msg: String);
   public
-    constructor Create(const aexpression: string; acontext: pointer; acontextclass: TContextClass); overload;
-    constructor Create(const aexpression: string; acontext: pointer; functions: TStringList; acontextclass: TContextClass); overload;
+    constructor Create(const aexpression: String; acontext: pointer; acontextclass: TContextClass); overload;
+    constructor Create(const aexpression: String; acontext: pointer; functions: TStringList; acontextclass: TContextClass); overload;
     function AllocNode: PExpression;
     function Evaluate: variant; overload;
     function Evaluate(expr: PExpression): variant; overload;
@@ -168,10 +168,10 @@ type
     function MulExpr: PExpression;
     function Identifier: PExpression;
   public
-    constructor Create(const expression: string; var evaluator: TEvaluator);
+    constructor Create(const expression: String; var evaluator: TEvaluator);
     destructor Destroy; override;
     procedure Parse;
-    procedure Error(const Msg: string; const Token: TToken);
+    procedure Error(const Msg: String; const Token: TToken);
   end;
 
   function EvaluateExpression(const Expression: String; Context: Pointer; ContextClass: TContextClass): Variant; overload;
@@ -181,7 +181,7 @@ var
   CommonSymbols: TStringList = nil;
   CommonKeywords: TStringList = nil;
   CommonFunctions: TStringList = nil;
-  DecimalPoint: char = '.';
+  DecimalPoint: Char = '.';
 
 resourcestring
   SIllegalExpression = 'Illegal expression';
@@ -268,12 +268,12 @@ end;
 
 { TLexer }
 
-constructor TLexer.Create(atext: string; behavior: TLexerBehavior);
+constructor TLexer.Create(atext: String; behavior: TLexerBehavior);
 begin
   Create(atext, CommonSymbols, CommonKeywords, behavior);
 end;
 
-constructor TLexer.Create(atext: string; asymbols, akeywords: TStringList;
+constructor TLexer.Create(atext: String; asymbols, akeywords: TStringList;
   behavior: TLexerBehavior);
 begin
   inherited Create;
@@ -311,14 +311,14 @@ var
   ch: char;
   lenBegin: integer;
   lenEnd: integer;
-  identQuote: string;
-  val: string;
-  sym: string;
+  identQuote: String;
+  val: String;
+  sym: String;
   id: integer;
   tType: TokenType;
   scale: integer;
   v: variant;
-  name: string;
+  name: String;
 begin
   start := from.EndPosition;
   index := start;
@@ -389,7 +389,7 @@ begin
     end;
   until not omit;
 
-  // string
+  // String
   for i := 1 to Length(StringQuotes) do begin
     ch := StringQuotes[i];
     if (text[index] = ch) then begin
@@ -610,7 +610,7 @@ begin
     FBehavior := FBehavior and not bQuotedString;
 end;
 
-procedure TLexer.SetText(const Value: string);
+procedure TLexer.SetText(const Value: String);
 begin
   FText := Value;
   Reset;
@@ -627,12 +627,12 @@ end;
 { TContext }
 
 class function TExpressionContext.GetItem(context: pointer;
-  const name: string): variant;
+  const name: String): variant;
 begin
   raise Exception.CreateFmt(SUnableToResolveName, [name]);
 end;
 
-class function TExpressionContext.GetSubContext(context: pointer; const name: string;
+class function TExpressionContext.GetSubContext(context: pointer; const name: String;
   out contextClass: TContextClass): pointer;
 begin
   (*
@@ -659,13 +659,13 @@ begin
   Inc(FItemCount);
 end;
 
-constructor TEvaluator.Create(const aexpression: string; acontext: pointer;
+constructor TEvaluator.Create(const aexpression: String; acontext: pointer;
   acontextclass: TContextClass);
 begin
   Create(aexpression, acontext, CommonFunctions, acontextclass);
 end;
 
-constructor TEvaluator.Create(const aexpression: string; acontext: pointer;
+constructor TEvaluator.Create(const aexpression: String; acontext: pointer;
   functions: TStringList; acontextclass: TContextClass);
 begin
   inherited Create;
@@ -689,7 +689,7 @@ begin
   result := Evaluate(FRoot);
 end;
 
-procedure TEvaluator.Error(const Msg: string);
+procedure TEvaluator.Error(const Msg: String);
 begin
   raise Exception.Create(Msg);
 end;
@@ -757,7 +757,7 @@ begin
   end;
 end;
 
-function TEvaluator.Like(const st, Mask: string): boolean;
+function TEvaluator.Like(const st, Mask: String): boolean;
 const
   Wildcard = '*';
   WildcardOne = '_';
@@ -989,7 +989,7 @@ begin
   result := expr;
 end;
 
-constructor TExpressionParser.Create(const expression: string;
+constructor TExpressionParser.Create(const expression: String;
   var evaluator: TEvaluator);
 begin
   inherited Create;
@@ -1003,7 +1003,7 @@ begin
   inherited;
 end;
 
-procedure TExpressionParser.Error(const Msg: string; const Token: TToken);
+procedure TExpressionParser.Error(const Msg: String; const Token: TToken);
 begin
   raise Exception.CreateFmt(Msg + Format(SAtPosition, [Token.StartPosition]), [Token.Value]);
 end;
@@ -1132,17 +1132,17 @@ begin
     Error(SIllegalExpression, FLexer.FCurrent);
 end;
 
-procedure AddSymbol(const symbol: string; id: integer);
+procedure AddSymbol(const symbol: String; id: integer);
 begin
   CommonSymbols.AddObject(symbol, pointer(id));
 end;
 
-procedure AddKeyword(const keyword: string; id: integer);
+procedure AddKeyword(const keyword: String; id: integer);
 begin
   CommonKeywords.AddObject(keyword, pointer(id));
 end;
 
-procedure AddFunction(const name: string; func: TFunction);
+procedure AddFunction(const name: String; func: TFunction);
 begin
   CommonFunctions.AddObject(name, @func);
 end;
@@ -1182,7 +1182,7 @@ end;
 
 function fLOWER(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
 begin
   s := evaluator.Evaluate(expression.Arg1);
   result := AnsiLowerCase(s);
@@ -1190,7 +1190,7 @@ end;
 
 function fUPPER(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
 begin
   s := evaluator.Evaluate(expression.Arg1);
   result := AnsiUpperCase(s);
@@ -1198,7 +1198,7 @@ end;
 
 function fLENGTH(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
 begin
   s := evaluator.Evaluate(expression.Arg1);
   result := Length(s);
@@ -1206,7 +1206,7 @@ end;
 
 function fSUBSTRING(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
   index, count: integer;
 begin
   s := evaluator.Evaluate(expression.Arg1);
@@ -1217,7 +1217,7 @@ end;
 
 function fLEFT(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
   count: integer;
 begin
   s := evaluator.Evaluate(expression.Arg1);
@@ -1227,7 +1227,7 @@ end;
 
 function fRIGHT(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
   count: integer;
 begin
   s := evaluator.Evaluate(expression.Arg1);
@@ -1237,7 +1237,7 @@ end;
 
 function fTRIM(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
 begin
   s := evaluator.Evaluate(expression.Arg1);
   result := Trim(s);
@@ -1245,7 +1245,7 @@ end;
 
 function fLTRIM(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
 begin
   s := evaluator.Evaluate(expression.Arg1);
   result := TrimLeft(s);
@@ -1253,7 +1253,7 @@ end;
 
 function fRTRIM(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
 begin
   s := evaluator.Evaluate(expression.Arg1);
   result := TrimRight(s);
@@ -1261,8 +1261,8 @@ end;
 
 function fPOSITION(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  substr: string;
-  s: string;
+  substr: String;
+  s: String;
 begin
   substr := evaluator.Evaluate(expression.Arg1);
   s := evaluator.Evaluate(expression.Arg2);
@@ -1271,9 +1271,9 @@ end;
 
 function fREPLACE(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  old: string;
-  new: string;
-  s: string;
+  old: String;
+  new: String;
+  s: String;
 begin
   old := evaluator.Evaluate(expression.Arg1);
   new := evaluator.Evaluate(expression.Arg2);
@@ -1283,14 +1283,14 @@ end;
 
 {
 TODO:
-  OCCURS Finds the number of times one string value is present within another string value.
+  OCCURS Finds the number of times one String value is present within another String value.
 }
 
 function fREPEAT(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  pattern: string;
+  pattern: String;
   count: integer;
-  s: string;
+  s: String;
   i: integer;
   p: integer;
   l: integer;
@@ -1309,7 +1309,7 @@ end;
 
 function fCONCAT(evaluator: PEvaluator; expression: PExpression): variant;
 var
-  s: string;
+  s: String;
   i: integer;
 begin
   s := evaluator.Evaluate(expression.Arg1);
