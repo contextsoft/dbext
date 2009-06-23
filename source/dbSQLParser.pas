@@ -16,6 +16,8 @@
 (******************************************************************************)
 unit dbSQLParser;
 
+{$I CtxVer.inc}
+
 interface
 
 uses Classes, SysUtils, dbSQLLexer, DB, dbSchema, dbEngProfile, Forms;
@@ -47,16 +49,16 @@ type
   TParseStatusType = (pstProgress, pstError, pstMessage);
 
   TParseStatusEvent = procedure (Schema: TDatabaseSchema;
-    StatusType: TParseStatusType; const Msg: AnsiString; Value: Integer) of object;
+    StatusType: TParseStatusType; const Msg: String; Value: Integer) of object;
 
-  procedure ParseSQL(const SQL: AnsiString; Schema: TDatabaseSchema;
+  procedure ParseSQL(const SQL: String; Schema: TDatabaseSchema;
     Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil); overload;
   procedure ParseSQL(AStream: TStream; Schema: TDatabaseSchema;
     Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil); overload;
-  procedure ParseSQLFile(const FileName: AnsiString; Schema: TDatabaseSchema;
+  procedure ParseSQLFile(const FileName: String; Schema: TDatabaseSchema;
     Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil);
 
-  procedure UpdateSchemaItem(Item: TSchemaCollectionItem; const Definition: AnsiString);
+  procedure UpdateSchemaItem(Item: TSchemaCollectionItem; const Definition: String);
 
 resourcestring
   STableNotFound = 'Table not found: %s near line %d in pos %d';
@@ -71,10 +73,12 @@ resourcestring
 
 implementation
 
+{$I CtxD2009.inc}
+
 const
   // This array contains names of the top most entities that may be
   // encountered in SQL script
-  // ObjNames: array [0..7] of AnsiString = ('table', 'index', 'sequence', 'domain',
+  // ObjNames: array [0..7] of String = ('table', 'index', 'sequence', 'domain',
   // 'object', 'view', 'trigger', 'storedproc');
   DefaultImportObjects = 'table,index,sequence,domain,view,trigger,storedproc,module';
 
@@ -84,7 +88,7 @@ type
     csCustomObject);
 
 const
-  StatementNames: array [TClassStatement] of AnsiString = ('',
+  StatementNames: array [TClassStatement] of String = ('',
     'field', 'computedfield', 'primarykey', 'foreignkey', 'unique', 'index', 'trigger',
     'table', 'view', 'storedproc', 'module', 'sequence', 'domain', 'indexfield', 'constraint', 'constraints',
     'custom object');
@@ -96,10 +100,10 @@ const
     TCustomObject
   );
 
-function ExtractTableName(const Definition: AnsiString): AnsiString;
+function ExtractTableName(const Definition: String): String;
 var
   I: Integer;
-  Temp: AnsiString;
+  Temp: String;
 begin
   // CREATE TRIGGER name SKIP_TOKENS ON table_name
   I := 1;
@@ -116,12 +120,12 @@ begin
   Result := '';
 end;
 
-procedure UpdateSchemaItem(Item: TSchemaCollectionItem; const Definition: AnsiString);
+procedure UpdateSchemaItem(Item: TSchemaCollectionItem; const Definition: String);
 var
   TempSchema: TDatabaseSchema;
   Col: TSchemaItemsCollection;
   Profile: TDBEngineProfile;
-  SaveTerm: AnsiString;
+  SaveTerm: String;
 begin
   TempSchema := TDatabaseSchema.Create(nil);
   try
@@ -158,27 +162,27 @@ procedure ParseSQL(AStream: TStream; Schema: TDatabaseSchema; Profile: TDBEngine
 var
   EqPos, I, TokenPos: Integer;
   Lexer: TSQLLexer;
-  Token: AnsiString;
+  Token: String;
   KeyToken: Boolean;
-  LastDelimiter: AnsiString;
+  LastDelimiter: String;
   LastTableDef: TTableDefinition;
   LastIndexDef: TIndexDefinition;
   ValueBuffer: TStringList;
   ExprList: TList;
   DataTypes: TList;
   // Term,
-  NextTerm: AnsiString;
+  NextTerm: String;
   ExpressionFields: TStringList;
   StatementFields: TStringList;
   ImportExpr: TFmtExpression;
   DummyItem: TSchemaCollectionItem;
   // StatementStartPos: Integer;
   ExprStack: TList;
-  SkippedExpression: AnsiString;
+  SkippedExpression: String;
 
-  function BeginWithText(AExpression: TFmtExpression; var Idx: Integer): AnsiString; forward;
+  function BeginWithText(AExpression: TFmtExpression; var Idx: Integer): String; forward;
 
-  function ExprDisplayName(AExpr: TFmtExpression): AnsiString;
+  function ExprDisplayName(AExpr: TFmtExpression): String;
   var
     Idx: Integer;
   begin
@@ -190,13 +194,13 @@ var
     end;
   end;
 
-  procedure ParseError(const Msg: AnsiString);
+  procedure ParseError(const Msg: string);
   var
     I: Integer;
-    Pad: AnsiString;
-    Tmp: AnsiString;
+    Pad: String;
+    Tmp: String;
   begin
-      Tmp := '';
+    Tmp := '';
     (* DEBUG ONLY *)
     Pad := '';
     for I := ExprStack.Count - 1 downto 0 do
@@ -207,17 +211,17 @@ var
     raise Exception.Create(Msg + Tmp);
   end;
 
-  procedure ParseErrorFmt(const Msg: AnsiString; const Args: array of const);
+  procedure ParseErrorFmt(const Msg: string; const Args: array of const);
   begin
     ParseError(Format(Msg, Args));
   end;
 
-  procedure GetItemOperation(const ExprName: AnsiString;
+  procedure GetItemOperation(const ExprName: String;
     var ItemClassIdx: TClassStatement; var ItemOperation: TItemOperation);
   var
     I: TClassStatement;
     P: Integer;
-    StmtName, OpName: AnsiString;
+    StmtName, OpName: String;
   begin
     if ExprName = '' then exit;
     P := 1;
@@ -263,28 +267,28 @@ var
     end;
   end;
 
-  procedure SetItemProp(Item: TSchemaCollectionItem; PropName: AnsiString; const PropValue: AnsiString);
+  procedure SetItemProp(Item: TSchemaCollectionItem; PropName: String; const PropValue: String);
   begin
-    while (PropName <> '') and (PropName[1] in ['~', '!', '?', '/', '^']) do
+    while (PropName <> '') and CharInSet(PropName[1], ['~', '!', '?', '/', '^']) do
       Delete(PropName, 1, 1);
     if PropName <> '' then
       Item.SetPropValue(PropName, PropValue);
   end;
 
-  procedure AddValue(var Item: TSchemaCollectionItem; PropName: AnsiString;
-    const PropValue: AnsiString; ItemOperation: TItemOperation; ItemClassIdx: TClassStatement);
+  procedure AddValue(var Item: TSchemaCollectionItem; PropName: String;
+    const PropValue: String; ItemOperation: TItemOperation; ItemClassIdx: TClassStatement);
   var
     I: Integer;
     Parent: TObject;
     Coll: TSchemaItemsCollection;
     IndexDef: TIndexDefinition;
-    TempStr, AdjPropValue, ParentName, ItemName: AnsiString;
+    TempStr, AdjPropValue, ParentName, ItemName: String;
     ItemClass: TSchemaCollectionItemClass;
     Dequote: Boolean;
   begin
     // We remove all possible prefixes except ^, which means "old value".
     Dequote := False;
-    while (PropName <> '') and (PropName[1] in ['~', '!', '?', '/', '^']) do
+    while (PropName <> '') and CharInSet(PropName[1], ['~', '!', '?', '/', '^']) do
     begin
       if PropName[1] = '/' then
         Dequote := True;
@@ -301,7 +305,7 @@ var
     begin
       AdjPropValue := Trim(PropValue);
       if AdjPropValue <> '' then
-        AdjPropValue := AnsiDequotedStr(String(AdjPropValue), Char(AdjPropValue[1]));
+        AdjPropValue := AnsiDequotedStr(AdjPropValue, AdjPropValue[1]);
     end else if Profile.IsIdentProp(PropName) then
       AdjPropValue := ExtractObjectName(PropValue)
     else AdjPropValue := Trim(PropValue);
@@ -342,11 +346,10 @@ var
           if ParentName = '' then
             Parent := LastTableDef
           else Parent := Schema.TableDefs.Find(ParentName);
-          // DEBUG ONLY
-          {
+          (*
           if Parent = nil then
             ParseErrorFmt(STableNotFound, [ParentName, Lexer.LineNo, Lexer.LinePos]);
-          }
+          *)
         end;
         csIndexField: begin
           Parent := LastIndexDef;
@@ -449,7 +452,7 @@ var
     end;
   end;
 
-  function IsKeyword(const Str: AnsiString): Boolean;
+  function IsKeyword(const Str: String): Boolean;
   begin
     Result := Profile.Keywords.IndexOf(Str) >= 0;
   end;
@@ -470,7 +473,7 @@ var
     end;
 
   var
-    TempStr: AnsiString;
+    TempStr: String;
 
   begin
     // We process two types of tokens: KeyTokens, Values (including quoted).
@@ -571,7 +574,7 @@ var
 
   function ExtractStatement(Item: TSchemaCollectionItem; CountBeginEnd: Boolean = False): Boolean;
   var
-    StatementName, SaveTerm: AnsiString;
+    StatementName, SaveTerm: String;
     StartPos: Integer;
     BeginEndCounter: Integer;
     FoundStatementName: Boolean;
@@ -635,31 +638,31 @@ var
     KeyToken := False;
   end;
 
-  function TrimValue(const Str: AnsiString): AnsiString;
+  function TrimValue(const Str: String): String;
   var
     B, E: Integer;
   begin
     B := 1;
     E := Length(Str);
-    while (B <= E) and (Str[B] in [#1..#32,  '"', '''']) do Inc(B);
-    while (E >= B) and (Str[E] in [#1..#32, '"', '''']) do Dec(E);
+    while (B <= E) and CharInSet(Str[B], [#1..#32,  '"', '''']) do Inc(B);
+    while (E >= B) and CharInSet(Str[E], [#1..#32, '"', '''']) do Dec(E);
     if E >= B then
       Result := copy(Str, B, E - B + 1)
     else Result := '';
   end;
 
-  function NextStrToken(const Str: AnsiString; var StrPos: Integer): AnsiString;
+  function NextStrToken(const Str: String; var StrPos: Integer): String;
   begin
     Result := '';
     if StrPos > Length(Str) then exit;
-    while (StrPos <= Length(Str)) and (Str[StrPos] in [#1..#32, '"', '''']) do Inc(StrPos);
+    while (StrPos <= Length(Str)) and CharInSet(Str[StrPos], [#1..#32, '"', '''']) do Inc(StrPos);
     if StrPos <= Length(Str) then
     case Str[StrPos] of
       '_', 'a'..'z', 'A'..'Z': begin
         Result := Str[StrPos];
         Inc(StrPos);
         // MB: Comment to the line below - I'm not sure why there was a space ' '?
-        while (StrPos <= Length(Str)) and (Str[StrPos] in [' ', '_', 'a'..'z', 'A'..'Z', '0'..'9']) do
+        while (StrPos <= Length(Str)) and CharInSet(Str[StrPos], [' ', '_', 'a'..'z', 'A'..'Z', '0'..'9']) do
         begin
           Result := Result + Str[StrPos];
           Inc(StrPos);
@@ -683,10 +686,10 @@ var
     end;
   end;
 
-  function MatchText(Str: AnsiString): Boolean;
+  function MatchText(Str: String): Boolean;
   var
     P: Integer;
-    TempToken: AnsiString;
+    TempToken: String;
   begin
     P := 1;
     Result := False;
@@ -699,7 +702,7 @@ var
 
       if Length(TempToken) < Length(Token) then
       begin
-        if Token[Length(TempToken)+1] in ['A'..'Z', 'a'..'z', '_', '0'..'9'] then
+        if CharInSet(Token[Length(TempToken)+1], ['A'..'Z', 'a'..'z', '_', '0'..'9']) then
           exit;
 
         Delete(Token, 1, Length(TempToken));
@@ -740,7 +743,7 @@ var
     end;
   end;
 
-  function BeginWithText(AExpression: TFmtExpression; var Idx: Integer): AnsiString;
+  function BeginWithText(AExpression: TFmtExpression; var Idx: Integer): String;
   var
     I: Integer;
   begin
@@ -787,7 +790,7 @@ var
     ItemClassIdx: TClassStatement; ItemOperation: TItemOperation;
     var Item: TSchemaCollectionItem; MatchCount: Integer; Res: Boolean);
   var
-    Temp: AnsiString;
+    Temp: String;
     I, P: Integer;
   begin
     if Res then
@@ -816,7 +819,7 @@ var
   var
     MatchCount, I, J, P: Integer;
     List: TList;
-    Temp, ObjClasses, ObjClass, Delimiter: AnsiString;
+    Temp, ObjClasses, ObjClass, Delimiter: String;
     OptionalExpr, NotEmptyToken: Boolean;
     TempExpr, DataTypeExpression: TFmtExpression;
     TempItem: TSchemaCollectionItem;
@@ -1031,7 +1034,7 @@ var
 
               Temp := Value;
 
-              while (Length(Temp) > 0) and (Temp[1] in ['^', '?', '!', '~', '/']) do
+              while (Length(Temp) > 0) and CharInSet(Temp[1], ['^', '?', '!', '~', '/']) do
                 Delete(Temp, 1, 1);
 
               if ExpressionFields.IndexOf(Temp) >= 0 then
@@ -1123,7 +1126,7 @@ var
   procedure BuildExprList;
   var
     I: Integer;
-    Temp: AnsiString;
+    Temp: String;
     ObjNames: TStringList;
   begin
     ObjNames := TStringList.Create;
@@ -1254,7 +1257,7 @@ begin
   end;
 end;
 
-procedure ParseSQL(const SQL: AnsiString; Schema: TDatabaseSchema;
+procedure ParseSQL(const SQL: String; Schema: TDatabaseSchema;
   Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil);
 var
   Stream: TStringStream;
@@ -1267,7 +1270,7 @@ begin
   end;
 end;
 
-procedure ParseSQLFile(const FileName: AnsiString; Schema: TDatabaseSchema;
+procedure ParseSQLFile(const FileName: String; Schema: TDatabaseSchema;
   Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil);
 var
   Stream: TFileStream;

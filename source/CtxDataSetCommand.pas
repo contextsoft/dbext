@@ -11,10 +11,26 @@
 (******************************************************************************)
 unit CtxDataSetCommand;
 
+{$I ctxVer.inc}
+
 interface
 
 uses SysUtils, Classes, CtxDataTypes, {$IFnDEF VER130}Variants,{$ENDIF}
   CtxDBIntf, DB;
+
+{$IFDEF D2009_ORLATER}
+type
+  TDataSetBookmark = TBytes;
+const
+  NilBookmark = nil;
+{$ELSE}
+type
+  TDataSetBookmark = String;
+  TRecordBuffer = PChar;
+const
+  NilBookmark = '';
+{$ENDIF}
+
 
 type
   {:$ TCtxDataSetCommand - implementation of data command, which executes based }
@@ -30,9 +46,8 @@ type
     FOwnDataSet: Boolean;
     FFetchAll: Boolean;
     FUseBookmarks: Boolean;
-    FStoredPos: {$IFDEF VER200}TBookmark{$ELSE}String{$ENDIF};
-
-
+    FStoredPos: TDataSetBookmark;
+    
     function GetPrepared: Boolean; override;
     procedure SetPrepared(Value: Boolean); override;
     procedure InternalPrepare; virtual;
@@ -119,11 +134,7 @@ begin
   Prepared := True;
   FEOF := False;
   FFetchAll := True;
-  {$IFDEF VER200}
-  FStoredPos := nil;
-  {$ELSE}
-  FStoredPos := '';
-  {$ENDIF}
+  FStoredPos := NilBookmark;
   if FDatabase <> nil then
   begin
     if CommandType = ctSQLUpdate then
@@ -287,13 +298,8 @@ begin
   if FDataSet <> nil then
   begin
     FDataSet.EnableControls;
-    {$IFDEF VER200}
-    if FStoredPos <> nil then
-    {$ELSE}
-    if FStoredPos <> '' then
-    {$ENDIF}
+    if FStoredPos <> NilBookmark then
       FDataSet.Bookmark := FStoredPos
-
     else FDataSet.First; // Restore position +++
   end;
 end;

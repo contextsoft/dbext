@@ -394,6 +394,8 @@ begin
 end;
 
 type
+  TCtxDiagramEditor = TCtxDiagramEditor3;
+
   TDBSchemaDesigner = class (TDatabaseSchemaDesigner)
   private
 {$IFDEF VER130}
@@ -588,7 +590,7 @@ begin
   end;
   TempPath := ExtractFilePath(Schema.DSDFileName);
   if TempPath = '' then
-    TempPath := IncludeTrailingBackslash(ExtractFilePath(FormFileName)) + Schema.DSDFileName
+    TempPath := IncludeTrailingPathDelimiter(ExtractFilePath(FormFileName)) + Schema.DSDFileName
   else TempPath := Schema.DSDFileName;
 
   case Index of

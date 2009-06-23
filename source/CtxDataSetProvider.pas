@@ -20,7 +20,7 @@ type
   {:$ from a given data set. }
   TCtxDataSetProvider = class (TComponent, IUnknown, ICtxDataProvider)
   protected
-    FDatabaseName: AnsiString;
+    FDatabaseName: String;
     FDataSet: TDataSet;
     FActive: Boolean;
     FUseBookmarks: Boolean;
@@ -35,11 +35,11 @@ type
     { Property handlers }
     procedure SetConnected(Value: Boolean);
     function GetConnected: Boolean;
-    function GetDatabaseName: AnsiString;
-    procedure SetDatabaseName(const Value: AnsiString);
-    function GetDriverName: AnsiString;
-    function GetDatabaseURL: AnsiString;
-    procedure SetDatabaseURL(const Value: AnsiString);
+    function GetDatabaseName: String;
+    procedure SetDatabaseName(const Value: String);
+    function GetDriverName: String;
+    function GetDatabaseURL: String;
+    procedure SetDatabaseURL(const Value: String);
 
     { Transactions }
     procedure StartTransaction;
@@ -53,7 +53,7 @@ type
     function CreateCommand: TCtxDataCommand;
   published
     {:$ Specifies the name of this data provider. }
-    property DatabaseName: AnsiString read GetDatabaseName write SetDatabaseName;
+    property DatabaseName: String read GetDatabaseName write SetDatabaseName;
     {:$ Specifies the data set, this data provider will serve to data adapters. }
     property DataSet: TDataSet read FDataSet write SetDataSet;
     {:$ Specifies whether the provider is active, i.e. registered and visible to other components. }
@@ -85,17 +85,17 @@ begin
   Result := (FDataSet <> nil) and DataSet.Active;
 end;
 
-function TCtxDataSetProvider.GetDatabaseName: AnsiString;
+function TCtxDataSetProvider.GetDatabaseName: String;
 begin
   Result := FDatabaseName;
 end;
 
-function TCtxDataSetProvider.GetDatabaseURL: AnsiString;
+function TCtxDataSetProvider.GetDatabaseURL: String;
 begin
   Result := '';
 end;
 
-function TCtxDataSetProvider.GetDriverName: AnsiString;
+function TCtxDataSetProvider.GetDriverName: String;
 begin
   Result := 'DataSet';
 end;
@@ -120,7 +120,7 @@ begin
   // Nothing here
 end;
 
-procedure TCtxDataSetProvider.SetDatabaseURL(const Value: AnsiString);
+procedure TCtxDataSetProvider.SetDatabaseURL(const Value: String);
 begin
   // Nothing here
 end;
@@ -131,7 +131,7 @@ begin
     FDataSet.Active := Value;
 end;
 
-procedure TCtxDataSetProvider.SetDatabaseName(const Value: AnsiString);
+procedure TCtxDataSetProvider.SetDatabaseName(const Value: String);
 begin
   FDatabaseName := Value;
   if FActive then

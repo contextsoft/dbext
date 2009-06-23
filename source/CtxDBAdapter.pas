@@ -28,7 +28,7 @@ type
   public
     destructor Destroy; override;
 
-    function CreateCommandData: TObject; virtual; 
+    function CreateCommandData: TObject; virtual;
     procedure ReadCommandData(Stream: TStream; CommandData: TObject); virtual;
     procedure WriteCommandData(Stream: TStream; CommandData: TObject); virtual;
 
@@ -37,7 +37,9 @@ type
     function EditCommandItem(CommandItem: TCtxDBCommandItem): Boolean; virtual; abstract;
     function GetDisplayName: String; virtual;
     procedure PrepareCommand(CommandItem: TCtxDBCommandItem); virtual;
-    procedure UpdateTableStructure(CommandItem: TCtxDBCommandItem; DataTable: TCtxDataTable); virtual; 
+    procedure UpdateTableStructure(CommandItem: TCtxDBCommandItem; DataTable: TCtxDataTable); virtual;
+
+    procedure GetRelatedCommands(CommandItem: TCtxDBCommandItem; RelatedCommandItems: TCtxDBCommandItems); virtual;
 
     // function GetCommandDataParams(CommandData: TObject): TObject;
     // function EditCommandItem(CommandItem: TCtxCommandItem): Boolean;
@@ -69,9 +71,6 @@ type
   {:$ will be affected (populated or updated) by execution of this command. }
   {:$ Each table can have any number of commands of each type. }
   TCtxDBCommandItem = class (TCtxDataCollectionItem)
-  private
-    function GetPrepared: Boolean;
-    procedure SetPrepared(const Value: Boolean);
   protected
     FCommandText: String;
     FSourceTableName: String;
@@ -87,6 +86,8 @@ type
     FCommandData: TObject;
     FCommandParamsAssigned: Boolean;
 
+    function GetPrepared: Boolean;
+    procedure SetPrepared(const Value: Boolean);
     function GetCommand: TCtxDataCommand;
     procedure UpdateCommandParams(ACommand: TCtxDataCommand);
     function GetEffectiveDataProviderName: String;
@@ -135,12 +136,16 @@ type
     procedure UpdateTableStructure(DataTable: TCtxDataTable);
     {:$ Update table strcuture from the meta-data of this command (usually select or refresh type of command item) }
     procedure UpdateTableStructureFromResultSet(DataTable: TCtxDataTable);
+    {:$ Update primary key columns. }
+    procedure UpdateTablePrimaryKey(DataTable: TCtxDataTable);
 
     procedure UpdateCommandName;
 
     {:$ Execute this command item as a stored procedure with given paramters. In order to pass }
     {:$ more then one parameter, use variant array. }
-    function ExecuteProc(AParams: Variant): Variant;
+    function ExecuteProc(AParams: Variant): Variant; overload;
+    {:$ Execute a procedure that updates source row. }
+    procedure ExecuteProc(Row: TCtxDataRow; AParams: Variant); overload;
     {:$ Execute an update command for the given row. }
     procedure ExecuteUpdateRow(Row: TCtxDataRow);
     {:$ Execute a refresh command for the given row. }
@@ -771,6 +776,7 @@ procedure TCtxDBCommandItem.InternalRefreshRow(Command: TCtxDataCommand; ARow: T
 begin
   // Delete childs ? Refresh details +++
   DoUpdateSourceRow(Command, ARow);
+  // How do we control that we need to accept changes
   ARow.AcceptChanges;
   // Select linked parent rows
   SelectParentRows(ARow);
@@ -834,6 +840,12 @@ begin
   else if (ResultType = crtResultSet) and not Command.EOF then
     Result := Command.Fields.GetOutputValues
   else Result := NULL;
+end;
+
+procedure TCtxDBCommandItem.ExecuteProc(Row: TCtxDataRow; AParams: Variant); 
+begin
+  InternalExecuteCommand(Row, Params);
+  DoUpdateSourceRow(Command, Row);
 end;
 
 procedure TCtxDBCommandItem.SetCommandText(const Value: String);
@@ -956,6 +968,26 @@ begin
   if B = nil then
     UpdateTableStructureFromResultSet(DataTable)
   else B.UpdateTableStructure(Self, DataTable);
+end;
+
+procedure TCtxDBCommandItem.UpdateTablePrimaryKey(DataTable: TCtxDataTable);
+var
+  I: Integer;
+  ColName: String;
+  Col: TCtxDataColumn;
+begin
+  if DataTable.HasPKColumns then exit;
+  for I := 0 to Params.Count - 1 do
+  begin
+    ColName := Params[I].SourceColumn;
+    if ColName = '' then
+      ColName := Params[I].Name;
+    if ColName = '' then continue;
+
+    Col := DataTable.Columns.Find(ColName);
+    if Col <> nil then
+      Col.PrimaryKey := True;
+  end;
 end;
 
 function TCtxDBCommandItem.CopyCommandData(Source: TCtxDBCommandItem): TObject;
@@ -1501,6 +1533,8 @@ var
   I: Integer;
   OwnCommands: Boolean;
 begin
+  if not (Row.Inserted or Row.Updated or Row.Deleted) then exit;
+
   OwnCommands := UpdateCommands = nil;
   if OwnCommands then
     UpdateCommands := GetCommands(Row.DataTable.Name, [citInsert, citUpdate, citDelete]);
@@ -1900,6 +1934,13 @@ procedure TCtxCommandBuilder.UpdateTableStructure(CommandItem: TCtxDBCommandItem
 begin
   // Implement in descendants
   CommandItem.UpdateTableStructureFromResultSet(DataTable);
+end;
+
+procedure TCtxCommandBuilder.GetRelatedCommands( CommandItem: TCtxDBCommandItem;
+  RelatedCommandItems: TCtxDBCommandItems);
+begin
+  // Implement in descendants. Fill the list of commands with potentiall references
+  RelatedCommandItems.Clear;
 end;
 
 initialization

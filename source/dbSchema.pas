@@ -33,6 +33,8 @@ unit dbSchema;
 
 {$DEFINE CTXDBEXT30}
 
+{$I CtxVer.inc}
+
 interface
 
 uses
@@ -44,6 +46,18 @@ uses
 
 const
   dbSchemaLibVersion = 301;
+
+{$IFDEF D2009_ORLATER}
+type
+  TDataSetBookmark = TBytes;
+const
+  NilBookmark = nil;
+{$ELSE}
+type
+  TDataSetBookmark = String;
+const
+  NilBookmark = '';
+{$ENDIF}
 
 type
   TDatabaseSchema = class;
@@ -74,16 +88,16 @@ type
   {:$ SQLFieldType propery has changed. The even is provided so the application has }
   {:$ chance to update other related properties, such as DataType or Size to correspond to }
   {:$ the newly assigned SQLFieldType. }
-  TOnSQLFieldTypeChanged = procedure (Sender: TDatabaseSchema; Item: TSchemaCollectionItem; const Value: AnsiString);
+  TOnSQLFieldTypeChanged = procedure (Sender: TDatabaseSchema; Item: TSchemaCollectionItem; const Value: String);
 
   {:$ TDatabaseProgress type is used by the database's OnProgress event. }
-  TDatabaseProgress = procedure (Sender: TObject; const Status: AnsiString; PercentDone: Byte; var Abort: Boolean) of object;
+  TDatabaseProgress = procedure (Sender: TObject; const Status: String; PercentDone: Byte; var Abort: Boolean) of object;
 
   {:$ The TOnFieldProc type is used as callback procedure passed to IterateFields method of TDataSetReference object. }
   TOnFieldProc = procedure (PropInfo: PPropInfo; Data: Pointer) of object;
 
   {:$ The TOnParseField type is used as callback function passed to ParseFields helper routine. }
-  TOnParseField = function (const FieldText: AnsiString; Data: Pointer): AnsiString of object;
+  TOnParseField = function (const FieldText: String; Data: Pointer): String of object;
 
   {:$ The TChangeType represents the type of update perfromed on a database object. }
   TChangeType = (ctDeleted, ctModifiedReference, ctModifiedContent, ctModified, ctInserted);
@@ -126,8 +140,8 @@ type
     property Operation: TItemOperation read GetItemOperation;
     function GetObj: TObject;
     function GetSubItems: TObjectList;
-    function GetPropValue(AObj: TObject; const PropName: AnsiString): AnsiString; virtual;
-    function GetDefaultPropValue(AObj: TObject; const PropName: AnsiString): AnsiString; virtual;
+    function GetPropValue(AObj: TObject; const PropName: String): String; virtual;
+    function GetDefaultPropValue(AObj: TObject; const PropName: String): String; virtual;
     class procedure SwapSrcDestList(List: TList);
   end;
 
@@ -144,7 +158,7 @@ type
     function GetItem: TSchemaCollectionItem;
     function SrcItem: TSchemaCollectionItem;
     function DestItem: TSchemaCollectionItem;
-    function GetPropValue(AObj: TObject; const PropName: AnsiString): AnsiString; override;
+    function GetPropValue(AObj: TObject; const PropName: String): String; override;
   end;
 
   {:$ TSchemaItemsCollection is a generic ancestor for all collection items owned directly by TDatabaseSchema component. }
@@ -155,12 +169,12 @@ type
   public
     function GetSchema: TDatabaseSchema; virtual;
     function Add: TSchemaCollectionItem;
-    function GetAutoName(AItem: TSchemaCollectionItem; const Template: AnsiString = '<N>'): AnsiString;
+    function GetAutoName(AItem: TSchemaCollectionItem; const Template: String = '<N>'): String;
     {:$ Returns an index of a collection item by name within this collection. }
     {:: If the item is not found the returned value is -1. }
-    function IndexOf(const AName: AnsiString): Integer; virtual;
+    function IndexOf(const AName: String): Integer; virtual;
     {:$ Locates an item by name within the collection. }
-    function Find(const Name: AnsiString): TSchemaCollectionItem;
+    function Find(const Name: String): TSchemaCollectionItem;
     {:$ Locates an item by name within the collection. }
     function FindByItemID(ItemID: Integer): TSchemaCollectionItem;
     {:$ Locates a copy of an item in this collection, using ItemID, Name and GetSchemaClassName properties. }
@@ -191,18 +205,18 @@ type
     FSign: Integer;
     FItemID: Integer;
     FProps: TStrings;
-    FName: AnsiString;
-    FDescription: AnsiString;
+    FName: String;
+    FDescription: String;
     FOldIndex: Integer;
     FUpdateCounter: Integer;
-    FCategory: AnsiString;
+    FCategory: String;
     FProduceSQL: Boolean;
 
-    function GetFullName: AnsiString; virtual;
+    function GetFullName: String; virtual;
     function GetSchema: TDatabaseSchema; virtual;
     procedure SetProps(const Value: TStrings);
     procedure PropsChanged(Sender: TObject); virtual;
-    procedure Rename(const Value: AnsiString); virtual;
+    procedure Rename(const Value: String); virtual;
     function GetItemIndex: Integer;
     procedure SetItemIndex(const Value: Integer);
     procedure ReadItemID(Reader: TReader);
@@ -211,13 +225,13 @@ type
     procedure WriteOldIndex(Writer: TWriter);
     procedure DefineProperties(Filer: TFiler); override;
     procedure InternalUpdate; virtual;
-    procedure ValidateRename(const NewName: AnsiString); virtual;
-    procedure ObjectRenamed(const OldName: AnsiString); virtual;
+    procedure ValidateRename(const NewName: String); virtual;
+    procedure ObjectRenamed(const OldName: String); virtual;
 
     function GetItemID: Integer; virtual;
     procedure SetItemID(const Value: Integer); virtual;
 
-    function  GetDisplayLabel: AnsiString; virtual;
+    function  GetDisplayLabel: String; virtual;
   public
     constructor Create(Collection: TCollection); override;
     destructor Destroy; override;
@@ -226,13 +240,13 @@ type
     procedure EndUpdate;
     function IsUpdating: Boolean;
 
-    procedure SetPropValue(const PropName, Value: AnsiString); virtual;
-    function GetPropValue(const PropName: AnsiString): AnsiString; virtual;
+    procedure SetPropValue(const PropName, Value: String); virtual;
+    function GetPropValue(const PropName: String): String; virtual;
 
     procedure GetPropNames(List: TStrings); virtual;
-    function GetSchemaClassName: AnsiString; virtual;
-    function GetAutoName(const Template: AnsiString = ''): AnsiString; virtual;
-    procedure UpdateDefinition(const Value: AnsiString = ''); virtual;
+    function GetSchemaClassName: String; virtual;
+    function GetAutoName(const Template: String = ''): String; virtual;
+    procedure UpdateDefinition(const Value: String = ''); virtual;
 
     {:$ Specifies the name of the item as it appears in Object Inspector. }
     function GetDisplayName: String; override;
@@ -240,36 +254,36 @@ type
     procedure Assign(Source: TPersistent); override;
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; virtual;
-    function PropsEqual(Dest: TCompareSchemaItem; const PropName: AnsiString): Boolean;
+    function PropsEqual(Dest: TCompareSchemaItem; const PropName: String): Boolean;
 
     procedure CopyFrom(ASource: TPersistent; AWithSubItems: boolean = True); virtual;
 
     property Schema: TDatabaseSchema read GetSchema;
     property ItemID: Integer read GetItemID write SetItemID;
-    property FullName: AnsiString read GetFullName;
-    property DisplayLabel: AnsiString read GetDisplayLabel;
+    property FullName: String read GetFullName;
+    property DisplayLabel: String read GetDisplayLabel;
   published
     {:$ Specifies the category this object belongs to. }
-    property Category: AnsiString read FCategory write FCategory;
+    property Category: String read FCategory write FCategory;
     property ItemIndex: Integer read GetItemIndex write SetItemIndex stored False;
-    property Name: AnsiString read FName write Rename;
-    property Description: AnsiString read FDescription write FDescription;
+    property Name: String read FName write Rename;
+    property Description: String read FDescription write FDescription;
     property Props: TStrings read FProps write SetProps;
     property ProduceSQL: Boolean read FProduceSQL write FProduceSQL default True;
   end;
 
   TTableCollectionItem = class (TSchemaCollectionItem)
   protected
-    function GetTableName: AnsiString;
-    procedure SetTableName(const Value: AnsiString);
-    function GetFullName: AnsiString; override;
+    function GetTableName: String;
+    procedure SetTableName(const Value: String);
+    function GetFullName: String; override;
     function GetSchema: TDatabaseSchema; override;
     function GetTableDef: TTableDefinition; virtual;
   public
-    //function GetAutoName(const Template: AnsiString = ''): AnsiString; override;
+    //function GetAutoName(const Template: String = ''): String; override;
     property TableDef: TTableDefinition read GetTableDef;
   published
-    property TableName: AnsiString read GetTableName write SetTableName stored False;
+    property TableName: String read GetTableName write SetTableName stored False;
   end;
 
   {:$ TDatabaseUpdate is a collection item representing certain update operation
@@ -277,16 +291,16 @@ type
   {:$ specified in the Version or VersionLabel property. }
   TDatabaseUpdate = class (TSchemaCollectionItem)
   protected
-    FTableName: AnsiString;
-    FSQLScript: AnsiString;
+    FTableName: String;
+    FSQLScript: String;
     FIterate: Boolean;
     FVersion: TSchemaVersion;
     FIgnoreSQLError: Boolean;
 
-    function GetVersionLabel: AnsiString;
+    function GetVersionLabel: String;
     procedure SetVersion(const Value: TSchemaVersion);
-    procedure SetVersionLabel(const Value: AnsiString);
-    function  GetDisplayLabel: AnsiString; override;
+    procedure SetVersionLabel(const Value: String);
+    function  GetDisplayLabel: String; override;
   public
     {:$ Creates an instance of TDatabaseUpdate object. }
     {:: This method should never be used directly. }
@@ -303,7 +317,7 @@ type
     property Version: TSchemaVersion read FVersion write SetVersion;
   published
     {:$ Conatins SQL script to be performed by database engine in order to update to the specified version. }
-    property SQLScript: AnsiString read FSQLScript write FSQLScript;
+    property SQLScript: String read FSQLScript write FSQLScript;
     {:: Set Iterate to True to force database to invoke OnDataSetRecord event for every record }
     {:: in a dataset returned by SQLScript. SQLScript must be assigned and return live result set. }
     property Iterate: Boolean read FIterate write FIterate;
@@ -312,9 +326,9 @@ type
     property IgnoreSQLError: Boolean read FIgnoreSQLError write FIgnoreSQLError default False;
     {:$ TableName contains the name of the table this update is related to. }
     {:: This property is optional.}
-    property TableName: AnsiString read FTableName write FTableName;
-    {:$ Contains a AnsiString representation of the version. }
-    property VersionLabel: AnsiString read GetVersionLabel write SetVersionLabel;
+    property TableName: String read FTableName write FTableName;
+    {:$ Contains a String representation of the version. }
+    property VersionLabel: String read GetVersionLabel write SetVersionLabel;
   end;
 
   {:$ TDatabaseUpdates collection contains a list of TDatabaseUpdate items.}
@@ -335,11 +349,11 @@ type
   TDomain = class (TSchemaCollectionItem)
   protected
     FDataType: TFieldDataType;
-    FSQLFieldType: AnsiString;
+    FSQLFieldType: String;
     FSize: Integer;
     procedure SetDataType(Value: TFieldDataType);
-    procedure SetSQLFieldType(const Value: AnsiString);
-    procedure ObjectRenamed(const OldName: AnsiString); override;
+    procedure SetSQLFieldType(const Value: String);
+    procedure ObjectRenamed(const OldName: String); override;
   public
     {:$ Creates and instance of TDomain object. }
     constructor Create(Collection: TCollection); override;
@@ -353,14 +367,14 @@ type
 
     {:$ Copies the contents from another TDomain object. }
     procedure Assign(Source: TPersistent); override;
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
   published
     {:$ Determines the logical type of a domain. }
     {:: Use DataType to find out what type of data the domain contains. When adding domain definitions to schema, }
     {:: set DataType to specify what type of field is being defined. }
     property DataType: TFieldDataType read FDataType write SetDataType;
     property Size: Integer read FSize write FSize;
-    property SQLFieldType: AnsiString read FSQLFieldType write SetSQLFieldType;
+    property SQLFieldType: String read FSQLFieldType write SetSQLFieldType;
   end;
 
   {:$ TDomains collection contains a list of TDomain items.}
@@ -372,7 +386,7 @@ type
     {:$ Creates and adds a new TDomain item to the TDomains collection. }
     function Add: TDomain;
     {:$ Locates a field definition item by name within the TDomains collection. }
-    function Find(const Name: AnsiString): TDomain;
+    function Find(const Name: String): TDomain;
     {:$ Provides access to the TDomain items in the collection by index. }
     property Items[Index: Integer]: TDomain read GetDomain write SetDomain; default;
   end;
@@ -385,7 +399,7 @@ type
   public
     {:$ Copies the contents from another TSequence object. }
     procedure Assign(Source: TPersistent); override;
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
   published
     property Increment: Integer read FIncrement write FIncrement;
     property InitialValue: Integer read FInitialValue write FInitialValue;
@@ -400,7 +414,7 @@ type
     {:$ Creates and adds a new TSequence item to the TSequences collection. }
     function Add: TSequence;
     {:$ Locates a field definition item by name within the TDomains collection. }
-    function Find(const Name: AnsiString): TSequence;
+    function Find(const Name: String): TSequence;
     {:$ Provides access to the TSequence items in the collection by index. }
     property Items[Index: Integer]: TSequence read GetSequence write SetSequence; default;
   end;
@@ -408,17 +422,17 @@ type
   {:$ TColumnDef is a collection item representing a view or stored proc result column. }
   TColumnDef = class (TSchemaCollectionItem)
   protected
-    FSourceTable: AnsiString;
-    FSourceField: AnsiString;
+    FSourceTable: String;
+    FSourceField: String;
     FDataType: TFieldDataType;
     procedure SetDataType(const Value: TFieldDataType);
-    procedure SetSourceField(const Value: AnsiString);
-    procedure SetSourceTable(const Value: AnsiString);
+    procedure SetSourceField(const Value: String);
+    procedure SetSourceTable(const Value: String);
   public
     {:: Resynch data type from refered table and field if any found. }
     procedure UpdateDataType;
 
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
     {:$ Copies the contents from another TColumnDef object. }
@@ -426,8 +440,8 @@ type
     {:$ Specifies the name of the TColumnDef as it appears in Object Inspector. }
     function GetDisplayName: String; override;
   published
-    property SourceTable: AnsiString read FSourceTable write SetSourceTable;
-    property SourceField: AnsiString read FSourceField write SetSourceField;
+    property SourceTable: String read FSourceTable write SetSourceTable;
+    property SourceField: String read FSourceField write SetSourceField;
     property DataType: TFieldDataType read FDataType write SetDataType default ftUnknown;
   end;
 
@@ -455,13 +469,13 @@ type
     constructor Create(Collection: TCollection); override;
     destructor Destroy; override;
 
-    procedure SetPropValue(const PropName, Value: AnsiString); override;
+    procedure SetPropValue(const PropName, Value: String); override;
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
     {:$ Copies the contents from another TViewDefinition object. }
     procedure Assign(Source: TPersistent); override;
-    function GetSchemaClassName: AnsiString; override;
-    procedure UpdateDefinition(const Value: AnsiString = ''); override;
+    function GetSchemaClassName: String; override;
+    procedure UpdateDefinition(const Value: String = ''); override;
   published
     property Definition: TStrings read FDefinition write SetDefinition;
     property ColumnDefs: TColumnDefs read FColumnDefs write SetColumnDefs;
@@ -476,7 +490,7 @@ type
     {:$ Creates and adds a new TDomain item to the TDomains collection. }
     function Add: TViewDefinition;
     {:$ Locates a field definition item by name within the TDomains collection. }
-    function Find(const Name: AnsiString): TViewDefinition;
+    function Find(const Name: String): TViewDefinition;
     {:$ Provides access to the TDomain items in the collection by index. }
     property Items[Index: Integer]: TViewDefinition read GetViewDefinition write SetViewDefinition; default;
   end;
@@ -493,11 +507,11 @@ type
     constructor Create(Collection: TCollection); override;
     destructor Destroy; override;
 
-    function GetSchemaClassName: AnsiString; override;
-    procedure SetPropValue(const PropName, Value: AnsiString); override;
+    function GetSchemaClassName: String; override;
+    procedure SetPropValue(const PropName, Value: String); override;
     procedure Assign(Source: TPersistent); override;
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
-    procedure UpdateDefinition(const Value: AnsiString = ''); override;
+    procedure UpdateDefinition(const Value: String = ''); override;
   published
     property Definition: TStrings read FDefinition write SetDefinition;
     property IsFunction: Boolean read FIsFunction write FIsFunction default False;
@@ -512,7 +526,7 @@ type
     {:$ Creates and adds a new TDomain item to the TDomains collection. }
     function Add: TStoredProcDefinition;
     {:$ Locates a field definition item by name within the TDomains collection. }
-    function Find(const Name: AnsiString): TStoredProcDefinition;
+    function Find(const Name: String): TStoredProcDefinition;
     {:$ Provides access to the TDomain items in the collection by index. }
     property Items[Index: Integer]: TStoredProcDefinition read GetStoredProcDefinition write SetStoredProcDefinition; default;
   end;
@@ -520,7 +534,7 @@ type
   {:$ TModuleDefinition is a collection item representing a module. }
   TModuleDefinition = class (TViewDefinition)
   public
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
   end;
 
   {:$ TModuleDefinitions is a collection contains a list of TModuleDefinition items.}
@@ -532,7 +546,7 @@ type
     {:$ Creates and adds a new TModuleDefinition item to the TModuleDefinitions collection. }
     function Add: TModuleDefinition;
     {:$ Locates a field definition item by name within the TModuleDefinitions collection. }
-    function Find(const Name: AnsiString): TModuleDefinition;
+    function Find(const Name: String): TModuleDefinition;
     {:$ Provides access to the TDomain items in the collection by index. }
     property Items[Index: Integer]: TModuleDefinition read GetModuleDefinition write SetModuleDefinition; default;
   end;
@@ -541,19 +555,19 @@ type
   {:$ file or external function defintion. }
   TCustomObject = class (TSchemaCollectionItem)
   private
-    FSchemaClassName: AnsiString;
-    FDefinition: AnsiString;
-    procedure SetSchemaClassName(const Value: AnsiString);
+    FSchemaClassName: String;
+    FDefinition: String;
+    procedure SetSchemaClassName(const Value: String);
   public
     constructor Create(Collection: TCollection); override;
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
     {:$ Copies the contents from another TViewDefinition object. }
     procedure Assign(Source: TPersistent); override;
   published
-    property SchemaClassName: AnsiString read FSchemaClassName write SetSchemaClassName;
-    property Definition: AnsiString read FDefinition write FDefinition;
+    property SchemaClassName: String read FSchemaClassName write SetSchemaClassName;
+    property Definition: String read FDefinition write FDefinition;
   end;
 
   {:$ TCustomObjects is a collection contains a list of TCustomObject items.}
@@ -563,9 +577,9 @@ type
     procedure SetCustomObject(Index: Integer; Value: TCustomObject);
   public
     {:$ Creates and adds a new TCustomObject item to the TCustomObjects collection. }
-    function Add(const ASchemaClassName: AnsiString = ''): TCustomObject;
+    function Add(const ASchemaClassName: String = ''): TCustomObject;
     {:$ Locates a field definition item by name within the TCustomObjects collection. }
-    function Find(const Name: AnsiString): TCustomObject;
+    function Find(const Name: String): TCustomObject;
     {:$ Provides access to the TDomain items in the collection by index. }
     property Items[Index: Integer]: TCustomObject read GetCustomObject write SetCustomObject; default;
   end;
@@ -576,27 +590,27 @@ type
   {:$ TFieldDefinition is a collection item representing a table field definition. }
   TFieldDefinition = class (TTableCollectionItem)
   protected
-    // FOldName: AnsiString;
+    // FOldName: String;
     // FFieldNo: Integer;
     // FInternalCalcField: Boolean;
     FPrecision: Integer;
     FAttributes: TFieldAttributes;
     FDataType: TFieldDataType;
-    FDomain: AnsiString;
-    FSQLFieldType: AnsiString;
+    FDomain: String;
+    FSQLFieldType: String;
     FSize: Integer;
-    FEnumeration: AnsiString;
-    FDisplayFormat: AnsiString;
-    FDefaultExpression: AnsiString;
+    FEnumeration: String;
+    FDisplayFormat: String;
+    FDefaultExpression: String;
     FDisplayWidth: Integer;
-    FEditMask: AnsiString;
-    FRelationName: AnsiString;
-    FAggregateExpression: AnsiString;
+    FEditMask: String;
+    FRelationName: String;
+    FAggregateExpression: String;
     FAggregateType: TAggregateType;
     FIdentity: Boolean;
-    FComputeAs: AnsiString;
+    FComputeAs: String;
 
-    procedure SetComputeAs(const Value: AnsiString);
+    procedure SetComputeAs(const Value: String);
     function GetIsComputed: Boolean;
     function GetIdentity: Boolean;
     procedure SetIdentity(const Value: Boolean);
@@ -604,17 +618,17 @@ type
     procedure SetIsUnique(const Value: Boolean);
     function GetIsPrimaryKey: Boolean;
     procedure SetIsPrimaryKey(const Value: Boolean);
-    procedure SetSQLFieldType(const Value: AnsiString);
+    procedure SetSQLFieldType(const Value: String);
     procedure SetAggregateType(const Value: TAggregateType);
-    procedure SetAggregateExpression(const Value: AnsiString);
-    procedure SetRelationName(const Value: AnsiString);
+    procedure SetAggregateExpression(const Value: String);
+    procedure SetRelationName(const Value: String);
     // function GetFieldNo: Integer;
     procedure SetDataType(const Value: TFieldDataType);
     function GetRequired: Boolean;
     procedure SetRequired(const Value: Boolean);
-    function GetDisplayLabel: AnsiString; override;
-    procedure ObjectRenamed(const OldName: AnsiString); override;
-    procedure SetDomain(const Value: AnsiString);
+    function GetDisplayLabel: String; override;
+    procedure ObjectRenamed(const OldName: String); override;
+    procedure SetDomain(const Value: String);
   public
     {:$ Creates and instance of TFieldDefinition item. }
     constructor Create(Collection: TCollection); override;
@@ -622,21 +636,21 @@ type
 
     procedure AssignFromDomain;
 
-    function IsInheritedProp(const PropName: AnsiString): Boolean;
+    function IsInheritedProp(const PropName: String): Boolean;
 
-//    function GetAutoName(const Template: AnsiString = ''): AnsiString; override;
-    procedure SetPropValue(const PropName, Value: AnsiString); override;
-    function GetPropValue(const PropName: AnsiString): AnsiString; override;
+//    function GetAutoName(const Template: String = ''): String; override;
+    procedure SetPropValue(const PropName, Value: String); override;
+    function GetPropValue(const PropName: String): String; override;
 
     procedure UpdateDomainReference;
 
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
     {:$ Copies the contents from another TFieldDefinition or TFieldDef object. }
     procedure Assign(Source: TPersistent); override;
     {:$ Copies the contents to another TFieldDefinition or TFieldDef object. }
     procedure AssignTo(Dest: TPersistent); override;
-    {:$ Returns field's type and size in readable form, like AnsiString[20] }
-    function GetDisplayFieldTypeSize: AnsiString;
+    {:$ Returns field's type and size in readable form, like String[20] }
+    function GetDisplayFieldTypeSize: String;
     {:$ Return whether this field is a part of primary index, foreighn key (relation) }
     {:$ and/or some of the other imdexes. }
     function GetDependances: TFieldDependances;
@@ -650,11 +664,11 @@ type
     {:: Use Required to find out if a field requires a value or if the field can be blank. }
     property Required: Boolean read GetRequired write SetRequired default False;
     {:$ Provides access to domain name for this field. If this field is empty the domain is not assigned. }
-    property Domain: AnsiString read FDomain write SetDomain;
+    property Domain: String read FDomain write SetDomain;
     {:$ Returns formatted SQL type & size for the selected target database engine. }
-    property DisplayFieldTypeSize: AnsiString read GetDisplayFieldTypeSize;
+    property DisplayFieldTypeSize: String read GetDisplayFieldTypeSize;
     {:$ Provides access to exact SQL type for the selected target database engine. }
-    property SQLFieldType: AnsiString read FSQLFieldType write SetSQLFieldType;
+    property SQLFieldType: String read FSQLFieldType write SetSQLFieldType;
     {:$ Identifies attributes of the field associated with the field def. }
     property Attributes: TFieldAttributes read FAttributes write FAttributes default [];
     {:$ Determines the type of a physical field. }
@@ -667,38 +681,38 @@ type
     {:$ Contains the size associated with the field in the physical database table. }
     {:: Size is meaningful only for a field definition object with one of the following }
     {:: TFieldType values: ftString, ftBCD, ftBytes, ftVarBytes, ftBlob, ftMemo or ftGraphic. }
-    {:: For AnsiString and byte fields, Size is the number of bytes reserved in the table }
+    {:: For String and byte fields, Size is the number of bytes reserved in the table }
     {:: for the field. For a BCD field, Size is the number of digits following }
     {:: the decimal point. For a BLOB, memo, or graphic field, Size is the number }
     {:: of bytes from the field’s value that are stored in the actual database table.}
     property Size: Integer read FSize write FSize;
     {:$ Specifies the previous name of this physical field. }
-    // property RenamedFrom: AnsiString read FOldName write FOldName stored False;
+    // property RenamedFrom: String read FOldName write FOldName stored False;
     { Extended field descriptions }
     {:$ Represents a diplasy label that will appear for this field in the captions of grids and other controls. }
-    property DisplayLabel: AnsiString read GetDisplayLabel write FDescription stored False;
+    property DisplayLabel: String read GetDisplayLabel write FDescription stored False;
     {:$ The enumeration type for this field. }
-    property Enumeration: AnsiString read FEnumeration write FEnumeration;
+    property Enumeration: String read FEnumeration write FEnumeration;
     {:$ The default display format that will be assigned to persistent fields corresponding to this field definition. }
-    property DisplayFormat: AnsiString read FDisplayFormat write FDisplayFormat;
+    property DisplayFormat: String read FDisplayFormat write FDisplayFormat;
     {:$ The default display width that will be assigned to persistent fields corresponding to this field definition. }
     property DisplayWidth: Integer read FDisplayWidth write FDisplayWidth default 0;
     {:$ Specifies an SQL expression that is assigned to the field if the user does not provide a value. }
-    property DefaultExpression: AnsiString read FDefaultExpression write FDefaultExpression;
+    property DefaultExpression: String read FDefaultExpression write FDefaultExpression;
     {:$ The default edit mask that will be assigned to persistent fields corresponding to this field definition. }
-    property EditMask: AnsiString read FEditMask write FEditMask;
+    property EditMask: String read FEditMask write FEditMask;
     {:: Aggregate function. Used in conjunction with relation field. }
     property AggregateType: TAggregateType read FAggregateType write SetAggregateType default aNone;
     {:: Relation that used in conjunction with aggregate function to produce }
     {:: automatically updated calculated field. }
-    property RelationName: AnsiString read FRelationName write SetRelationName;
+    property RelationName: String read FRelationName write SetRelationName;
     {:: Foreign field name. }
-    property AggregateExpression: AnsiString read FAggregateExpression write SetAggregateExpression;
+    property AggregateExpression: String read FAggregateExpression write SetAggregateExpression;
     {:: If true this field is considered to be an Identity. This property is always True for AutoInc fields. }
     property Identity: Boolean read GetIdentity write SetIdentity default False;
     {:: Expression used to compute this field on server. When this property assign assigned }
     {:: IsComputed will return true. }
-    property ComputeAs: AnsiString read FComputeAs write SetComputeAs;
+    property ComputeAs: String read FComputeAs write SetComputeAs;
   end;
 
   {:$ TFieldDefinitions collection contains a list of TFieldDefinition items.}
@@ -710,13 +724,13 @@ type
     {:$ Creates and adds a new TFieldDefinition item to the TFieldDefinitions collection. }
     function Add: TFieldDefinition; overload;
     {:$ Creates and adds a new TFieldDefinition item to the TFieldDefinitions collection. }
-    procedure Add(const Name: AnsiString; DataType: TFieldDataType; Size: Integer = 0;
+    procedure Add(const Name: String; DataType: TFieldDataType; Size: Integer = 0;
       Required: Boolean = False); overload;
     {:$ Locates a field definition item by name within the TFieldDefinitions collection. }
-    function Find(const Name: AnsiString): TFieldDefinition;
+    function Find(const Name: String): TFieldDefinition;
     {:$ Returns an index of a field definition item by its old name within the TFieldDefinitions collection. }
     {:: If field definition is not found the returned value is -1. }
-    // function IndexOfRenamed(const AOldName: AnsiString): Integer;
+    // function IndexOfRenamed(const AOldName: String): Integer;
     {:$ Provides access to the TFieldDefinition items in the collection by index. }
     property Items[Index: Integer]: TFieldDefinition read GetFieldDef write SetFieldDef; default;
   end;
@@ -728,13 +742,13 @@ type
     FDescending: Boolean;
     FCaseInsensitive: Boolean;
     function GetIndexDef: TIndexDefinition; virtual;
-    procedure ValidateRename(const NewName: AnsiString); override;
+    procedure ValidateRename(const NewName: String); override;
     function GetItemID: Integer; override;
     procedure SetItemID(const Value: Integer); override;
   public
     {:$ Copies the contents from another TIndexField object. }
     procedure Assign(Source: TPersistent); override;
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
     function GetFieldID: Integer;
     property IndexDef: TIndexDefinition read GetIndexDef;
@@ -762,34 +776,34 @@ type
     FIndexFields: TIndexFields;
 
     function GetDummyBool: Boolean;
-    function GetDummyStr: AnsiString;
-    function GetCaseInsFields: AnsiString;
-    function GetDescFields: AnsiString;
+    function GetDummyStr: String;
+    function GetCaseInsFields: String;
+    function GetDescFields: String;
     procedure SetIndexFields(const Value: TIndexFields);
     procedure DoAddDescField(Value: Boolean);
-    procedure DoAddIndexField(const Value: AnsiString);
+    procedure DoAddIndexField(const Value: String);
     procedure SetNoCase(const Value: Boolean);
     procedure SetUnique(const Value: Boolean);
     procedure SetPrimaryKey(const Value: Boolean);
     function GetNoCase: Boolean;
     function GetUnique: Boolean;
-    function GetDisplayProps: AnsiString;
+    function GetDisplayProps: String;
     function GetPrimaryKey: Boolean;
 
-    function GetFieldProps: AnsiString;
-    procedure SetFieldProps(const Value: AnsiString);
+    function GetFieldProps: String;
+    procedure SetFieldProps(const Value: String);
     function GetDescending: Boolean;
     procedure SetDescending(const Value: Boolean);
-    function GetFields: AnsiString;
-    procedure SetCaseInsFields(const Value: AnsiString);
-    procedure SetDescFields(const Value: AnsiString);
-    procedure SetFields(const Value: AnsiString);
+    function GetFields: String;
+    procedure SetCaseInsFields(const Value: String);
+    procedure SetDescFields(const Value: String);
+    procedure SetFields(const Value: String);
     procedure SetOptions(const Value: TIndexOptions);
-    procedure SetDisplayFields(const Value: AnsiString);
+    procedure SetDisplayFields(const Value: String);
 
-    procedure ValidateRename(const NewName: AnsiString); override;
+    procedure ValidateRename(const NewName: String); override;
   public
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
     {:$ Specifies the name of the TIndexDefinition as it appears in Object Inspector. }
     function GetDisplayName: String; override;
     {:$ Creates and instance of TIndexDefinition object. }
@@ -802,34 +816,34 @@ type
 
     procedure UpdateFieldReferences;
 
-//    function GetAutoName(const Template: AnsiString = ''): AnsiString; override;
+//    function GetAutoName(const Template: String = ''): String; override;
     {:$ Returns True is the specified field is a part of this index. }
-    function HasField(const FieldName: AnsiString): Boolean;
+    function HasField(const FieldName: String): Boolean;
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
   published
-    property DisplayProps: AnsiString read GetDisplayProps;
+    property DisplayProps: String read GetDisplayProps;
     property Unique: Boolean read GetUnique write SetUnique stored False default False;
     property PrimaryKey: Boolean read GetPrimaryKey write SetPrimaryKey stored False default False;
     property Descending: Boolean read GetDescending write SetDescending stored False default False;
     property NoCase: Boolean read GetNoCase write SetNoCase stored False default False;
 
-    property AddIndexField: AnsiString read GetDummyStr write DoAddIndexField stored False;
+    property AddIndexField: String read GetDummyStr write DoAddIndexField stored False;
     property AddDescField: Boolean read GetDummyBool write DoAddDescField stored False;
 
     property IndexFields: TIndexFields read FIndexFields write SetIndexFields;
 
     {:$ Specifies the fields of the index that are case-insensitive. }
-    property CaseInsFields: AnsiString read GetCaseInsFields write SetCaseInsFields stored False;
+    property CaseInsFields: String read GetCaseInsFields write SetCaseInsFields stored False;
     {:$ Specifies the fields of the index that are to be in descending order. }
-    property DescFields: AnsiString read GetDescFields write SetDescFields stored False;
+    property DescFields: String read GetDescFields write SetDescFields stored False;
     {:$ Identifies the fields that comprise the index. }
     {:: When creating an index, set Fields to a list of fields separated by semi-colons }
     {:: (no semi-colon is required if there is only one field in the index).}
-    property Fields: AnsiString read GetFields write SetFields stored False;
+    property Fields: String read GetFields write SetFields stored False;
     {:: This property retuns concatenated set of all custom properties of index fields. }
-    property FieldProps: AnsiString read GetFieldProps write SetFieldProps stored False;
-    property DisplayFields: AnsiString read GetFields write SetDisplayFields stored False;
+    property FieldProps: String read GetFieldProps write SetFieldProps stored False;
+    property DisplayFields: String read GetFields write SetDisplayFields stored False;
 
     { ----------- DEPRECATED FIELDS ------------------ }
     {:$ Describes the characteristics of the index. }
@@ -846,9 +860,9 @@ type
     {:$ Creates and adds a new TIndexDefinition item to the TIndexDefinitions collection. }
     function Add: TIndexDefinition; overload;
     {:$ Creates and adds a new TIndexDefinition item to the TIndexDefinitions collection. }
-    procedure Add(const Name, Fields: AnsiString; Options: TIndexOptions); overload;
+    procedure Add(const Name, Fields: String; Options: TIndexOptions); overload;
     {:$ Locates an index definition item by name within the TIndexDefinitions collection. }
-    function Find(const Name: AnsiString): TIndexDefinition;
+    function Find(const Name: String): TIndexDefinition;
     {:$ Locates an index definition in the Items array. }
     {:: Use FindIndexForFields to search for the index that starts with the fields }
     {:: specified in the Fields parameter. If the index is constructed using more than }
@@ -858,7 +872,7 @@ type
     {:: match is found, FindIndexForFields returns the first index that begins with }
     {:: the indicated fields. If no match is found, FindIndexForFields raises an }
     {:: EDatabaseError exception.}
-    function FindIndexForFields(const Fields: AnsiString): TIndexDefinition;
+    function FindIndexForFields(const Fields: String): TIndexDefinition;
     {:$ Locates an index definition in the Items array. }
     {:: Use GetIndexForFields to search for the index that starts with the fields }
     {:: specified in the Fields parameter. If more than one field comprises the index, }
@@ -869,7 +883,7 @@ type
     {:: returns the first index that begins with the indicated fields. If no match
     {:: can be found, GetIndexForFields returns nil. }
     {:! When CaseInsensitive is True, descending indexes are considered even if they are case-sensitive. }
-    function GetIndexForFields(const Fields: AnsiString; CaseInsensitive: Boolean): TIndexDefinition;
+    function GetIndexForFields(const Fields: String; CaseInsensitive: Boolean): TIndexDefinition;
     {:$ Provides access to the TIndexDefinition items in the collection by index. }
     property Items[Index: Integer]: TIndexDefinition read GetIndexDef write SetIndexDef; default;
   end;
@@ -881,9 +895,9 @@ type
   public
     {:$ Creates and adds a new TTableDefinition item to the TTableDefinitions collection. }
     function Add: TRelationship;
-    function AddRelationship(const DetailTable, MasterTable: AnsiString): TRelationship;
+    function AddRelationship(const DetailTable, MasterTable: String): TRelationship;
     {:$ Locates TTableDefinition item by its table name within the TTableDefinitions collection. }
-    function Find(const Name: AnsiString): TRelationship;
+    function Find(const Name: String): TRelationship;
     {:$ Provides access to the TTableDefinition items in the collection by index by index. }
     property Items[Index: Integer]: TRelationship read GetItem write SetItem; default;
   end;
@@ -900,7 +914,7 @@ type
   (*$HPPEMIT '}'*)
 
   TDetailCardinality = (dcOne, dcMany, dcLogical);
-  TDualStringProp = array [TRelationSide] of AnsiString;
+  TDualStringProp = array [TRelationSide] of String;
 
   TRelationship = class (TSchemaCollectionItem)
   protected
@@ -919,9 +933,9 @@ type
     FUpdateAction: TRelationAction;
     FEnforceForeignKey: Boolean;
     FCaseInsensitive: Boolean;
-    FDeleteErrorMessage: AnsiString;
-    FUpdateErrorMessage: AnsiString;
-    FRequireRecordErrorMessage: AnsiString;
+    FDeleteErrorMessage: String;
+    FUpdateErrorMessage: String;
+    FRequireRecordErrorMessage: String;
     procedure SetMasterRecordOptional(const Value: Boolean);
     function GetRelation(const Index: TRelationSide): TRelation;
     function GetTableDef(const Index: TRelationSide): TTableDefinition;
@@ -939,9 +953,9 @@ type
     {:$ Specifies the name of the TRelation as it appears in Object Inspector. }
     function GetDisplayName: String; override;
 
-    procedure SetPropValue(const PropName, Value: AnsiString); override;
+    procedure SetPropValue(const PropName, Value: String); override;
 
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
 
@@ -953,33 +967,33 @@ type
     procedure SwapSides;
     procedure UpdateKeyFields;
 
-    function GetCondition(const Index: TRelationSide): AnsiString;
-    function GetKeyFields(const Index: TRelationSide): AnsiString;
-    function GetRelationName(const Index: TRelationSide): AnsiString;
-    function GetTableName(const Index: TRelationSide): AnsiString;
-    function GetRelDescription(const Index: TRelationSide): AnsiString;
-    procedure SetCondition(const Index: TRelationSide; const Value: AnsiString);
-    procedure SetKeyFields(const Index: TRelationSide; const Value: AnsiString);
-    procedure SetRelationName(const Index: TRelationSide; const Value: AnsiString);
-    procedure SetTableName(const Index: TRelationSide; const Value: AnsiString);
-    procedure SetRelDescription(const Index: TRelationSide; const Value: AnsiString);
+    function GetCondition(const Index: TRelationSide): String;
+    function GetKeyFields(const Index: TRelationSide): String;
+    function GetRelationName(const Index: TRelationSide): String;
+    function GetTableName(const Index: TRelationSide): String;
+    function GetRelDescription(const Index: TRelationSide): String;
+    procedure SetCondition(const Index: TRelationSide; const Value: String);
+    procedure SetKeyFields(const Index: TRelationSide; const Value: String);
+    procedure SetRelationName(const Index: TRelationSide; const Value: String);
+    procedure SetTableName(const Index: TRelationSide; const Value: String);
+    procedure SetRelDescription(const Index: TRelationSide; const Value: String);
 
     property DetailRelation: TRelation index sideDetail read GetRelation;
     property MasterRelation: TRelation index sideMaster read GetRelation;
     property DetailTableDef: TTableDefinition index sideDetail read GetTableDef;
     property MasterTableDef: TTableDefinition index sideMaster read GetTableDef;
   published
-    property DetailTableName: AnsiString index sideDetail read GetTableName write SetTableName;
-    property DetailKeyFields: AnsiString index sideDetail read GetKeyFields write SetKeyFields;
-    property DetailRelationName: AnsiString index sideDetail read GetRelationName write SetRelationName;
-    property DetailCondition: AnsiString index sideDetail read GetCondition write SetCondition;
-    property DetailDescription: AnsiString index sideDetail read GetRelDescription write SetRelDescription;
+    property DetailTableName: String index sideDetail read GetTableName write SetTableName;
+    property DetailKeyFields: String index sideDetail read GetKeyFields write SetKeyFields;
+    property DetailRelationName: String index sideDetail read GetRelationName write SetRelationName;
+    property DetailCondition: String index sideDetail read GetCondition write SetCondition;
+    property DetailDescription: String index sideDetail read GetRelDescription write SetRelDescription;
 
-    property MasterTableName: AnsiString index sideMaster read GetTableName write SetTableName;
-    property MasterKeyFields: AnsiString index sideMaster read GetKeyFields write SetKeyFields;
-    property MasterRelationName: AnsiString index sideMaster read GetRelationName write SetRelationName;
-    property MasterCondition: AnsiString index sideMaster read GetCondition write SetCondition;
-    property MasterDescription: AnsiString index sideMaster read GetRelDescription write SetRelDescription;
+    property MasterTableName: String index sideMaster read GetTableName write SetTableName;
+    property MasterKeyFields: String index sideMaster read GetKeyFields write SetKeyFields;
+    property MasterRelationName: String index sideMaster read GetRelationName write SetRelationName;
+    property MasterCondition: String index sideMaster read GetCondition write SetCondition;
+    property MasterDescription: String index sideMaster read GetRelDescription write SetRelDescription;
 
     property DetailCardinality: TDetailCardinality read FDetailCardinality write FDetailCardinality default dcMany;
     property MasterRecordOptional: Boolean read FMasterRecordOptional write SetMasterRecordOptional default True;
@@ -991,9 +1005,9 @@ type
 
     // The following properties are client-side only
     property CaseInsensitive: Boolean read FCaseInsensitive write FCaseInsensitive default False;
-    property DeleteErrorMessage: AnsiString read FDeleteErrorMessage write FDeleteErrorMessage;
-    property UpdateErrorMessage: AnsiString read FUpdateErrorMessage write FUpdateErrorMessage;
-    property RequireRecordErrorMessage: AnsiString read FRequireRecordErrorMessage write FRequireRecordErrorMessage;
+    property DeleteErrorMessage: String read FDeleteErrorMessage write FDeleteErrorMessage;
+    property UpdateErrorMessage: String read FUpdateErrorMessage write FUpdateErrorMessage;
+    property RequireRecordErrorMessage: String read FRequireRecordErrorMessage write FRequireRecordErrorMessage;
   end;
 
   TMultiplicity = (mUndefined, mOne, mZeroOrOne, mZeroOrMany);
@@ -1007,45 +1021,45 @@ type
     function GetSide: TRelationSide;
     function GetMultiplicity: TMultiplicity;
     function GetEnforceForeignKey: Boolean;
-    function GetRelationshipName: AnsiString;
-    procedure SetRelationshipName(const Value: AnsiString);
-    function GetDescription: AnsiString;
+    function GetRelationshipName: String;
+    procedure SetRelationshipName(const Value: String);
+    function GetDescription: String;
     function GetCaseInsensitive: Boolean;
-    function GetCondition: AnsiString;
+    function GetCondition: String;
     function GetDeleteAction: TRelationAction;
-    function GetForeignCondition: AnsiString;
-    function GetForeignKeyFields: AnsiString;
-    function GetForeignTable: AnsiString;
-    function GetKeyFields: AnsiString;
-    function GetPeerRelationName: AnsiString;
+    function GetForeignCondition: String;
+    function GetForeignKeyFields: String;
+    function GetForeignTable: String;
+    function GetKeyFields: String;
+    function GetPeerRelationName: String;
     function GetRelationKind: TRelationKind;
     function GetRelationType: TRelationType;
     function GetRequireOneRecord: Boolean;
     function GetUpdateAction: TRelationAction;
-    procedure SetDescription(const Value: AnsiString);
-    procedure SetDeleteErrorMessage(const Value: AnsiString);
-    procedure SetPeerRelationName(const Value: AnsiString);
-    procedure SetRequireRecordErrorMessage(const Value: AnsiString);
-    procedure SetUpdateErrorMessage(const Value: AnsiString);
-    function GetRequireRecordErrorMessage: AnsiString;
-    function GetDeleteErrorMessage: AnsiString;
-    function GetUpdateErrorMessage: AnsiString;
+    procedure SetDescription(const Value: String);
+    procedure SetDeleteErrorMessage(const Value: String);
+    procedure SetPeerRelationName(const Value: String);
+    procedure SetRequireRecordErrorMessage(const Value: String);
+    procedure SetUpdateErrorMessage(const Value: String);
+    function GetRequireRecordErrorMessage: String;
+    function GetDeleteErrorMessage: String;
+    function GetUpdateErrorMessage: String;
 
     procedure SetCaseInsensitive(const Value: Boolean);
-    procedure SetCondition(const Value: AnsiString);
-    procedure SetForeignCondition(const Value: AnsiString);
-    procedure SetForeignKeyFields(const Value: AnsiString);
-    procedure SetForeignTable(const Value: AnsiString);
-    procedure SetKeyFields(const Value: AnsiString);
+    procedure SetCondition(const Value: String);
+    procedure SetForeignCondition(const Value: String);
+    procedure SetForeignKeyFields(const Value: String);
+    procedure SetForeignTable(const Value: String);
+    procedure SetKeyFields(const Value: String);
     procedure SetRelationKind(const Value: TRelationKind);
     procedure SetRelationType(const Value: TRelationType);
     procedure SetDeleteAction(const Value: TRelationAction);
     procedure SetRequireOneRecord(const Value: Boolean);
     procedure SetUpdateAction(const Value: TRelationAction);
-    procedure DoAddForeignKeyField(const Value: AnsiString);
-    procedure DoAddKeyField(const Value: AnsiString);
-    function GetDummyStr: AnsiString;
-    procedure ObjectRenamed(const OldName: AnsiString); override;
+    procedure DoAddForeignKeyField(const Value: String);
+    procedure DoAddKeyField(const Value: String);
+    function GetDummyStr: String;
+    procedure ObjectRenamed(const OldName: String); override;
     function GetRelationship: TRelationship; virtual;
     function FindPeerRelation: TRelation;
     function GetItemID: Integer; override;
@@ -1067,33 +1081,33 @@ type
     function GetPeerRelation: TRelation;
 
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
-    function GetSchemaClassName: AnsiString; override;
-//    function GetAutoName(const Template: AnsiString = ''): AnsiString; override;
+    function GetSchemaClassName: String; override;
+//    function GetAutoName(const Template: String = ''): String; override;
 
     function IsDataTemporary: Boolean;
     property Relationship: TRelationship read GetRelationship;
 
     function EffectiveDeleteAction: TRelationAction;
     function EffectiveUpdateAction: TRelationAction;
-    function EffectiveDeleteErrorMessage: AnsiString;
-    function EffectiveUpdateErrorMessage: AnsiString;
-    function EffectiveRequireRecordErrorMessage: AnsiString;
+    function EffectiveDeleteErrorMessage: String;
+    function EffectiveUpdateErrorMessage: String;
+    function EffectiveRequireRecordErrorMessage: String;
     property EnforceForeignKey: Boolean read GetEnforceForeignKey;
     property Multiplicity: TMultiplicity read GetMultiplicity;
     property Side: TRelationSide read GetSide;
     property RelationIndex: Integer read GetRelationIndex;
     property IsForeignKey: Boolean read GetIsForeignKey;
   published
-    property AddKeyField: AnsiString read GetDummyStr write DoAddKeyField stored False;
-    property AddForeignKeyField: AnsiString read GetDummyStr write DoAddForeignKeyField stored False;
+    property AddKeyField: String read GetDummyStr write DoAddKeyField stored False;
+    property AddForeignKeyField: String read GetDummyStr write DoAddForeignKeyField stored False;
 
-    property RelationshipName: AnsiString read GetRelationshipName write SetRelationshipName stored False;
+    property RelationshipName: String read GetRelationshipName write SetRelationshipName stored False;
     {:$ Specifies a set of key fields for this relation. }
-    property KeyFields: AnsiString read GetKeyFields write SetKeyFields stored IsDataTemporary;
+    property KeyFields: String read GetKeyFields write SetKeyFields stored IsDataTemporary;
     {:$ Specifies a foreign table for this relation. }
-    property ForeignTable: AnsiString read GetForeignTable write SetForeignTable stored IsDataTemporary;
+    property ForeignTable: String read GetForeignTable write SetForeignTable stored IsDataTemporary;
     {:$ Specifies a set of fields in the foreign table for this relation. }
-    property ForeignKeyFields: AnsiString read GetForeignKeyFields write SetForeignKeyFields stored IsDataTemporary;
+    property ForeignKeyFields: String read GetForeignKeyFields write SetForeignKeyFields stored IsDataTemporary;
     {:$ Specifies whether the key is case insensitive. }
     property CaseInsensitive: Boolean read GetCaseInsensitive write SetCaseInsensitive stored IsDataTemporary;
     {:$ Specifies the additional filter for a foreign table. }
@@ -1108,10 +1122,10 @@ type
     {::   ForeignKeyFields := 'CustomerID'; }
     {::   ForeignFilter := 'Balance > 0'; }
     {:: end; }
-    property ForeignCondition: AnsiString read GetForeignCondition write SetForeignCondition stored IsDataTemporary;
+    property ForeignCondition: String read GetForeignCondition write SetForeignCondition stored IsDataTemporary;
     {:$ Specifies a field, which determine if this relation is applicable to the current record. }
     {:: If ConditionField is not empty, then the relation only applies if this field is not null or contains a boolean 'True' value. }
-    property Condition: AnsiString read GetCondition write SetCondition stored IsDataTemporary;
+    property Condition: String read GetCondition write SetCondition stored IsDataTemporary;
     {:$ Specifies the type of the relation between to tables. }
     property RelationType: TRelationType read GetRelationType write SetRelationType stored IsDataTemporary;
     {:$ Specifies the kind of the relation between to tables. }
@@ -1135,16 +1149,16 @@ type
     {:$ Specifies what action should be taken if key fields are being updated in the table. }
     property UpdateAction: TRelationAction read GetUpdateAction write SetUpdateAction stored IsDataTemporary default raIgnore;
     {:$ Name of reverse relation in foreign table. }
-    property PeerRelationName: AnsiString read GetPeerRelationName write SetPeerRelationName stored IsDataTemporary;
+    property PeerRelationName: String read GetPeerRelationName write SetPeerRelationName stored IsDataTemporary;
     { --- Deprecated properties --- }
     {:$ Specifies the error message, that should appear if delete operation has failed due to specified integrity constaint. }
-    property DeleteErrorMessage: AnsiString read GetDeleteErrorMessage write SetDeleteErrorMessage stored IsDataTemporary;
+    property DeleteErrorMessage: String read GetDeleteErrorMessage write SetDeleteErrorMessage stored IsDataTemporary;
     {:$ Specifies the error message, that should appear if update operation has failed due to specified integrity constaint. }
-    property UpdateErrorMessage: AnsiString read GetUpdateErrorMessage write SetUpdateErrorMessage stored IsDataTemporary;
+    property UpdateErrorMessage: String read GetUpdateErrorMessage write SetUpdateErrorMessage stored IsDataTemporary;
     {:$ Specifies the error message, that should appear if update operation has failed because the key fields in the table }
     {:: does not refer to one or more records in the foreign table. }
-    property RequireRecordErrorMessage: AnsiString read GetRequireRecordErrorMessage write SetRequireRecordErrorMessage stored IsDataTemporary;
-    property Description: AnsiString read GetDescription write SetDescription stored IsDataTemporary;
+    property RequireRecordErrorMessage: String read GetRequireRecordErrorMessage write SetRequireRecordErrorMessage stored IsDataTemporary;
+    property Description: String read GetDescription write SetDescription stored IsDataTemporary;
   end;
 
   {:$ TRelations collection contains a list of TRelation items.}
@@ -1156,7 +1170,7 @@ type
     {:$ Creates and adds a new TRelation item to the TRelations collection. }
     function Add: TRelation;
     {:$ Locates TRelation item by its name within the TRelations collection. }
-    function Find(const Name: AnsiString): TRelation;
+    function Find(const Name: String): TRelation;
     {:$ Provides access to the TRelation items in the collection by index. }
     property Items[Index: Integer]: TRelation read GetRelation write SetRelation; default;
   end;
@@ -1164,29 +1178,29 @@ type
   TAggregateLink = class (TTableCollectionItem)
   protected
     FAggregateType: TAggregateType;
-    FForeignFieldName: AnsiString;
-    FAggregateExpression: AnsiString;
-    FKeyFields: AnsiString;
-    FForeignKeyFields: AnsiString;
-    FForeignTable: AnsiString;
+    FForeignFieldName: String;
+    FAggregateExpression: String;
+    FKeyFields: String;
+    FForeignKeyFields: String;
+    FForeignTable: String;
     FRelationType: TRelationType;
     FRelationKind: TRelationKind;
-    FCondition: AnsiString;
-    FForeignCondition: AnsiString;
+    FCondition: String;
+    FForeignCondition: String;
     FCaseInsensitive: Boolean;
   public
     constructor CreateLink(Collection: TCollection; Relation: TRelation; ForeignFieldDef: TFieldDefinition);
 
-    property KeyFields: AnsiString read FKeyFields;
-    property ForeignKeyFields: AnsiString read FForeignKeyFields;
-    property ForeignTable: AnsiString read FForeignTable;
+    property KeyFields: String read FKeyFields;
+    property ForeignKeyFields: String read FForeignKeyFields;
+    property ForeignTable: String read FForeignTable;
     property RelationType: TRelationType read FRelationType;
     property RelationKind: TRelationKind read FRelationKind;
-    property Condition: AnsiString read FCondition;
-    property ForeignCondition: AnsiString read FForeignCondition;
+    property Condition: String read FCondition;
+    property ForeignCondition: String read FForeignCondition;
     property CaseInsensitive: Boolean read FCaseInsensitive;
-    property AggregateExpression: AnsiString read FAggregateExpression;
-    property ForeignFieldName: AnsiString read FForeignFieldName;
+    property AggregateExpression: String read FAggregateExpression;
+    property ForeignFieldName: String read FForeignFieldName;
     property AggregateType: TAggregateType read FAggregateType;
   end;
 
@@ -1199,7 +1213,7 @@ type
     constructor Create(AggregateLink: TAggregateLink);
     destructor Destroy; override;
 
-    procedure AddKey(const KeyValue: AnsiString);
+    procedure AddKey(const KeyValue: String);
     procedure ClearKeys;
     function HasKeys: Boolean;
 
@@ -1226,11 +1240,11 @@ type
   {:$ executed when a record in a table is updated or deleted. }
   TTriggerDefinition = class (TTableCollectionItem)
   protected
-    FDefinition: AnsiString;
+    FDefinition: String;
     FTriggerWhen: TChangeTypes;
     FTriggerType: TTriggerType;
     FTriggerActive: TTriggerActive;
-    function GetTableName: AnsiString;
+    function GetTableName: String;
     function GetTriggerWhen(Idx: TChangeType): boolean;
     procedure SetTriggerWhen(Idx: TChangeType; Value: boolean);
   public
@@ -1239,22 +1253,22 @@ type
     {:$ Creates an instance of TTriggerDefinition item. }
     constructor Create(Collection: TCollection); override;
 
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
 
-    procedure SetPropValue(const PropName, Value: AnsiString); override;
+    procedure SetPropValue(const PropName, Value: String); override;
 
-    procedure UpdateDefinition(const Value: AnsiString = ''); override;
+    procedure UpdateDefinition(const Value: String = ''); override;
     procedure Assign(ASource: TPersistent); override;
     {:$ Name of the table this trigger relates to. }
-    property TableName: AnsiString read GetTableName;
+    property TableName: String read GetTableName;
   published
     {:$ TriggerWhen property controls when to execute this trigger. }
     property TriggerWhen: TChangeTypes read FTriggerWhen write FTriggerWhen;
     property TriggerType: TTriggerType read FTriggerType write FTriggerType;
     property TriggerActive: TTriggerActive read FTriggerActive write FTriggerActive default taAlways;
     {:$ SQLScript property contains an optional SQL script that will be executed. }
-    property SQLScript: AnsiString read FDefinition write FDefinition stored False;
-    property Definition: AnsiString read FDefinition write FDefinition;
+    property SQLScript: String read FDefinition write FDefinition stored False;
+    property Definition: String read FDefinition write FDefinition;
     property OnDeleted: boolean index ctDeleted read GetTriggerWhen write SetTriggerWhen stored False;
     property OnUpdated: boolean index ctModified read GetTriggerWhen write SetTriggerWhen stored False;
     property OnInserted: boolean index ctInserted read GetTriggerWhen write SetTriggerWhen stored False;
@@ -1275,15 +1289,15 @@ type
   {:$ TableConstraint is a collection item representing table constraints. }
   TTableConstraint = class (TTableCollectionItem)
   protected
-    FCheck: AnsiString;
+    FCheck: String;
   public
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
     {:$ Copies the contents from another TTableConstraint object. }
     procedure Assign(Source: TPersistent); override;
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
   published
-    property Check: AnsiString read FCheck write FCheck;
+    property Check: String read FCheck write FCheck;
   end;
 
   {:$ TTableConstraints is a collection contains a list of TTableConstraint items.}
@@ -1294,7 +1308,7 @@ type
   public
     {:$ Creates and adds a new TTableConstraint item to the TTableConstraints collection. }
     function Add: TTableConstraint;
-    function Find(const Name: AnsiString): TTableConstraint;
+    function Find(const Name: String): TTableConstraint;
     {:$ Provides access to the TDomain items in the collection by index. }
     property Items[Index: Integer]: TTableConstraint read GetConstraint write SetConstraint; default;
   end;
@@ -1302,7 +1316,7 @@ type
   {:$ TTableDefinition is a collection item representing a physical table. }
   TTableDefinition = class (TSchemaCollectionItem)
   protected
-    FTypePrefix: AnsiString;
+    FTypePrefix: String;
     FIndexDefs: TIndexDefinitions;
     FFieldDefs: TFieldDefinitions;
     FRelations: TRelations;
@@ -1313,8 +1327,8 @@ type
     // Fields related to replications
     FReplicate: Boolean;
     FMasterRecord: Boolean;
-    FObjectType: AnsiString; // Effectively a table name alias
-    FObjectKeyFields: AnsiString;
+    FObjectType: String; // Effectively a table name alias
+    FObjectKeyFields: String;
     FObjectKeyCaseInsensitive: Boolean;
 
     // View
@@ -1331,10 +1345,10 @@ type
     procedure SetIndexDefs(const Value: TIndexDefinitions);
     procedure SetRelations(const Value: TRelations);
     procedure SetTriggers(const Value: TTriggerDefinitions);
-    procedure SetObjectType(const Value: AnsiString);
+    procedure SetObjectType(const Value: String);
     function ObjectTypeAssigned: Boolean;
-    procedure CheckObjectTypeUnique(const NewValue: AnsiString);
-    procedure ObjectRenamed(const OldName: AnsiString); override;
+    procedure CheckObjectTypeUnique(const NewValue: String);
+    procedure ObjectRenamed(const OldName: String); override;
     procedure ReadRelations(Reader: TReader);
     procedure WriteRelations(Writer: TWriter);
     procedure DefineProperties(Filer: TFiler); override;
@@ -1346,9 +1360,9 @@ type
     // constructor CreateView(Collection: TCollection);
     destructor Destroy; override;
 
-    procedure SetPropValue(const PropName, Value: AnsiString); override;
+    procedure SetPropValue(const PropName, Value: String); override;
     procedure Assign(ASource: TPersistent); override;
-    procedure UpdateDefinition(const Value: AnsiString = ''); override;
+    procedure UpdateDefinition(const Value: String = ''); override;
     {:$ This method is used in import instead of Assign because it does not overwrite }
     {:$ field definitions, relations, triggers, etc., but replaces only the ones changed. }
     {:: After the call to CopyFrom the structure of table defintion is identical to the }
@@ -1358,33 +1372,33 @@ type
     procedure Prepare;
     procedure UnPrepare;
 
-    function GetSchemaClassName: AnsiString; override;
+    function GetSchemaClassName: String; override;
     {:$ Returns definition of the primary index for this table. }
     {:: Returns nil if not primary index is specified. }
     function GetPrimaryIndex: TIndexDefinition;
-    function GetPrimaryKeyFields: AnsiString;
+    function GetPrimaryKeyFields: String;
 
     {:$ Locates constraint by name among primary key, foreign keys & checks. }
-    function FindConstraint(const Name: AnsiString): TTableCollectionItem;
+    function FindConstraint(const Name: String): TTableCollectionItem;
     {:$ Returns true if index exists for Fields (including case sensitivity). }
-    function PartOfIndex(const Fields: AnsiString; CaseInsensitive: Boolean = False): Boolean;
+    function PartOfIndex(const Fields: String; CaseInsensitive: Boolean = False): Boolean;
     {:$ Returns true if any unique or primary index is a part of Fields (including case sensitivity). }
-    function IsUniqueKey(const Fields: AnsiString; CaseInsensitive: Boolean = False): Boolean;
+    function IsUniqueKey(const Fields: String; CaseInsensitive: Boolean = False): Boolean;
     {:$ Returns list of TFieldDefinition objects named in FieldNames (delimited by ';') }
-    procedure GetFieldList(List: TList; const FieldNames: AnsiString); overload;
+    procedure GetFieldList(List: TList; const FieldNames: String); overload;
     {:$ Returns list of TFieldDefinition objects named in FieldNames (delimited by ';') }
-    procedure GetFieldList(List: TStrings; const FieldNames: AnsiString); overload;
+    procedure GetFieldList(List: TStrings; const FieldNames: String); overload;
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
 
     {:$ Returns effective object type. If FObjectType is not specified, then table's name is returned. }
-    function GetObjectType: AnsiString;
+    function GetObjectType: String;
 
     {:: Internal collection of calculated fields }
     property AggregateLinks: TAggregateLinks read FAggregateLinks;
     {:$ Specifies the fields (delimited by semi-colon) that comprise object's key.<br> }
     {:! Fields specified by the ObjectKeyFields property must be a unique key for the table.  }
-    property ObjectKeyFields: AnsiString read FObjectKeyFields;
+    property ObjectKeyFields: String read FObjectKeyFields;
     {:$ Tells whether the object key fields should be treated as case insensitive. }
     property ObjectKeyCaseInsensitive: Boolean read FObjectKeyCaseInsensitive;
     {:$ If true, then a record in this table represents an object. Otheriwse, it's
@@ -1397,7 +1411,7 @@ type
     property HasIdentityFields: Boolean read GetHasIdentityFields;
   published
     {:$ Specifies the name of the physical table. }
-    property TableName: AnsiString read FName write Rename stored False;
+    property TableName: String read FName write Rename stored False;
     {:$ Specifies the collection of field definitions for the physical table. }
     property FieldDefs: TFieldDefinitions read FFieldDefs write SetFieldDefs stored StoreFieldDefs;
     {:$ Specifies the collection of index definitions for the physical table. }
@@ -1409,7 +1423,7 @@ type
     property Constraints: TTableConstraints read FConstraints write SetConstraints stored StoreConstraints;
 
     {:$ Specifies the name of the object type represented by a record in the table. }
-    property ObjectType: AnsiString read FObjectType write SetObjectType stored ObjectTypeAssigned;
+    property ObjectType: String read FObjectType write SetObjectType stored ObjectTypeAssigned;
     {:$ Specifies whether the changes made to this table should be stored to be used for }
     {:$ replicating it's content with the main database. }
     {:: Generally all the tables should have Replicate set to True, except for those }
@@ -1421,7 +1435,7 @@ type
     {:: particular database snapshot. }
     property Replicate: Boolean read FReplicate write FReplicate default True;
     {:$ Specifies the prefix for auto generated DataSet reference class. }
-    property TypePrefix: AnsiString read FTypePrefix write FTypePrefix;
+    property TypePrefix: String read FTypePrefix write FTypePrefix;
     property IsView: boolean read FIsView write SetIsView;
     property Definition: TStrings read FDefinition write SetDefinition;
 
@@ -1438,7 +1452,7 @@ type
     {:$ Creates and adds a new TTableDefinition item to the TTableDefinitions collection. }
     function Add(AIsView: boolean = False): TTableDefinition;
     {:$ Locates TTableDefinition item by its table name within the TTableDefinitions collection. }
-    function Find(const Name: AnsiString): TTableDefinition;
+    function Find(const Name: String): TTableDefinition;
     {:$ Provides access to the TTableDefinition items in the collection by index by index. }
     property Items[Index: Integer]: TTableDefinition read GetItem write SetItem; default;
   end;
@@ -1446,12 +1460,12 @@ type
   {:$ TEnumeration is a collection item representing a type of enumeration. }
   TEnumeration = class (TSchemaCollectionItem)
   private
-    function GetDelphiDecl: AnsiString;
+    function GetDelphiDecl: String;
   protected
     FItems: TStringList;
     FDescriptions: TStringList;
     FShortDescriptions: TStringList;
-    FTypePrefix: AnsiString;
+    FTypePrefix: String;
     FIntConsts: Boolean;
     function GetDescriptions: TStrings;
     function GetShortDescriptions: TStrings;
@@ -1459,8 +1473,8 @@ type
     procedure SetDescriptions(const Value: TStrings);
     procedure SetShortDescriptions(const Value: TStrings);
     procedure SetItems(const Value: TStrings);
-    procedure ObjectRenamed(const OldName: AnsiString); override;
-    function  GetDisplayLabel: AnsiString; override;
+    procedure ObjectRenamed(const OldName: String); override;
+    function  GetDisplayLabel: String; override;
   public
     function GetDisplayName: String; override;
     procedure Assign(ASource: TPersistent); override;
@@ -1471,7 +1485,7 @@ type
     constructor Create(Collection: TCollection); override;
     destructor Destroy; override;
   published
-    property DelphiDecl: AnsiString read GetDelphiDecl;
+    property DelphiDecl: String read GetDelphiDecl;
     {:$ Stores pairs Value=Name, that defines this enumeration. }
     {:: E.g. Order states:<br>}
     {::   '0=Open'<br>}
@@ -1490,10 +1504,10 @@ type
     {:: See also Items property.}
     property ShortDescriptions: TStrings read GetShortDescriptions write SetShortDescriptions;
     {:$ Specifies the DisplayLabel for this enumeration. }
-    property DisplayLabel: AnsiString read GetDisplayLabel write FDescription;
+    property DisplayLabel: String read GetDisplayLabel write FDescription;
     {:$ Specifies the prefix for auto generated constants. }
-    property TypePrefix: AnsiString read FTypePrefix write FTypePrefix;
-    {:$ Specifies the type of auto generated constants (Integer or AnsiString). }
+    property TypePrefix: String read FTypePrefix write FTypePrefix;
+    {:$ Specifies the type of auto generated constants (Integer or String). }
     property IntConsts: Boolean read FIntConsts write FIntConsts default False;
   end;
 
@@ -1506,7 +1520,7 @@ type
     {:$ Creates and adds a new TEnumeration item to the TEnumerations collection. }
     function Add: TEnumeration;
     {:$ Locates TEnumeration item by its name within the TEnumerations collection. }
-    function Find(const Name: AnsiString): TEnumeration;
+    function Find(const Name: String): TEnumeration;
     {:$ Provides access to the TEnumeration items in the collection by index. }
     property Items[Index: Integer]: TEnumeration read GetEnumeration write SetEnumeration; default;
   end;
@@ -1514,7 +1528,7 @@ type
   TDatabaseSchemaDesigner = class
   protected
     FSchema: TDatabaseSchema;
-    FModulePath: AnsiString;
+    FModulePath: String;
     FDesignerForm: TObject; // TForm;
     FOnChanged: TNotifyEvent;
   public
@@ -1526,7 +1540,7 @@ type
 
     property Schema: TDatabaseSchema read FSchema;
     property DesignerForm: TObject read FDesignerForm write FDesignerForm;
-    property ModulePath: AnsiString read FModulePath write FModulePath;
+    property ModulePath: String read FModulePath write FModulePath;
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   end;
 
@@ -1547,32 +1561,32 @@ type
     FEnumerations: TEnumerations;
     FCustomObjects: TCustomObjects;
     FVersion: TSchemaVersion;
-    FSchemaName: AnsiString;
-    FDescription: AnsiString;
+    FSchemaName: String;
+    FDescription: String;
     FPrepared: Boolean;
     FDesigner: TDatabaseSchemaDesigner;
     FOnReadError: TReaderError;
     FCustomProps: TStringList;
     FDefaultValues: TStringList;
     FNextItemID: Integer;
-    FSchemaID: AnsiString;
-    FTargetDB: AnsiString;
-    FSysTable: AnsiString;
+    FSchemaID: String;
+    FTargetDB: String;
+    FSysTable: String;
 
-    FCompanyName: AnsiString;
-    FLegalCopyright: AnsiString;
-    FAuthor: AnsiString;
+    FCompanyName: String;
+    FLegalCopyright: String;
+    FAuthor: String;
     FUpdateCounter: Integer;
-    FDSDFileName: AnsiString;
+    FDSDFileName: String;
 
     FReadLibVersion: Integer;
     FStreamContainsVersion: Boolean;
     FEncloseIdentifiersInQuotes: Boolean;
 
-    procedure SetDSDFileName(const Value: AnsiString);
+    procedure SetDSDFileName(const Value: String);
     function GetLibVersion: Integer;
     procedure SetLibVersion(const Value: Integer);
-    function GetSchemaID: AnsiString;
+    function GetSchemaID: String;
     function StoreDomains: Boolean;
     function StoreEnumerations: Boolean;
     function StoreSequences: Boolean;
@@ -1601,8 +1615,8 @@ type
     procedure SetDefaultValues(const Value: TStrings);
     function  GetEmpty: boolean;
 
-    function GetVersionLabel: AnsiString;
-    procedure SetVersionLabel(const Value: AnsiString);
+    function GetVersionLabel: String;
+    procedure SetVersionLabel(const Value: String);
     procedure SetPrepared(const Value: Boolean);
     procedure DoOnReadError(Reader: TReader; const Message: String; var Handled: Boolean);
 
@@ -1616,7 +1630,7 @@ type
     procedure UpdateLibVersion; virtual;
     procedure UpdateViews; virtual;
 
-    procedure DoSQLFieldTypeChanged(Item: TSchemaCollectionItem; const Value: AnsiString);
+    procedure DoSQLFieldTypeChanged(Item: TSchemaCollectionItem; const Value: String);
   public
     { Public declarations }
     {:$ Creates an instance of the TDatabaseSchema component. }
@@ -1634,7 +1648,7 @@ type
     {:$ Loads schema information from the stream. }
     procedure LoadFromStream(Stream: TStream); virtual;
 
-    function FormatName(const Name, Fmt: AnsiString): AnsiString;
+    function FormatName(const Name, Fmt: String): String;
 
     procedure BeginUpdate;
     procedure EndUpdate;
@@ -1647,10 +1661,10 @@ type
 
     function FindItemByID(ItemID: Integer): TSchemaCollectionItem;
 
-    {:$ Saves schema information to AnsiString. }
-    function SaveToStr: AnsiString;
-    {:$ Loads schema information from the AnsiString. }
-    procedure LoadFromStr(Value: AnsiString);
+    {:$ Saves schema information to String. }
+    function SaveToStr: String;
+    {:$ Loads schema information from the String. }
+    procedure LoadFromStr(Value: String);
 
     procedure UpdateRelationships;
 
@@ -1659,27 +1673,27 @@ type
 
     {:$ Locates table defintion by either by TableName or by the properties of }
     {:$ TDataSet component passed as the Table parameter. }
-    function GetTableDef(Table: TDataSet; const TableName: AnsiString = ''): TTableDefinition; overload;
+    function GetTableDef(Table: TDataSet; const TableName: String = ''): TTableDefinition; overload;
     {:$ Locates table defintion by TableName }
-    function GetTableDef(const TableName: AnsiString): TTableDefinition; overload;
+    function GetTableDef(const TableName: String): TTableDefinition; overload;
     {:$ Locates table definition by object type. }
-    function GetObjectTable(const ObjectType: AnsiString): TTableDefinition;
+    function GetObjectTable(const ObjectType: String): TTableDefinition;
 
-    function FindIndexGlobal(const IndexName: AnsiString): TIndexDefinition;
+    function FindIndexGlobal(const IndexName: String): TIndexDefinition;
 
     procedure GetTableCategories(List: TStrings);
 
     procedure UpdateFieldDefinitions;
-    function TopLevelUnique(Item: TSchemaCollectionItem; const NewName: AnsiString): Boolean;
+    function TopLevelUnique(Item: TSchemaCollectionItem; const NewName: String): Boolean;
 
     {:$ Saves schema information to file. }
-    procedure SaveToFile(const FileName: AnsiString);
+    procedure SaveToFile(const FileName: String);
     {:$ Loads schema information from file. }
-    procedure LoadFromFile(const FileName: AnsiString);
+    procedure LoadFromFile(const FileName: String);
     {:$ Loads schema information from DBS file. }
-    procedure LoadFromDBSFile(const FileName: AnsiString);
+    procedure LoadFromDBSFile(const FileName: String);
     {:$ Loads schema information from DSD file. }
-    procedure LoadFromDSDFile(const FileName: AnsiString);
+    procedure LoadFromDSDFile(const FileName: String);
     {:$ Updates version of the database schema from the list of updates. }
     procedure UpdateVersion; virtual;
 
@@ -1691,7 +1705,7 @@ type
     {:: Returns next unique item's ID. }
     function GetNextItemID: Integer;
 
-    {:: Reset Schema ID by setting it to empty AnsiString. New ID will be automatically }
+    {:: Reset Schema ID by setting it to empty String. New ID will be automatically }
     {:: generated when necessary. }
     procedure ResetSchemaID;
 
@@ -1707,7 +1721,7 @@ type
     property Designer: TDatabaseSchemaDesigner read FDesigner;
 
     property OnReadError: TReaderError read FOnReadError write FOnReadError;
-    property SchemaID: AnsiString read GetSchemaID write FSchemaID;
+    property SchemaID: String read GetSchemaID write FSchemaID;
     property ReadLibVersion: Integer read FReadLibVersion;
     {:$ Returns True if database schema is empty. }
     property Empty: boolean read GetEmpty;
@@ -1715,7 +1729,7 @@ type
     property MaxItemID: integer read FNextItemID;
   published
     { Published declarations }
-    property TargetDB: AnsiString read FTargetDB write FTargetDB;
+    property TargetDB: String read FTargetDB write FTargetDB;
     {:$ Contains the list of updates for the database schema. }
     property Updates: TDatabaseUpdates read FUpdates write SetUpdates stored StoreUpdates;
     {:$ Contains the list of domain definitions for the database schema. }
@@ -1737,30 +1751,30 @@ type
     {:$ Contains the list of enumerations for the database schema. }
     property Enumerations: TEnumerations read FEnumerations write SetEnumerations stored StoreEnumerations;
     {:$ Returns the name of the schema. }
-    property SchemaName: AnsiString read FSchemaName write FSchemaName;
+    property SchemaName: String read FSchemaName write FSchemaName;
     {:$ Returns the version as text. }
-    property VersionLabel: AnsiString read GetVersionLabel write SetVersionLabel stored False;
+    property VersionLabel: String read GetVersionLabel write SetVersionLabel stored False;
     {:$ Schema Description. }
-    property Description: AnsiString read FDescription write FDescription;
+    property Description: String read FDescription write FDescription;
     {:$ Author of this schema. This field is only used for documenting purposes. }
-    property Author: AnsiString read FAuthor write FAuthor;
+    property Author: String read FAuthor write FAuthor;
     {:$ Company, this schema belongs to. This field is only used for documenting purposes. }
-    property CompanyName: AnsiString read FCompanyName write FCompanyName;
+    property CompanyName: String read FCompanyName write FCompanyName;
     {:$ Legal Copyright. This field is only used for documenting purposes. }
-    property LegalCopyright: AnsiString read FLegalCopyright write FLegalCopyright;
+    property LegalCopyright: String read FLegalCopyright write FLegalCopyright;
     {:$ List of possible custom properties, that field definitions may have. }
     property CustomProps: TStrings read GetCustomProps write SetCustomProps;
     {:$ Version of Database Extensions Library. }
     property LibVersion: Integer read GetLibVersion write SetLibVersion;
     {:$ Name and (optionally) path of the .dsd file name containing complete schema, diagram and version history. }
     {:$ This property is design-time only. }
-    property DSDFileName: AnsiString read FDSDFileName write SetDSDFileName;
+    property DSDFileName: String read FDSDFileName write SetDSDFileName;
     {:$ Specifies whether the identifiers must be enclosed in quotes or square brackets,  }
     {:$ depending on database engine properties. }
     property EncloseIdentifiersInQuotes: Boolean read FEncloseIdentifiersInQuotes write FEncloseIdentifiersInQuotes default True;
     {:$ List of possible custom properties, that field definitions may have. }
     property DefaultValues: TStrings read GetDefaultValues write SetDefaultValues;
-    property SystemTableName: AnsiString read FSysTable write FSysTable;
+    property SystemTableName: String read FSysTable write FSysTable;
   end;
 
   TDBSchemaVersion = class(TDatabaseSchema)
@@ -1913,14 +1927,14 @@ type
   {:$ modified within a transaction. }
   TObjectState = class
   public
-    ObjectType: AnsiString;
-    ObjectStrKey: AnsiString;
+    ObjectType: String;
+    ObjectStrKey: String;
     ObjectKey: Variant;
     ChangeType: TChangeType;
     ChangeStatus: TChangeStatus;
     ReplicationID: Integer;
     SnapshotID: Integer;
-    UserName: AnsiString;
+    UserName: String;
     Timestamp: TDateTime;
   end;
 
@@ -1939,7 +1953,7 @@ type
     destructor Destroy; override;
 
     function WriteChange(TableDef: TTableDefinition; ObjectKey: Variant;
-      AChangeType: TChangeType; SnapshotID: Integer = -1; const UserName: AnsiString = '';
+      AChangeType: TChangeType; SnapshotID: Integer = -1; const UserName: String = '';
       ChangeStatus: TChangeStatus = csActive): Boolean;
 
     function GetAggregateLinkData(AggregateLink: TAggregateLink): TAggregateLinkData;
@@ -1951,13 +1965,13 @@ type
     function GetSchema: TDatabaseSchema;
     procedure SetSchema(Value: TDatabaseSchema);
 
-    function GetRangeCursor(const TableName, KeyFields, TableFilter: AnsiString;
-      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: AnsiString = ''): TDBRangeCursor; overload;
+    function GetRangeCursor(const TableName, KeyFields, TableFilter: String;
+      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: String = ''): TDBRangeCursor; overload;
     function GetRangeCursor(Relation: TRelation; KeyValues: Variant): TDBRangeCursor; overload;
 
     function GetVersion: TSchemaVersion;
     procedure SetVersion(const Value: TSchemaVersion);
-    function GetSystemTableName: AnsiString;
+    function GetSystemTableName: String;
 
     property Schema: TDatabaseSchema read GetSchema write SetSchema;
   end;
@@ -1968,10 +1982,10 @@ type
   function CompareVersions(Version1, Version2: TSchemaVersion): Integer;
   {:$ Returns true if CurrentVersion is less or equal to Version. }
   function VersionIsOkey(CurrentVersion, Version: TSchemaVersion; AllowNewer: Boolean = False): Boolean;
-  {:$ Converts version record to its AnsiString representation (e.g. 1.43) }
-  function VersionToStr(const Version: TSchemaVersion): AnsiString;
-  {:$ Converts AnsiString representation to version record. }
-  function StrToVersion(const Value: AnsiString): TSchemaVersion;
+  {:$ Converts version record to its String representation (e.g. 1.43) }
+  function VersionToStr(const Version: TSchemaVersion): String;
+  {:$ Converts String representation to version record. }
+  function StrToVersion(const Value: String): TSchemaVersion;
 
   function GetDatabaseVersion(Database: ISchemaDatabase): TSchemaVersion;
   procedure SetDatabaseVersion(Database: ISchemaDatabase; Value: TSchemaVersion);
@@ -1980,38 +1994,38 @@ type
   {:$ delimited by Delim. Ex.:<br> }
   {:$   ListedIn('Name', 'Name;LastName', ';') = True <br>}
   {:$   ListedIn('Last', 'Name;LastName', ';') = False }
-  function ListedIn(SubStr, Str, Delim: AnsiString): Boolean;
+  function ListedIn(SubStr, Str, Delim: String): Boolean;
 
-  function AnsiDateToStr(Value: TDateTime): AnsiString;
-  function AnsiTimeToStr(Value: TDateTime; MilitaryTime: Boolean): AnsiString;
-  function AnsiDateTimeToStr(Value: TDateTime; MilitaryTime: Boolean): AnsiString;
+  function AnsiDateToStr(Value: TDateTime): String;
+  function AnsiTimeToStr(Value: TDateTime; MilitaryTime: Boolean): String;
+  function AnsiDateTimeToStr(Value: TDateTime; MilitaryTime: Boolean): String;
 
-  function FormatSQLConst(FieldType: TFieldType; Value: Variant): AnsiString;
-  function CreateRangeFilter(KeyFieldsList: TList; KeyValues: Variant): AnsiString;
+  function FormatSQLConst(FieldType: TFieldType; Value: Variant): String;
+  function CreateRangeFilter(KeyFieldsList: TList; KeyValues: Variant): String;
 
-  procedure DecodeDatabaseURL(const DatabaseURL: AnsiString; var ConnectionType, RemoteHost, DatabaseName: AnsiString);
-  function EncodeDatabaseURL(ConnectionType, RemoteHost, DatabaseName: AnsiString): AnsiString;
-  function ContainsParam(const Name: AnsiString; ParamList: TStrings): Boolean;
+  procedure DecodeDatabaseURL(const DatabaseURL: String; var ConnectionType, RemoteHost, DatabaseName: String);
+  function EncodeDatabaseURL(ConnectionType, RemoteHost, DatabaseName: String): String;
+  function ContainsParam(const Name: String; ParamList: TStrings): Boolean;
 
   {:$ Returns next token within Str starting from StartPos (1-based), using Divider to separate tokens. }
-  function NextToken(const Str, Delimiter: AnsiString; var StartPos: Integer): AnsiString;
+  function NextToken(const Str, Delimiter: String; var StartPos: Integer): String;
   {:$ Concatenates an array of strings separating them with the Delimiter. }
-  function Concatenate(Strings: array of AnsiString; const Delimiter: AnsiString): AnsiString; overload;
+  function Concatenate(Strings: array of String; const Delimiter: String): String; overload;
   {:$ Concatenates an array of strings separating them with the Delimiter. }
-  function Concatenate(Strings: TStrings; const Delimiter: AnsiString): AnsiString; overload;
+  function Concatenate(Strings: TStrings; const Delimiter: String): String; overload;
   {:$ Get list of token contained in Str and separated by Delimiter. }
-  procedure GetTokens(const Str, Delimiter: AnsiString; List: TStrings);
-  {:$ Replaces field name passed in OldName parameter withing Fields AnsiString by }
-  {:$ NewName and returns resulted AnsiString. }
-  function ReplaceFieldName(const Fields, OldName, NewName: AnsiString): AnsiString;
+  procedure GetTokens(const Str, Delimiter: String; List: TStrings);
+  {:$ Replaces field name passed in OldName parameter withing Fields String by }
+  {:$ NewName and returns resulted String. }
+  function ReplaceFieldName(const Fields, OldName, NewName: String): String;
   {:$ Extracts object name from pairs of quote. Object name may follow "schema" name. }
   {:$ E.g. given [schema]."table name" the output will be 'table name'. }
-  function ExtractObjectName(const Value: AnsiString): AnsiString; overload;
-  function ExtractObjectName(const Value: AnsiString; var LeftPart: AnsiString): AnsiString; overload;
+  function ExtractObjectName(const Value: String): String; overload;
+  function ExtractObjectName(const Value: String; var LeftPart: String): String; overload;
 
-  {:$ Converts any variant value to AnsiString representation. See also DecodeVariant. }
-  function EncodeVariant(Value: Variant): AnsiString;
-  {:$ Decodes variant value from its AnsiString representation. See also EncodeVariant.}
+  {:$ Converts any variant value to String representation. See also DecodeVariant. }
+  function EncodeVariant(Value: Variant): String;
+  {:$ Decodes variant value from its String representation. See also EncodeVariant.}
   function DecodeVariant(Value: String): Variant;
   {:$ Returns true is V is NULL or empty or is array with all items null or empty.  }
   function VarIsNullExt(V: Variant): Boolean;
@@ -2022,14 +2036,14 @@ type
   procedure FreeObjects(List: TStrings); overload;
 
   {:$ Internal helper function. }
-  function GetVirtualKey(const TableName, KeyFields: AnsiString; KeyValues: Variant; CaseInsensitive: Boolean = False): AnsiString;
+  function GetVirtualKey(const TableName, KeyFields: String; KeyValues: Variant; CaseInsensitive: Boolean = False): String;
   {:$ Internal helper function. }
-  function FindVirtualKey(VirtualKeys: TStrings; const Key: AnsiString): Integer;
+  function FindVirtualKey(VirtualKeys: TStrings; const Key: String): Integer;
   {:$ Internal helper function. }
-  function VirtualKeyExists(VirtualKeys: TStrings; const Key: AnsiString): Boolean;
+  function VirtualKeyExists(VirtualKeys: TStrings; const Key: String): Boolean;
 
   {:$ Return key values corresponding to the list of KeyFields. }
-  function GetKeyValues(DataSet: TDataSet; const KeyFields: AnsiString; var OldKeyValues, NewKeyValues: Variant; KeyFieldsList: TList = nil): Boolean;
+  function GetKeyValues(DataSet: TDataSet; const KeyFields: String; var OldKeyValues, NewKeyValues: Variant; KeyFieldsList: TList = nil): Boolean;
   {:$ Clear fields contained in KeyFieldsList array. }
   procedure ClearFields(DataSet: TDataSet; KeyFieldsList: TList);
   {:$ Assign KeyValues to fields contained in KeyFieldsList array. }
@@ -2043,13 +2057,13 @@ type
   {:$ Assign current record from source to destination dataset. }
   procedure AssignRecord(SrcTable, DestTable: TDataSet; ClearBeforeAssign: Boolean = False);
   {:$ Assign Master field value passed as Value parameter to all records of the DataSet. }
-  procedure AssignMasterField(const DataSet: TDataSet; const MasterField: AnsiString; Value: Variant);
+  procedure AssignMasterField(const DataSet: TDataSet; const MasterField: String; Value: Variant);
   {:$ Remove all records from the dataset. }
   procedure ClearDataSet(DataSet: TDataSet);
   {:$ Copy source (Src) dataset to destination (Dest) dataset. }
   procedure CopyDataSet(Src, Dest: TDataSet);
   {:$ Copy source (Src) dataset to destination (Dest) dataset. }
-  procedure CopyDataSetWithKey(Src, Dest: TDataSet; const KeyField: AnsiString);
+  procedure CopyDataSetWithKey(Src, Dest: TDataSet; const KeyField: String);
 
   {:$ Saves dataset into variant array. Stores field defs as a first 3 rows (Name, Type, Size). }
   function DataSetToVariant(DataSet: TDataSet; MaxRecCount: Integer = -1): OleVariant;
@@ -2057,57 +2071,57 @@ type
   {:$ Converts field class to physical data type. }
   function FieldClassToDataType(FieldClass: TFieldClass): TFieldType;
   {:$ Creates field for the Owner dataset. }
-  function CreateField(Owner: TDataSet; FieldClass: TFieldClass; const FieldName: AnsiString; DataType: TFieldType = DB.ftUnknown; Size: Integer = 0; Required: Boolean = False): TField;
+  function CreateField(Owner: TDataSet; FieldClass: TFieldClass; const FieldName: String; DataType: TFieldType = DB.ftUnknown; Size: Integer = 0; Required: Boolean = False): TField;
 
   {:$ Returnes component, implementing ISchemaDatabase associated with the database name passed as DatabaseName parameter. }
-  function FindDatabase(const DatabaseName: AnsiString): TComponent;
+  function FindDatabase(const DatabaseName: String): TComponent;
 
-  {:$ Parses input AnsiString (InpStr) and invokes OnParseField callback procedure }
+  {:$ Parses input String (InpStr) and invokes OnParseField callback procedure }
   {:$ for each "field" starting from Open substring and ending by Close substring. }
   {:$ Example:  ParseFields('This <%text%> contains two <%fields%>.', '<%', '%>', OnParseField); }
-  function ParseFields(const InpStr, Open, Close: AnsiString; OnParseField: TOnParseField; Data: Pointer): AnsiString;
-  function ReverseString(const Str: AnsiString): AnsiString;
+  function ParseFields(const InpStr, Open, Close: String; OnParseField: TOnParseField; Data: Pointer): String;
+  function ReverseString(const Str: String): String;
 
-  {:$ Retrives the list of values of a AnsiString property which name is passed }
+  {:$ Retrives the list of values of a String property which name is passed }
   {:$ as PropName parameter from all collection items and returns it in the Values parameter. }
-  procedure GetValues(Collection: TCollection; Values: TStrings; PropName: AnsiString = 'Name'; Append: boolean = False); overload;
+  procedure GetValues(Collection: TCollection; Values: TStrings; PropName: String = 'Name'; Append: boolean = False); overload;
 
-  {:$ Retrives the list of values of a AnsiString property which name is passed }
+  {:$ Retrives the list of values of a String property which name is passed }
   {:$ as PropName parameter from all list items and returns it in the Values parameter. }
-  procedure GetValues(List: TList; Values: TStrings; PropName: AnsiString = 'Name'; Append: boolean = False); overload;
+  procedure GetValues(List: TList; Values: TStrings; PropName: String = 'Name'; Append: boolean = False); overload;
 
-  {:$ Retrives the list of *distinct* values of a AnsiString property which name is passed }
+  {:$ Retrives the list of *distinct* values of a String property which name is passed }
   {:$ as PropName parameter from all collection or list items and returns it in the Values parameter. }
-  procedure GetDistinctValues(List: TObject; Values: TStrings; PropName: AnsiString = 'Name'); overload;
+  procedure GetDistinctValues(List: TObject; Values: TStrings; PropName: String = 'Name'); overload;
 
   {:$ Returns true if the NewValue is unique value for the published property named PropName }
   {:$ amongst the items of the collection owning CollectionItem }
-  function IsUnique(CollectionItem: TCollectionItem; const NewValue: AnsiString; const PropName: AnsiString = 'Name'): Boolean;
+  function IsUnique(CollectionItem: TCollectionItem; const NewValue: String; const PropName: String = 'Name'): Boolean;
 
-  procedure AddPublishedProp(Instance: TObject; PropName: AnsiString; Values: TStrings);
-  function ValueFromIndex(Strings: TStrings; Idx: Integer): AnsiString;
-  procedure SaveStrToFile(const FileName, Value: AnsiString);
-  function LoadStrFromFile(const FileName: AnsiString): AnsiString;
-  function VarArrayToStr(const V: OleVariant): AnsiString;
-  function StrToVarArray(const S: AnsiString): OleVariant;
+  procedure AddPublishedProp(Instance: TObject; PropName: String; Values: TStrings);
+  function ValueFromIndex(Strings: TStrings; Idx: Integer): String;
+  procedure SaveStrToFile(const FileName, Value: String);
+  function LoadStrFromFile(const FileName: String): String;
+  function VarArrayToStr(const V: OleVariant): String;
+  function StrToVarArray(const S: String): OleVariant;
 
   procedure GetFieldTypes(List: TStrings);
-  function IsValidFieldType(const FieldType: AnsiString): Boolean;
-  function GetFieldTypeByName(const Name: AnsiString): TFieldDataType;
+  function IsValidFieldType(const FieldType: String): Boolean;
+  function GetFieldTypeByName(const Name: String): TFieldDataType;
   procedure GetPropNames(Instance: TObject; List: TStrings);
 
   function GetItemCollection(Parent: TObject; ItemClass: TSchemaCollectionItemClass): TSchemaItemsCollection;
 
   procedure GenerateSchemaDeclarations(Schema: TDatabaseSchema; Strings: TStrings);
-  function NameToIdent(const TypePrefix, Name: AnsiString): AnsiString;
-  function KeyFieldsRequired(TableDef: TTableDefinition; KeyFields: AnsiString): Boolean;
+  function NameToIdent(const TypePrefix, Name: String): String;
+  function KeyFieldsRequired(TableDef: TTableDefinition; KeyFields: String): Boolean;
 
   function CompareRelProps(SrcRel, DestRel: TRelationship): Boolean;
   function RelationshipsEqual(Src, Dest: TRelationship): Boolean;
   function CheckVersion(Database: ISchemaDatabase): Boolean;
 
   function UpdateDatabase(Database: ISchemaDatabase; OnProgress: TDatabaseProgress = nil): Boolean;
-  function FormatName(const Name, Fmt: AnsiString): AnsiString;
+  function FormatName(const Name, Fmt: String): String;
 
   function ValidObj(Obj: TSchemaCollectionItem): Boolean;
 
@@ -2140,7 +2154,7 @@ resourcestring
   SDefaultUpdateErrorMessage = 'Field %s in the %s table cannot be updated, because it already references records in the %s table.';
   SDefaultRequireRecordErrorMessage = 'Field %s in the %s table does not contain a valid or null reference to the %s table.';
 
-  SInvalidVariantString = 'Invalid variant AnsiString';
+  SInvalidVariantString = 'Invalid variant String';
   SFieldTypeNotSupported = 'Field type not supported. Field: %s';
   SDataSetRefFieldNotFound = 'Field %s not found in DataSet %s';
 
@@ -2174,7 +2188,7 @@ resourcestring
 
 
 const
-  VERSION_NOT_AVAILABLE: AnsiString = 'N/A';
+  VERSION_NOT_AVAILABLE: String = 'N/A';
 
   propTableName         = 'TableName';
   propIndexFieldNames   = 'IndexFieldNames';
@@ -2192,7 +2206,7 @@ const
   OppositeRelationKind: array [TRelationKind] of TRelationKind = (
     rkReference, rkChildren, rkParent);
 
-  RelationTypeText: array [TRelationType] of AnsiString = (
+  RelationTypeText: array [TRelationType] of String = (
     SOneToOne, SManyToOne, SOneToMany, SManyToMany);
 
   uoNone: TUpdateOptions = [];
@@ -2209,7 +2223,7 @@ const
     ftRecRev];
 
 const
-  DefaultSQLFieldTypes: array [TFieldDataType] of AnsiString = (
+  DefaultSQLFieldTypes: array [TFieldDataType] of String = (
     'UNKNOWN', 'VARCHAR', 'SMALLINT', 'INTEGER', 'WORD', 'BOOLEAN',
     'FLOAT', 'CURRENCY', 'BCD', 'DATE', 'TIME', 'DATETIME', 'BYTES',
     'VARBYTES', 'AUTOINC', 'BLOB', 'MEMO', 'GRAPHIC', 'FMTMEMO', 'PARADOXOLE',
@@ -2218,7 +2232,7 @@ const
     'INTERFACE', 'IDISPATCH', 'GUID', 'TIMESTAMP', 'FMTBCD', 'NCHAR', 'NCLOB',
     'RECREV'
   );
-  FieldDataTypes: array [TFieldDataType] of AnsiString = (
+  FieldDataTypes: array [TFieldDataType] of String = (
     'ftUnknown', 'ftString', 'ftSmallint', 'ftInteger', 'ftWord', 'ftBoolean',
     'ftFloat', 'ftCurrency', 'ftBCD', 'ftDate', 'ftTime', 'ftDateTime', 'ftBytes',
     'ftVarBytes', 'ftAutoInc', 'ftBlob', 'ftMemo', 'ftGraphic', 'ftFmtMemo', 'ftParadoxOle',
@@ -2233,15 +2247,10 @@ const
     ftVarBytes, ftAutoInc, ftBlob, ftMemo, ftGraphic, ftFmtMemo, ftParadoxOle,
     ftDBaseOle, ftTypedBinary, ftCursor, ftFixedChar, ftWideString, ftLargeint,
     ftADT, ftArray, ftReference, ftDataSet, ftOraBlob, ftOraClob, ftVariant,
-    ftInterface, ftIDispatch, ftGuid {$IFnDEF VER130},ftTimeStamp, ftFMTBcd{$ENDIF}
-    {$IFDEF VER180},
-    ftNChar, ftNClob, ftTimeStamp, ftUnknown
-    {$ELSE}
-    {$IFDEF VER200},
-    ftNChar, ftNClob, ftTimeStamp, ftUnknown, ftLargeInt, ftInteger, ftSmallInt, ftFloat, ftUnknown, ftUnknown, ftUnknown
-    {$ENDIF}
-    {$ENDIF}
-
+    ftInterface, ftIDispatch, ftGuid
+    {$IFDEF D6_ORLATER},ftTimeStamp, ftFMTBcd{$ENDIF}
+    {$IFDEF D2005_ORLATER}, ftNChar, ftNClob, ftTimeStamp, ftUnknown{$ENDIF}
+    {$IFDEF D2009_ORLATER}, ftLargeInt, ftInteger, ftSmallInt, ftFloat, ftUnknown, ftUnknown, ftUnknown{$ENDIF}
   );
 
   FieldDataTypeToVCL: array [TFieldDataType] of TFieldType = (
@@ -2266,7 +2275,7 @@ const
 
 const
   OppositeSide: array [TRelationSide] of TRelationSide = (sideMaster, sideDetail);
-  SMultiplicity: array [TMultiplicity] of AnsiString = ('*', '1', '0..1', '0..N');
+  SMultiplicity: array [TMultiplicity] of String = ('*', '1', '0..1', '0..N');
 
 var
   GlobalSQLFieldTypeChanged: TOnSQLFieldTypeChanged;
@@ -2279,9 +2288,7 @@ uses
 {$ENDIF}
   DbConsts, Math, dbSQLLexer, StrUtils;
 
-{$IFnDEF VER200}
-  {$I D2009.inc}
-{$ENDIF}
+{$I CtxD2009.inc}
 
 { Routines }
 
@@ -2302,7 +2309,7 @@ begin
   Result := CoCreateGuid(Guid);
 end;
 
-function GUIDToString(const GUID: TGUID): AnsiString;
+function GUIDToString(const GUID: TGUID): String;
 var
   P: PWideChar;
 begin
@@ -2347,17 +2354,17 @@ begin
     else Result := True;
 end;
 
-function VersionToStr(const Version: TSchemaVersion): AnsiString;
+function VersionToStr(const Version: TSchemaVersion): String;
 begin
   if (Version.Major > 0) and (Version.Minor > 0) then
     Result := Format('%d.%2.2d', [Version.Major, Version.Minor])
   else Result := VERSION_NOT_AVAILABLE;
 end;
 
-function StrToVersion(const Value: AnsiString): TSchemaVersion;
+function StrToVersion(const Value: String): TSchemaVersion;
 var
   P: Integer;
-  TempValue: AnsiString;
+  TempValue: String;
 begin
   TempValue := Trim(Value);
   if (TempValue = '') or (TempValue = VERSION_NOT_AVAILABLE) then begin
@@ -2375,7 +2382,7 @@ end;
 function GetDatabaseVersion(Database: ISchemaDatabase): TSchemaVersion;
 var
   Query: TDataSet;
-  STable: AnsiString;
+  STable: String;
 begin
   Result := SchemaVersion(0, 0);
   STable := '';
@@ -2396,7 +2403,7 @@ end;
 procedure SetDatabaseVersion(Database: ISchemaDatabase; Value: TSchemaVersion);
 var
   Query: TDataSet;
-  STable: AnsiString;
+  STable: String;
 begin
   STable := '';
   if Database.GetSchema <> nil then
@@ -2420,37 +2427,39 @@ begin
   end;
 end;
 
-function ListedIn(SubStr, Str, Delim: AnsiString): Boolean;
+function ListedIn(SubStr, Str, Delim: String): Boolean;
 begin
   Result := (SubStr <> '') and (Str <> '')
     and (AnsiPos(Delim+SubStr+Delim, Delim+Str+Delim) > 0);
 end;
 
-function PadLeft(const Value: AnsiString; Padding: Integer; PadChar: Char): AnsiString;
+function PadLeft(const Value: String; Padding: Integer; PadChar: Char): String;
 var
-   NumToPad: Integer;
-   I: Integer;
+  NumToPad: Integer;
+  I: Integer;
 begin
-   Result:=Value;
-   if Length(Result) >= Padding then Exit;
-   NumToPad:=Padding-Length(Result);
-   for I:=1 to NumToPad do
-      Result:=PadChar+Result;
+  Result := Value;
+  if Length(Result) >= Padding then
+    exit;
+  NumToPad := Padding - Length(Result);
+  for I := 1 to NumToPad do
+    Result := PadChar + Result;
 end;
 
-function AnsiDateToStr(Value: TDateTime): AnsiString;
+function AnsiDateToStr(Value: TDateTime): String;
 var
-   TempYear: Word;
-   TempMonth: Word;
-   TempDay: Word;
+  TempYear: Word;
+  TempMonth: Word;
+  TempDay: Word;
 begin
-   DecodeDate(Value,TempYear,TempMonth,TempDay);
-   Result:=PadLeft(IntToStr(TempYear),4,'0')+ANSI_DATE_SEPARATOR+
-           PadLeft(IntToStr(TempMonth),2,'0')+ANSI_DATE_SEPARATOR+
-           PadLeft(IntToStr(TempDay),2,'0');
+  DecodeDate(Value,TempYear,TempMonth,TempDay);
+  Result :=
+    PadLeft(IntToStr(TempYear),4,'0')+ANSI_DATE_SEPARATOR+
+    PadLeft(IntToStr(TempMonth),2,'0')+ANSI_DATE_SEPARATOR+
+    PadLeft(IntToStr(TempDay),2,'0');
 end;
 
-function AnsiTimeToStr(Value: TDateTime; MilitaryTime: Boolean): AnsiString;
+function AnsiTimeToStr(Value: TDateTime; MilitaryTime: Boolean): String;
 var
    TempHour: Word;
    TempMin: Word;
@@ -2485,13 +2494,13 @@ begin
       end;
 end;
 
-function AnsiDateTimeToStr(Value: TDateTime; MilitaryTime: Boolean): AnsiString;
+function AnsiDateTimeToStr(Value: TDateTime; MilitaryTime: Boolean): String;
 begin
    Result:=AnsiDateToStr(Value)+' '+
            AnsiTimeToStr(Value,MilitaryTime);
 end;
 
-function FormatSQLConst(FieldType: TFieldType; Value: Variant): AnsiString;
+function FormatSQLConst(FieldType: TFieldType; Value: Variant): String;
 begin
   case FieldType of
     DB.ftString, DB.ftFixedChar, DB.ftWideString, DB.ftMemo:
@@ -2508,7 +2517,7 @@ begin
   end;
 end;
 
-function CreateRangeFilter(KeyFieldsList: TList; KeyValues: Variant): AnsiString;
+function CreateRangeFilter(KeyFieldsList: TList; KeyValues: Variant): String;
 var
   I: Integer;
 begin
@@ -2527,7 +2536,7 @@ begin
   end;
 end;
 
-procedure DecodeDatabaseURL(const DatabaseURL: AnsiString; var ConnectionType, RemoteHost, DatabaseName: AnsiString);
+procedure DecodeDatabaseURL(const DatabaseURL: String; var ConnectionType, RemoteHost, DatabaseName: String);
 var
   P: Integer;
 begin
@@ -2547,7 +2556,7 @@ begin
   end;
 end;
 
-function EncodeDatabaseURL(ConnectionType, RemoteHost, DatabaseName: AnsiString): AnsiString;
+function EncodeDatabaseURL(ConnectionType, RemoteHost, DatabaseName: String): String;
 begin
   Result := '';
   if ConnectionType <> '' then
@@ -2555,7 +2564,7 @@ begin
   Result := Result + DatabaseName;
 end;
 
-function ContainsParam(const Name: AnsiString; ParamList: TStrings): Boolean;
+function ContainsParam(const Name: String; ParamList: TStrings): Boolean;
 var
   I: Integer;
 begin
@@ -2565,13 +2574,13 @@ begin
   Result := False;
 end;
 
-function NextToken(const Str, Delimiter: AnsiString; var StartPos: Integer): AnsiString;
+function NextToken(const Str, Delimiter: String; var StartPos: Integer): String;
 var
-  _pos: PAnsiChar;
+  _pos: PChar;
 begin
   Result := '';
   if StartPos > Length(Str) then exit;
-  _pos := StrPos(@Str[StartPos], PAnsiChar(Delimiter));
+  _pos := StrPos(@Str[StartPos], PChar(Delimiter));
   if _pos <> nil then
   begin
     Result := copy(Str, StartPos, Integer(_pos - @Str[StartPos]));
@@ -2582,7 +2591,7 @@ begin
   end;
 end;
 
-function Concatenate(Strings: array of AnsiString; const Delimiter: AnsiString): AnsiString;
+function Concatenate(Strings: array of String; const Delimiter: String): String;
 var
   I: Integer;
 begin
@@ -2608,7 +2617,7 @@ begin
   end;
 end;
 
-function Concatenate(Strings: TStrings; const Delimiter: AnsiString): AnsiString;
+function Concatenate(Strings: TStrings; const Delimiter: String): String;
 var
   I: Integer;
 begin
@@ -2635,10 +2644,10 @@ begin
   end;
 end;
 
-procedure GetTokens(const Str, Delimiter: AnsiString; List: TStrings);
+procedure GetTokens(const Str, Delimiter: String; List: TStrings);
 var
   P: Integer;
-  S: AnsiString;
+  S: String;
 begin
   List.Clear;
   P := 1;
@@ -2649,10 +2658,10 @@ begin
   end;
 end;
 
-function ReplaceFieldName(const Fields, OldName, NewName: AnsiString): AnsiString;
+function ReplaceFieldName(const Fields, OldName, NewName: String): String;
 var
   I: Integer;
-  S: AnsiString;
+  S: String;
 begin
   Result := Fields;
   if (OldName = '') or (Length(Fields) < Length(OldName)) then exit;
@@ -2678,17 +2687,17 @@ begin
   end;
 end;
 
-function ExtractObjectName(const Value: AnsiString): AnsiString;
+function ExtractObjectName(const Value: String): String;
 var
-  Temp: AnsiString;
+  Temp: String;
 begin
   Result := ExtractObjectName(Value, Temp);
 end;
 
-function ExtractObjectName(const Value: AnsiString; var LeftPart: AnsiString): AnsiString;
+function ExtractObjectName(const Value: String; var LeftPart: String): String;
 var
   P: Integer;
-  Quote: AnsiChar;
+  Quote: Char;
 begin
   // Remove all quotes and brackets and schema name if there
   LeftPart := Trim(Value);
@@ -2696,7 +2705,7 @@ begin
   if LeftPart = '' then exit;
   // Extract quoted or unquoted item from the end till period
   P := Length(LeftPart);
-  if LeftPart[P] in ['"', '`', ']'] then
+  if CharInSet(LeftPart[P], ['"', '`', ']']) then
   begin
     if LeftPart[P] = ']' then
       Quote := '['
@@ -2711,7 +2720,7 @@ begin
       Delete(LeftPart, P, 1);
   end else
   begin
-    while (P > 0) and (LeftPart[P] in [#32..#255]-['.']) do
+    while (P > 0) and CharInSet(LeftPart[P], [#32..#255]-['.']) do
       Dec(P);
     if P > 0 then
     begin
@@ -2724,7 +2733,7 @@ begin
   end;
 end;
 
-function EncodeVariant(Value: Variant): AnsiString;
+function EncodeVariant(Value: Variant): String;
 var
   I: Integer;
 begin
@@ -2748,7 +2757,7 @@ end;
 function CommaTextToVar(const Value: PChar): Variant;
 var
   P, P1: PChar;
-  S: AnsiString;
+  S: String;
   I: Integer;
 begin
   Result := VarArrayCreate([0, 15], varVariant); // Maximum allow 16 keys
@@ -2809,19 +2818,19 @@ begin
   end else Result := VarIsNull(V) or VarIsEmpty(V);
 end;
 
-procedure AddPublishedProp(Instance: TObject; PropName: AnsiString; Values: TStrings);
+procedure AddPublishedProp(Instance: TObject; PropName: String; Values: TStrings);
 begin
   Values.Values[PropName] := GetPropValue(Instance, PropName);
 end;
 
-function ValueFromIndex(Strings: TStrings; Idx: Integer): AnsiString;
+function ValueFromIndex(Strings: TStrings; Idx: Integer): String;
 begin
   if Idx >= 0 then
     Result := Copy(Strings[Idx], Length(Strings.Names[Idx]) + 2, MaxInt) else
     Result := '';
 end;
 
-procedure SaveStrToFile(const FileName, Value: AnsiString);
+procedure SaveStrToFile(const FileName, Value: String);
 var
   Stream: TFileStream;
 begin
@@ -2833,7 +2842,7 @@ begin
   end;
 end;
 
-function LoadStrFromFile(const FileName: AnsiString): AnsiString;
+function LoadStrFromFile(const FileName: String): String;
 var
   Stream: TFileStream;
 begin
@@ -2846,7 +2855,7 @@ begin
   end;
 end;
 
-function VarArrayToStr(const V: OleVariant): AnsiString;
+function VarArrayToStr(const V: OleVariant): String;
 var
   P: Pointer;
   Size: Integer;
@@ -2870,7 +2879,7 @@ begin
   end;
 end;
 
-function StrToVarArray(const S: AnsiString): OleVariant;
+function StrToVarArray(const S: String): OleVariant;
 var
   P: Pointer;
 begin
@@ -2916,14 +2925,14 @@ begin
   end;
 end;
 
-function GetVirtualKey(const TableName, KeyFields: AnsiString; KeyValues: Variant; CaseInsensitive: Boolean = False): AnsiString;
+function GetVirtualKey(const TableName, KeyFields: String; KeyValues: Variant; CaseInsensitive: Boolean = False): String;
 begin
   if CaseInsensitive then
     Result := AnsiUpperCase(Format('%s.%s=%s', [TableName, KeyFields, EncodeVariant(KeyValues)]))
   else Result := Format('%s.%s=%s', [AnsiUpperCase(TableName), AnsiUpperCase(KeyFields), EncodeVariant(KeyValues)]);
 end;
 
-function FindVirtualKey(VirtualKeys: TStrings; const Key: AnsiString): Integer;
+function FindVirtualKey(VirtualKeys: TStrings; const Key: String): Integer;
 var
   I: Integer;
 begin
@@ -2935,12 +2944,12 @@ begin
   Result := -1;
 end;
 
-function VirtualKeyExists(VirtualKeys: TStrings; const Key: AnsiString): Boolean;
+function VirtualKeyExists(VirtualKeys: TStrings; const Key: String): Boolean;
 begin
   Result := FindVirtualKey(VirtualKeys, Key) >= 0;
 end;
 
-function GetKeyValues(DataSet: TDataSet; const KeyFields: AnsiString; var OldKeyValues, NewKeyValues: Variant; KeyFieldsList: TList = nil): Boolean;
+function GetKeyValues(DataSet: TDataSet; const KeyFields: String; var OldKeyValues, NewKeyValues: Variant; KeyFieldsList: TList = nil): Boolean;
 var
   J: Integer;
   KeyListWasNil: Boolean;
@@ -3075,7 +3084,7 @@ begin
   end;
 end;
 
-procedure AssignMasterField(const DataSet: TDataSet; const MasterField: AnsiString; Value: Variant);
+procedure AssignMasterField(const DataSet: TDataSet; const MasterField: String; Value: Variant);
 var
   Fld: TField;
 begin
@@ -3125,11 +3134,7 @@ end;
 
 procedure CopyDataSet(Src, Dest: TDataSet);
 var
-  {$IFDEF VER200}
-  B: TBookmark;
-  {$ELSE}
-  B: string;
-  {$ENDIF}
+  B: TDataSetBookmark;
 begin
   Src.DisableControls;
   Dest.DisableControls;
@@ -3165,16 +3170,12 @@ begin
   end;
 end;
 
-procedure CopyDataSetWithKey(Src, Dest: TDataSet; const KeyField: AnsiString);
+procedure CopyDataSetWithKey(Src, Dest: TDataSet; const KeyField: String);
 var
   MaxSrcKeyValue: Variant;
   SrcKeyField: TField;
   DestKeyField: TField;
-  {$IFDEF VER200}
-  B: TBookmark;
-  {$ELSE}
-  B: string;
-  {$ENDIF}
+  B: TDataSetBookmark;
 begin
   B := Src.Bookmark;
   Src.DisableControls;
@@ -3331,7 +3332,7 @@ begin
   end;
 end;
 
-function CreateField(Owner: TDataSet; FieldClass: TFieldClass; const FieldName: AnsiString; DataType: TFieldType = DB.ftUnknown; Size: Integer = 0; Required: Boolean = False): TField;
+function CreateField(Owner: TDataSet; FieldClass: TFieldClass; const FieldName: String; DataType: TFieldType = DB.ftUnknown; Size: Integer = 0; Required: Boolean = False): TField;
 begin
   Result := FieldClass.Create(Owner);
   try
@@ -3350,7 +3351,7 @@ begin
   end;
 end;
 
-function FindDatabase(const DatabaseName: AnsiString): TComponent;
+function FindDatabase(const DatabaseName: String): TComponent;
 var
   I: Integer;
   DB: ISchemaDatabase;
@@ -3367,10 +3368,10 @@ begin
   end;
 end;
 
-function ReverseString(const Str: AnsiString): AnsiString;
+function ReverseString(const Str: String): String;
 var
   I, Cnt: Integer;
-  C: AnsiChar;
+  C: Char;
 begin
   Result := Str;
   Cnt := Length(Str);
@@ -3382,10 +3383,10 @@ begin
   end;
 end;
 
-function ParseFields(const InpStr, Open, Close: AnsiString; OnParseField: TOnParseField; Data: Pointer): AnsiString;
+function ParseFields(const InpStr, Open, Close: String; OnParseField: TOnParseField; Data: Pointer): String;
 var
   OpenPos, ClosePos: Integer;
-  Res: AnsiString;
+  Res: String;
 
   function PosFrom(const SubStr, Str: String; FromPos: Integer): Integer;
   var P: PChar;
@@ -3416,7 +3417,7 @@ begin
   Result := Result + copy(Res, ClosePos, Length(Res));
 end;
 
-procedure GetValues(Collection: TCollection; Values: TStrings; PropName: AnsiString = 'Name'; Append: boolean = False);
+procedure GetValues(Collection: TCollection; Values: TStrings; PropName: String = 'Name'; Append: boolean = False);
 var I: Integer;
 begin
   if not Append then
@@ -3425,7 +3426,7 @@ begin
     Values.AddObject(GetStrProp(Collection.Items[I], PropName), Collection.Items[I]);
 end;
 
-procedure GetValues(List: TList; Values: TStrings; PropName: AnsiString = 'Name'; Append: boolean = False);
+procedure GetValues(List: TList; Values: TStrings; PropName: String = 'Name'; Append: boolean = False);
 var I: Integer;
 begin
   if not Append then
@@ -3434,7 +3435,7 @@ begin
     Values.AddObject(GetStrProp(TObject(List[I]), PropName), List[I]);
 end;
 
-procedure GetDistinctValues(List: TObject; Values: TStrings; PropName: AnsiString = 'Name'); overload;
+procedure GetDistinctValues(List: TObject; Values: TStrings; PropName: String = 'Name'); overload;
 var
   TempList: TStringList;
 begin
@@ -3452,7 +3453,7 @@ begin
   end;
 end;
 
-function IsUnique(CollectionItem: TCollectionItem; const NewValue: AnsiString; const PropName: AnsiString = 'Name'): Boolean;
+function IsUnique(CollectionItem: TCollectionItem; const NewValue: String; const PropName: String = 'Name'): Boolean;
 var I: Integer;
 begin
   Result := True;
@@ -3477,12 +3478,12 @@ begin
     List.Add(FieldDataTypes[I]);
 end;
 
-function IsValidFieldType(const FieldType: AnsiString): Boolean;
+function IsValidFieldType(const FieldType: String): Boolean;
 begin
-  Result := (FieldType <> '') and not (FieldType[1] in ['{', '?', '*']);
+  Result := (FieldType <> '') and not CharInSet(FieldType[1], ['{', '?', '*']);
 end;
 
-function GetFieldTypeByName(const Name: AnsiString): TFieldDataType;
+function GetFieldTypeByName(const Name: String): TFieldDataType;
 begin
   for Result := Low(FieldDataTypes) to High(FieldDataTypes) do
     if AnsiSameText(FieldDataTypes[Result], Name) then exit;
@@ -3514,7 +3515,7 @@ begin
           PropValue := TObject(GetOrdProp(Instance, PropList^[I]));
           if not PropValue.InheritsFrom(TStrings) then continue;
         end;
-        List.Add(Name);
+        List.Add(String(Name));
       end;
   finally
     FreeMem(PropList);
@@ -3563,12 +3564,12 @@ const
    ' do downto else end except exports file finalization finally for function goto '+
    ' if implementation in inherited initialization inline interface is label library mod nil '+
    ' not object of or out packed procedure program property raise record repeat '+
-   ' resourcestring set shl shr AnsiString then threadvar to try type unit until '+
+   ' resourcestring set shl shr String then threadvar to try type unit until '+
    ' uses var while with xor private protected public published automated at on ';
 
 { Helper Routines }
 
-function NameToIdent(const TypePrefix, Name: AnsiString): AnsiString;
+function NameToIdent(const TypePrefix, Name: String): String;
 var
   I: Integer;
 const
@@ -3577,16 +3578,16 @@ const
 begin
   Result := '';
   for I := 1 to Length(Name) do
-    if Name[I] in set_alnum then
+    if CharInSet(Name[I], set_alnum) then
       Result := Result + Name[I];
   Result := TypePrefix + Result;
   if Length(Result) = 0 then
     raise Exception.CreateFmt('Invalid identifier: "%s"', [Name]);
-  if Result[1] in set_digits then
+  if CharInSet(Result[1], set_digits) then
     Result := '_' + Result;
 end;
 
-function AdjustName(const Name: AnsiString): AnsiString;
+function AdjustName(const Name: String): String;
 begin
   if AnsiPos(' ' + AnsiLowerCase(Name) + ' ', DelphiKeyWords) > 0 then
     Result := '_' + Name
@@ -3597,18 +3598,18 @@ procedure GenerateSchemaDeclarations(Schema: TDatabaseSchema; Strings: TStrings)
 var
   I, J: Integer;
   EnumConstName, EnumConstValue,
-  EnumConstDescription, EnumConstShortDescription: AnsiString;
+  EnumConstDescription, EnumConstShortDescription: String;
   Idents: TStringList;
   FieldClass: TFieldClass;
-  UnitName: AnsiString;
+  UnitName: String;
 
-  function EnumPrefix(const Prefix: AnsiString): AnsiString;
+  function EnumPrefix(const Prefix: String): String;
   begin
     Result := Prefix;
     if Result = '' then Result := 'en';
   end;
 
-  function TablePrefix(const Prefix: AnsiString): AnsiString;
+  function TablePrefix(const Prefix: String): String;
   begin
     Result := Prefix;
     if Result = '' then Result := 'T';
@@ -3704,10 +3705,10 @@ begin
   Strings.Add('end.');
 end;
 
-function KeyFieldsRequired(TableDef: TTableDefinition; KeyFields: AnsiString): Boolean;
+function KeyFieldsRequired(TableDef: TTableDefinition; KeyFields: String): Boolean;
 var
   P: Integer;
-  FldName: AnsiString;
+  FldName: String;
   FldDef: TFieldDefinition;
 begin
   // Returns True if all key fields are not null
@@ -3776,9 +3777,9 @@ begin
   Result := CompareVersions(Database.GetVersion, Database.Schema.Version) >= 0;
 end;
 
-procedure ExecuteUpdate(Database: ISchemaDatabase; const SQLScript: AnsiString; Version: TSchemaVersion);
+procedure ExecuteUpdate(Database: ISchemaDatabase; const SQLScript: String; Version: TSchemaVersion);
 var
-  Stmt: AnsiString;
+  Stmt: String;
   Query: TDataSet;
 begin
   Query := Database.CreateQuery('');
@@ -3807,7 +3808,7 @@ var
   MinUpdate, I: Integer;
   Ver: TSchemaVersion;
 
-  procedure DoProgress(const Status: AnsiString; PercentDone: Byte);
+  procedure DoProgress(const Status: String; PercentDone: Byte);
   begin
     if Assigned(OnProgress) then
       OnProgress(Database.Schema, Status, PercentDone, Abort);
@@ -3859,7 +3860,7 @@ begin
 {$ENDIF}
 end;
 
-function FormatName(const Name, Fmt: AnsiString): AnsiString;
+function FormatName(const Name, Fmt: String): String;
 begin
   if AnsiSameText(Fmt, 'd') or (Fmt = '') then
     Result := AnsiQuotedStr(Name, '"')
@@ -3931,7 +3932,7 @@ begin
 end;
 
 function TCompareItem.GetDefaultPropValue(AObj: TObject;
-  const PropName: AnsiString): AnsiString;
+  const PropName: String): String;
 var
   PropInfo: PPropInfo;
 begin
@@ -3945,7 +3946,7 @@ begin
 end;
 
 function TCompareItem.GetPropValue(AObj: TObject;
-  const PropName: AnsiString): AnsiString;
+  const PropName: String): String;
 begin
   if IsPublishedProp(AObj, PropName) then
     Result := VarToStr(TypInfo.GetPropValue(AObj, PropName, True))
@@ -4033,7 +4034,7 @@ begin
 end;
 
 function TCompareSchemaItem.GetPropValue(AObj: TObject;
-  const PropName: AnsiString): AnsiString;
+  const PropName: String): String;
 begin
   Result := TSchemaCollectionItem(AObj).GetPropValue(PropName);
 end;
@@ -4085,7 +4086,7 @@ begin
     Result := inherited GetDisplayName;
 end;
 
-function TSchemaCollectionItem.GetPropValue(const PropName: AnsiString): AnsiString;
+function TSchemaCollectionItem.GetPropValue(const PropName: String): String;
 var
   PropInfo: PPropInfo;
   PropValue: TObject;
@@ -4111,7 +4112,7 @@ begin
 end;
 
 {$IFDEF VER130}
-function AnsiDequotedStr(const S: AnsiString; AQuote: Char): AnsiString;
+function AnsiDequotedStr(const S: String; AQuote: Char): String;
 var
   LText: PChar;
 begin
@@ -4122,7 +4123,7 @@ begin
 end;
 {$ENDIF}
 
-procedure TSchemaCollectionItem.SetPropValue(const PropName, Value: AnsiString);
+procedure TSchemaCollectionItem.SetPropValue(const PropName, Value: String);
 const
   cNoEmptyProp = [tkInteger, tkEnumeration, tkFloat, tkSet, tkVariant, tkArray, tkRecord, tkDynArray];
 var
@@ -4166,9 +4167,9 @@ begin
   // Implement in descendants
 end;
 
-procedure TSchemaCollectionItem.Rename(const Value: AnsiString);
+procedure TSchemaCollectionItem.Rename(const Value: String);
 var
-  NewName, OldName: AnsiString;
+  NewName, OldName: String;
 begin
   if FName <> Value then
   begin
@@ -4238,19 +4239,19 @@ begin
 end;
 
 function TSchemaCollectionItem.PropsEqual(Dest: TCompareSchemaItem;
-  const PropName: AnsiString): Boolean;
+  const PropName: String): Boolean;
 begin
   Result := AnsiSameText(Props.Values[PropName], Dest.DestItem.Props.Values[PropName]);
 end;
 
-function TSchemaCollectionItem.GetSchemaClassName: AnsiString;
+function TSchemaCollectionItem.GetSchemaClassName: String;
 begin
   Result := copy(ClassName, 2, MaxInt);
 end;
 
-function TSchemaCollectionItem.GetAutoName(const Template: AnsiString = ''): AnsiString;
+function TSchemaCollectionItem.GetAutoName(const Template: String = ''): String;
 var
-  S: AnsiString;
+  S: String;
 begin
 {  if Template = '' then
     S := GetSchemaClassName+'_<N>' else
@@ -4307,12 +4308,12 @@ begin
   // Implement in descendants
 end;
 
-procedure TSchemaCollectionItem.ObjectRenamed(const OldName: AnsiString);
+procedure TSchemaCollectionItem.ObjectRenamed(const OldName: String);
 begin
   // Implement in descendants. Update referencing objects.
 end;
 
-procedure TSchemaCollectionItem.ValidateRename(const NewName: AnsiString);
+procedure TSchemaCollectionItem.ValidateRename(const NewName: String);
 begin
   // Do not validate renames in case of schema version 
   if Schema is TDBSchemaVersion then exit;
@@ -4333,17 +4334,17 @@ begin
   end;
 end;
 
-function TSchemaCollectionItem.GetFullName: AnsiString;
+function TSchemaCollectionItem.GetFullName: String;
 begin
   Result := Name;
 end;
 
-function TSchemaCollectionItem.GetDisplayLabel: AnsiString;
+function TSchemaCollectionItem.GetDisplayLabel: String;
 begin
   Result := Name;
 end;
 
-procedure TSchemaCollectionItem.UpdateDefinition(const Value: AnsiString);
+procedure TSchemaCollectionItem.UpdateDefinition(const Value: String);
 begin
   // Implement in descendands. This method may be called to update
   // object definitions after all properties has been assigned.
@@ -4352,12 +4353,12 @@ end;
 
 { TTableCollectionItem }
 {
-function TTableCollectionItem.GetAutoName(const Prefix: AnsiString): AnsiString;
+function TTableCollectionItem.GetAutoName(const Prefix: String): String;
 begin
   Result := inherited GetAutoName(TableName + '_' + Prefix);
 end;
 }
-function TTableCollectionItem.GetFullName: AnsiString;
+function TTableCollectionItem.GetFullName: String;
 begin
   Result := TableName + '.' + Name;
 end;
@@ -4372,12 +4373,12 @@ begin
   Result := TTableDefItemsCollection(Collection).GetTableDef;
 end;
 
-function TTableCollectionItem.GetTableName: AnsiString;
+function TTableCollectionItem.GetTableName: String;
 begin
   Result := GetTableDef.Name;
 end;
 
-procedure TTableCollectionItem.SetTableName(const Value: AnsiString);
+procedure TTableCollectionItem.SetTableName(const Value: String);
 begin
   // Dummy setter
 end;
@@ -4442,7 +4443,7 @@ begin
 end;
 
 function TSchemaItemsCollection.Find(
-  const Name: AnsiString): TSchemaCollectionItem;
+  const Name: String): TSchemaCollectionItem;
 var
   I: Integer;
 begin
@@ -4470,7 +4471,7 @@ begin
   Result := TDatabaseSchema(GetOwner);
 end;
 
-function TSchemaItemsCollection.IndexOf(const AName: AnsiString): Integer;
+function TSchemaItemsCollection.IndexOf(const AName: String): Integer;
 begin
   for Result := 0 to Count - 1 do
     if AnsiSameText(TSchemaCollectionItem(Items[Result]).Name, AName) then Exit;
@@ -4493,10 +4494,10 @@ begin
   Result := TSchemaCollectionItem(inherited Add);
 end;
 
-function TSchemaItemsCollection.GetAutoName(AItem: TSchemaCollectionItem; const Template: AnsiString = '<N>'): AnsiString;
+function TSchemaItemsCollection.GetAutoName(AItem: TSchemaCollectionItem; const Template: String = '<N>'): String;
 var
   Cnt: Integer;
-  S: AnsiString;
+  S: String;
   Temp: TObject;
   CntExist: boolean;
 begin
@@ -4537,7 +4538,7 @@ function TSchemaItemsCollection.LocateItem(
   AnItem: TSchemaCollectionItem; ByName: Boolean = True): TSchemaCollectionItem;
 var
   I: Integer;
-  TempClassName: AnsiString;
+  TempClassName: String;
 begin
   TempClassName := AnItem.GetSchemaClassName;
   for I := 0 to Count - 1 do
@@ -4653,12 +4654,12 @@ begin
   inherited Assign(Source);
 end;
 
-function TDatabaseUpdate.GetVersionLabel: AnsiString;
+function TDatabaseUpdate.GetVersionLabel: String;
 begin
   Result := VersionToStr(FVersion);
 end;
 
-procedure TDatabaseUpdate.SetVersionLabel(const Value: AnsiString);
+procedure TDatabaseUpdate.SetVersionLabel(const Value: String);
 begin
   Version := StrToVersion(Value);
 end;
@@ -4669,7 +4670,7 @@ begin
   Changed(False);
 end;
 
-function TDatabaseUpdate.GetDisplayLabel: AnsiString;
+function TDatabaseUpdate.GetDisplayLabel: String;
 begin
   Result := 'Version update #'+ VersionLabel;
 end;
@@ -4734,9 +4735,9 @@ begin
   FDataType := Value;
 end;
 
-procedure TDomain.SetSQLFieldType(const Value: AnsiString);
+procedure TDomain.SetSQLFieldType(const Value: String);
 var
-  Temp: AnsiString;
+  Temp: String;
 begin
   Temp := ExtractObjectName(Value);
   if FSQLFieldType <> Temp then
@@ -4746,12 +4747,12 @@ begin
   end;
 end;
 
-function TDomain.GetSchemaClassName: AnsiString;
+function TDomain.GetSchemaClassName: String;
 begin
   Result := 'Domain';
 end;
 
-procedure TDomain.ObjectRenamed(const OldName: AnsiString);
+procedure TDomain.ObjectRenamed(const OldName: String);
 var
   I, J: Integer;
 begin
@@ -4798,7 +4799,7 @@ begin
   Result := TDomain(inherited Add);
 end;
 
-function TDomains.Find(const Name: AnsiString): TDomain;
+function TDomains.Find(const Name: String): TDomain;
 begin
   Result := TDomain(inherited Find(Name));
 end;
@@ -4825,7 +4826,7 @@ begin
   end;
 end;
 
-function TSequence.GetSchemaClassName: AnsiString;
+function TSequence.GetSchemaClassName: String;
 begin
   Result := 'Sequence';
 end;
@@ -4837,7 +4838,7 @@ begin
   Result := TSequence(inherited Add);
 end;
 
-function TSequences.Find(const Name: AnsiString): TSequence;
+function TSequences.Find(const Name: String): TSequence;
 begin
   Result := TSequence(inherited Find(Name));
 end;
@@ -4882,7 +4883,7 @@ begin
   FDataType := Value;
 end;
 
-procedure TColumnDef.SetSourceField(const Value: AnsiString);
+procedure TColumnDef.SetSourceField(const Value: String);
 begin
   if FSourceField <> Value then
   begin
@@ -4891,7 +4892,7 @@ begin
   end;
 end;
 
-procedure TColumnDef.SetSourceTable(const Value: AnsiString);
+procedure TColumnDef.SetSourceTable(const Value: String);
 begin
   if FSourceTable <> Value then
   begin
@@ -4921,7 +4922,7 @@ begin
   Dest.PropsEqual := Result;
 end;
 
-function TColumnDef.GetSchemaClassName: AnsiString;
+function TColumnDef.GetSchemaClassName: String;
 begin
   Result := 'Column';
 end;
@@ -4976,7 +4977,7 @@ begin
   Dest.PropsEqual := Result;
 end;
 
-function TViewDefinition.GetSchemaClassName: AnsiString;
+function TViewDefinition.GetSchemaClassName: String;
 begin
   Result := 'View';
 end;
@@ -4986,13 +4987,13 @@ begin
   FDefinition.Assign(Value);
 end;
 
-procedure TViewDefinition.UpdateDefinition(const Value: AnsiString);
+procedure TViewDefinition.UpdateDefinition(const Value: String);
 begin
   if FDefinition.Count > 0 then
     FDefinition.Insert(0, 'CREATE VIEW ' + Schema.FormatName(Name, Value));
 end;
 
-procedure TViewDefinition.SetPropValue(const PropName, Value: AnsiString);
+procedure TViewDefinition.SetPropValue(const PropName, Value: String);
 begin
   if AnsiSameText(PropName, 'AddDefinition') then
     FDefinition.Text := FDefinition.Text + Value
@@ -5011,7 +5012,7 @@ begin
   Result := TViewDefinition(inherited Add);
 end;
 
-function TViewDefinitions.Find(const Name: AnsiString): TViewDefinition;
+function TViewDefinitions.Find(const Name: String): TViewDefinition;
 begin
   Result := TViewDefinition(inherited Find(Name));
 end;
@@ -5060,7 +5061,7 @@ begin
   inherited Destroy;
 end;
 
-function TStoredProcDefinition.GetSchemaClassName: AnsiString;
+function TStoredProcDefinition.GetSchemaClassName: String;
 begin
   Result := 'StoredProc';
 end;
@@ -5071,14 +5072,14 @@ begin
 end;
 
 procedure TStoredProcDefinition.SetPropValue(const PropName,
-  Value: AnsiString);
+  Value: String);
 begin
   if AnsiSameText(PropName, 'AddDefinition') then
     FDefinition.Text := FDefinition.Text + Value
   else inherited;
 end;
 
-procedure TStoredProcDefinition.UpdateDefinition(const Value: AnsiString);
+procedure TStoredProcDefinition.UpdateDefinition(const Value: String);
 begin
   if FDefinition.Count = 0 then exit;
   if IsFunction then
@@ -5094,7 +5095,7 @@ begin
 end;
 
 function TStoredProcDefinitions.Find(
-  const Name: AnsiString): TStoredProcDefinition;
+  const Name: String): TStoredProcDefinition;
 begin
   Result := TStoredProcDefinition(inherited Find(Name));
 end;
@@ -5155,7 +5156,7 @@ begin
       inherited Assign(Source);
       S := TFieldDefinition(Source);
 
-      // FOldName: AnsiString;
+      // FOldName: String;
       // FFieldNo: Integer;
       FRelationName := S.FRelationName;
       FAggregateExpression := S.FAggregateExpression;
@@ -5292,14 +5293,14 @@ begin
   else Attributes := Attributes - [faRequired];
 end;
 
-function TFieldDefinition.GetDisplayLabel: AnsiString;
+function TFieldDefinition.GetDisplayLabel: String;
 begin
   if FDescription <> '' then
     Result := FDescription
   else Result := FName;
 end;
 
-procedure TFieldDefinition.ObjectRenamed(const OldName: AnsiString);
+procedure TFieldDefinition.ObjectRenamed(const OldName: String);
 var
   I, J: Integer;
 begin
@@ -5366,7 +5367,7 @@ begin
   end;
 end;
 
-procedure TFieldDefinition.SetAggregateExpression(const Value: AnsiString);
+procedure TFieldDefinition.SetAggregateExpression(const Value: String);
 begin
   if FAggregateExpression <> Value then
   begin
@@ -5375,7 +5376,7 @@ begin
   end;
 end;
 
-procedure TFieldDefinition.SetRelationName(const Value: AnsiString);
+procedure TFieldDefinition.SetRelationName(const Value: String);
 begin
   if FRelationName <> Value then
   begin
@@ -5384,9 +5385,9 @@ begin
   end;
 end;
 
-function TFieldDefinition.GetDisplayFieldTypeSize: AnsiString;
+function TFieldDefinition.GetDisplayFieldTypeSize: String;
 var
-  Scale, FldSize: AnsiString;
+  Scale, FldSize: String;
 begin
   if Domain <> '' then
     Result := Domain
@@ -5424,10 +5425,10 @@ begin
   end;
 end;
 
-procedure TFieldDefinition.SetSQLFieldType(const Value: AnsiString);
+procedure TFieldDefinition.SetSQLFieldType(const Value: String);
 var
   TestDomain: TDomain;
-  Temp: AnsiString;
+  Temp: String;
 begin
   Temp := ExtractObjectName(Value);
   if Temp <> FSQLFieldType then
@@ -5442,7 +5443,7 @@ begin
   end;
 end;
 
-procedure TFieldDefinition.SetDomain(const Value: AnsiString);
+procedure TFieldDefinition.SetDomain(const Value: String);
 begin
   if FDomain <> Value then
   begin
@@ -5460,7 +5461,7 @@ procedure TFieldDefinition.AssignFromDomain;
 var
   Domain: TDomain;
   I: Integer;
-  SaveDomain, PropValue: AnsiString;
+  SaveDomain, PropValue: String;
 begin
   if FDomain = '' then exit;
   Domain := Schema.Domains.Find(FDomain);
@@ -5481,14 +5482,14 @@ begin
   end;
 end;
 
-function TFieldDefinition.GetSchemaClassName: AnsiString;
+function TFieldDefinition.GetSchemaClassName: String;
 begin
   if IsComputed then
     Result := 'ComputedField' else
     Result := 'Field';
 end;
 
-function TFieldDefinition.IsInheritedProp(const PropName: AnsiString): Boolean;
+function TFieldDefinition.IsInheritedProp(const PropName: String): Boolean;
 var
   DomainDef: TDomain;
 begin
@@ -5505,7 +5506,7 @@ procedure TFieldDefinition.SetIsPrimaryKey(const Value: Boolean);
 var
   PkIdx: TIndexDefinition;
   IdxFld: TIndexField;
-  ConstrName: AnsiString;
+  ConstrName: String;
 begin
   if Value then
   begin
@@ -5557,7 +5558,7 @@ procedure TFieldDefinition.SetIsUnique(const Value: Boolean);
 var
   I: Integer;
   IdxDef: TIndexDefinition;
-  ConstrName: AnsiString;
+  ConstrName: String;
 begin
   if Value <> IsUnique then
   begin
@@ -5582,7 +5583,7 @@ begin
   end;
 end;
 
-function TFieldDefinition.GetPropValue(const PropName: AnsiString): AnsiString;
+function TFieldDefinition.GetPropValue(const PropName: String): String; 
 var
   Idx: Integer;
 begin
@@ -5595,10 +5596,10 @@ begin
     Result := inherited GetPropValue(PropName);
 end;
 
-procedure TFieldDefinition.SetPropValue(const PropName, Value: AnsiString);
+procedure TFieldDefinition.SetPropValue(const PropName, Value: String);
 var
   Relationship: TRelationship;
-  FkFields, ConstrName: AnsiString;
+  FkFields, ConstrName: String;
   PrevField: TFieldDefinition;
 begin
   if AnsiSameText(PropName, 'fk_add') then
@@ -5659,7 +5660,7 @@ begin
   Result := Trim(FComputeAs) <> '';
 end;
 
-procedure TFieldDefinition.SetComputeAs(const Value: AnsiString);
+procedure TFieldDefinition.SetComputeAs(const Value: String);
 begin
   FComputeAs := Value;
   if (FComputeAs <> '') and (FDataType = ftUnknown) then
@@ -5676,7 +5677,7 @@ begin
     FDomain := D.Name;
 end;
 {
-function TFieldDefinition.GetAutoName(const Prefix: AnsiString): AnsiString;
+function TFieldDefinition.GetAutoName(const Prefix: String): String;
 begin
   Result := TSchemaItemsCollection(Collection).GetAutoName(GetSchemaClassName, Prefix);
 end;
@@ -5727,7 +5728,7 @@ begin
   Result := Index + 1;
 end;
 
-function TIndexField.GetSchemaClassName: AnsiString;
+function TIndexField.GetSchemaClassName: String;
 begin
   Result := 'IndexField';
 end;
@@ -5737,7 +5738,7 @@ begin
   // Ignore this value
 end;
 
-procedure TIndexField.ValidateRename(const NewName: AnsiString);
+procedure TIndexField.ValidateRename(const NewName: String);
 begin
   // Any index name accepted
 end;
@@ -5935,12 +5936,12 @@ begin
   end else inherited;
 end;
 
-function TIndexDefinition.HasField(const FieldName: AnsiString): Boolean;
+function TIndexDefinition.HasField(const FieldName: String): Boolean;
 begin
   Result := FIndexFields.Find(FieldName) <> nil;
 end;
 
-function TIndexDefinition.GetFields: AnsiString;
+function TIndexDefinition.GetFields: String;
 var
   I: Integer;
 begin
@@ -5951,7 +5952,7 @@ begin
   if Result <> '' then Delete(Result, 1, 1);
 end;
 
-function TIndexDefinition.GetCaseInsFields: AnsiString;
+function TIndexDefinition.GetCaseInsFields: String;
 var
   I: Integer;
 begin
@@ -5963,7 +5964,7 @@ begin
   if Result <> '' then Delete(Result, 1, 1);
 end;
 
-function TIndexDefinition.GetDescFields: AnsiString;
+function TIndexDefinition.GetDescFields: String;
 var
   I: Integer;
 begin
@@ -5975,7 +5976,7 @@ begin
   if Result <> '' then Delete(Result, 1, 1);
 end;
 
-function TIndexDefinition.GetFieldProps: AnsiString;
+function TIndexDefinition.GetFieldProps: String;
 var
   I: Integer;
 begin
@@ -5986,15 +5987,15 @@ begin
   if Result <> '' then Delete(Result, 1, 2);
 end;
 
-procedure TIndexDefinition.SetFieldProps(const Value: AnsiString);
+procedure TIndexDefinition.SetFieldProps(const Value: String);
 begin
   // Ignore any input there
 end;
 
-procedure TIndexDefinition.SetFields(const Value: AnsiString);
+procedure TIndexDefinition.SetFields(const Value: String);
 var
   I: Integer;
-  FieldName: AnsiString;
+  FieldName: String;
 begin
   FIndexFields.Clear;
   I := 1;
@@ -6006,11 +6007,11 @@ begin
   end;
 end;
 
-procedure TIndexDefinition.SetCaseInsFields(const Value: AnsiString);
+procedure TIndexDefinition.SetCaseInsFields(const Value: String);
 var
   I: Integer;
   Field: TIndexField;
-  FieldName: AnsiString;
+  FieldName: String;
 begin
   for I := 0 to FIndexFields.Count - 1 do
     FIndexFields[I].CaseInsensitive := False;
@@ -6027,11 +6028,11 @@ begin
   end;
 end;
 
-procedure TIndexDefinition.SetDescFields(const Value: AnsiString);
+procedure TIndexDefinition.SetDescFields(const Value: String);
 var
   I: Integer;
   Field: TIndexField;
-  FieldName: AnsiString;
+  FieldName: String;
 begin
   for I := 0 to FIndexFields.Count - 1 do
     FIndexFields[I].Descending := False;
@@ -6060,15 +6061,15 @@ begin
     Result := '<Primary>'; { do not localize }
 end;
 
-procedure TIndexDefinition.ValidateRename(const NewName: AnsiString);
+procedure TIndexDefinition.ValidateRename(const NewName: String);
 begin
   if (NewName <> '') and not IsUnique(Self, NewName) then
     DatabaseErrorFmt(SDuplicateObjectName, ['Index', NewName]);
 end;
 
-function TIndexDefinition.GetDisplayProps: AnsiString;
+function TIndexDefinition.GetDisplayProps: String;
 const
-  StrOptions: array [TIndexOption] of AnsiString = (
+  StrOptions: array [TIndexOption] of String = (
     'Primary', 'Unique', 'Descending', 'Case Insensitive',
     'Expression', 'Non Maintained');
 var
@@ -6083,7 +6084,7 @@ begin
   end;
 end;
 
-function TIndexDefinition.GetSchemaClassName: AnsiString;
+function TIndexDefinition.GetSchemaClassName: String;
 begin
   if ixPrimary in Options then
     Result := 'PrimaryKey'
@@ -6126,7 +6127,7 @@ begin
   else Exclude(FOptions, ixDescending);
 end;
 
-procedure TIndexDefinition.DoAddIndexField(const Value: AnsiString);
+procedure TIndexDefinition.DoAddIndexField(const Value: String);
 begin
   if Value <> '' then
     FIndexFields.Add.Name := Value;
@@ -6143,7 +6144,7 @@ begin
   Result := False;
 end;
 
-function TIndexDefinition.GetDummyStr: AnsiString;
+function TIndexDefinition.GetDummyStr: String;
 begin
   Result := '';
 end;
@@ -6191,7 +6192,7 @@ begin
   end;
 end;
 {
-function TIndexDefinition.GetAutoName(const Prefix: AnsiString): AnsiString;
+function TIndexDefinition.GetAutoName(const Prefix: String): String;
 begin
   if PrimaryKey then
     Result := TSchemaItemsCollection(Collection).GetAutoName('PK_' + TableName, Prefix)
@@ -6211,7 +6212,7 @@ begin
   end;
 end;
 
-procedure TIndexDefinition.SetDisplayFields(const Value: AnsiString);
+procedure TIndexDefinition.SetDisplayFields(const Value: String);
 begin
   // Nothing
 end;
@@ -6224,7 +6225,7 @@ begin
   Result := TIndexDefinition(inherited Add);
 end;
 
-procedure TIndexDefinitions.Add(const Name, Fields: AnsiString; Options: TIndexOptions);
+procedure TIndexDefinitions.Add(const Name, Fields: String; Options: TIndexOptions);
 var
   IndexDef: TIndexDefinition;
 begin
@@ -6237,14 +6238,14 @@ begin
   IndexDef.Options := Options;
 end;
 
-function TIndexDefinitions.FindIndexForFields(const Fields: AnsiString): TIndexDefinition;
+function TIndexDefinitions.FindIndexForFields(const Fields: String): TIndexDefinition;
 begin
   Result := GetIndexForFields(Fields, False);
   if Result = nil then
     DatabaseErrorFmt(SNoIndexForFields, [Fields], TComponent(GetOwner));
 end;
 
-function TIndexDefinitions.GetIndexForFields(const Fields: AnsiString;
+function TIndexDefinitions.GetIndexForFields(const Fields: String;
   CaseInsensitive: Boolean): TIndexDefinition;
 var
   Exact: Boolean;
@@ -6273,7 +6274,7 @@ begin
   Result := nil;
 end;
 
-function TIndexDefinitions.Find(const Name: AnsiString): TIndexDefinition;
+function TIndexDefinitions.Find(const Name: String): TIndexDefinition;
 begin
   Result := TIndexDefinition(inherited Find(Name));
 end;
@@ -6295,7 +6296,7 @@ begin
   Result := TRelationship(inherited Add);
 end;
 
-function TRelationships.AddRelationship(const DetailTable, MasterTable: AnsiString): TRelationship;
+function TRelationships.AddRelationship(const DetailTable, MasterTable: String): TRelationship;
 begin
   Result := Add;
   (*
@@ -6316,7 +6317,7 @@ begin
   end;  
 end;
 
-function TRelationships.Find(const Name: AnsiString): TRelationship;
+function TRelationships.Find(const Name: String): TRelationship;
 begin
   Result := TRelationship(inherited Find(Name));
 end;
@@ -6398,45 +6399,45 @@ begin
   FMasterRecordOptional := Value;
 end;
 
-function TRelationship.GetCondition(const Index: TRelationSide): AnsiString;
+function TRelationship.GetCondition(const Index: TRelationSide): String;
 begin
   Result := FCondition[Index];
 end;
 
-function TRelationship.GetKeyFields(const Index: TRelationSide): AnsiString;
+function TRelationship.GetKeyFields(const Index: TRelationSide): String;
 begin
   Result := FKeyFields[Index];
 end;
 
-function TRelationship.GetRelationName(const Index: TRelationSide): AnsiString;
+function TRelationship.GetRelationName(const Index: TRelationSide): String;
 begin
   Result := FRelationName[Index];
 end;
 
-function TRelationship.GetTableName(const Index: TRelationSide): AnsiString;
+function TRelationship.GetTableName(const Index: TRelationSide): String;
 begin
   Result := FTableName[Index];
 end;
 
 function TRelationship.GetRelDescription(
-  const Index: TRelationSide): AnsiString;
+  const Index: TRelationSide): String;
 begin
   Result := FRelDescription[Index];
 end;
 
 procedure TRelationship.SetCondition(const Index: TRelationSide;
-  const Value: AnsiString);
+  const Value: String);
 begin
   FCondition[Index] := Value;
 end;
 
 procedure TRelationship.SetKeyFields(const Index: TRelationSide;
-  const Value: AnsiString);
+  const Value: String);
 begin
   FKeyFields[Index] := Value;
 end;
 
-procedure TRelationship.SetRelationName(const Index: TRelationSide; const Value: AnsiString);
+procedure TRelationship.SetRelationName(const Index: TRelationSide; const Value: String);
 begin
   FRelationName[Index] := Value;
   if Assigned(FRelation[Index]) then
@@ -6463,9 +6464,9 @@ begin
 end;
 
 procedure TRelationship.SetTableName(const Index: TRelationSide;
-  const Value: AnsiString);
+  const Value: String);
 var
-  NewName: AnsiString;
+  NewName: String;
 begin
   NewName := Trim(Value);
   if FTableName[Index] <> NewName then
@@ -6491,7 +6492,7 @@ begin
 end;
 
 procedure TRelationship.SetRelDescription(const Index: TRelationSide;
-  const Value: AnsiString);
+  const Value: String);
 begin
   FRelDescription[Index] := Value;
 end;
@@ -6509,7 +6510,7 @@ procedure TRelationship.SwapSides;
 
   procedure SwapDualString(var A: TDualStringProp);
   var
-    S: AnsiString;
+    S: String;
   begin
     S := A[sideMaster];
     A[sideMaster] := A[sideDetail];
@@ -6537,7 +6538,7 @@ begin
     FRelation[sideMaster] := nil;
 end;
 
-function ConcatWithDelimiter(const A, B, Delimiter: AnsiString): AnsiString;
+function ConcatWithDelimiter(const A, B, Delimiter: String): String;
 begin
   if A = '' then
     Result := B
@@ -6604,7 +6605,7 @@ begin
   Dest.PropsEqual := Result;
 end;
 
-function TRelationship.GetSchemaClassName: AnsiString;
+function TRelationship.GetSchemaClassName: String;
 begin
   Result := 'Relationship';
 end;
@@ -6620,7 +6621,7 @@ begin
   UpdateRelations;
 end;
 
-procedure TRelationship.SetPropValue(const PropName, Value: AnsiString);
+procedure TRelationship.SetPropValue(const PropName, Value: String);
 begin
   if AnsiSameText(PropName, 'AddDetailKeyField') then
   begin
@@ -6687,7 +6688,7 @@ begin
   Result := TFieldDefinition(inherited Add);
 end;
 
-procedure TFieldDefinitions.Add(const Name: AnsiString; DataType: TFieldDataType;
+procedure TFieldDefinitions.Add(const Name: String; DataType: TFieldDataType;
   Size: Integer; Required: Boolean);
 var
   FieldDef: TFieldDefinition;
@@ -6713,7 +6714,7 @@ begin
   end;
 end;
 
-function TFieldDefinitions.Find(const Name: AnsiString): TFieldDefinition;
+function TFieldDefinitions.Find(const Name: String): TFieldDefinition;
 begin
   Result := TFieldDefinition(inherited Find(Name));
 end;
@@ -6769,43 +6770,43 @@ begin
   else Result := [];
 end;
 
-function TRelation.GetDeleteErrorMessage: AnsiString;
+function TRelation.GetDeleteErrorMessage: String;
 begin
   Result := Relationship.DeleteErrorMessage;
 end;
 
-function TRelation.GetUpdateErrorMessage: AnsiString;
+function TRelation.GetUpdateErrorMessage: String;
 begin
   Result := Relationship.UpdateErrorMessage;
 end;
 
-function TRelation.GetRequireRecordErrorMessage: AnsiString;
+function TRelation.GetRequireRecordErrorMessage: String;
 begin
   Result := Relationship.RequireRecordErrorMessage;
 end;
 
-function TRelation.EffectiveDeleteErrorMessage: AnsiString;
+function TRelation.EffectiveDeleteErrorMessage: String;
 begin
   Result := Relationship.DeleteErrorMessage;
   if (Result = '') and (EffectiveDeleteAction = raError) then
     Result := Format(SDefaultDeleteErrorMessage, [TableDef.TableName, ForeignTable]);
 end;
 
-function TRelation.EffectiveUpdateErrorMessage: AnsiString;
+function TRelation.EffectiveUpdateErrorMessage: String;
 begin
   Result := Relationship.UpdateErrorMessage;
   if (Result = '') and (EffectiveUpdateAction = raError) then
     Result := Format(SDefaultUpdateErrorMessage, [KeyFields, TableDef.TableName, ForeignTable]);
 end;
 
-function TRelation.EffectiveRequireRecordErrorMessage: AnsiString;
+function TRelation.EffectiveRequireRecordErrorMessage: String;
 begin
   Result := Relationship.RequireRecordErrorMessage;
   if (Result = '') and RequireOneRecord then
     Result := Format(SDefaultRequireRecordErrorMessage, [KeyFields, TableDef.TableName, ForeignTable]);
 end;
 
-procedure TRelation.ObjectRenamed(const OldName: AnsiString);
+procedure TRelation.ObjectRenamed(const OldName: String);
 begin
   // if Assigned(FRelationship) then
   with Relationship do
@@ -6818,31 +6819,31 @@ begin
     CaseInsensitive := Value;
 end;
 
-procedure TRelation.SetCondition(const Value: AnsiString);
+procedure TRelation.SetCondition(const Value: String);
 begin
   with Relationship do
     SetCondition(Side(Self), Value);
 end;
 
-procedure TRelation.SetForeignCondition(const Value: AnsiString);
+procedure TRelation.SetForeignCondition(const Value: String);
 begin
   with Relationship do
     SetCondition(OppositeSide[Side(Self)], Value);
 end;
 
-procedure TRelation.SetForeignKeyFields(const Value: AnsiString);
+procedure TRelation.SetForeignKeyFields(const Value: String);
 begin
   with Relationship do
     SetKeyFields(OppositeSide[Side(Self)], Value);
 end;
 
-procedure TRelation.SetForeignTable(const Value: AnsiString);
+procedure TRelation.SetForeignTable(const Value: String);
 begin
   with Relationship do
     SetTableName(OppositeSide[Side(Self)], Value);
 end;
 
-procedure TRelation.SetKeyFields(const Value: AnsiString);
+procedure TRelation.SetKeyFields(const Value: String);
 begin
   with Relationship do
     SetKeyFields(Side(Self), Value);
@@ -6942,7 +6943,7 @@ begin
   Dest.PropsEqual := Result;
 end;
 
-function TRelation.GetSchemaClassName: AnsiString;
+function TRelation.GetSchemaClassName: String;
 begin
   with Relationship do
   if EnforceForeignKey then
@@ -6964,14 +6965,14 @@ begin
   *)
 end;
 
-procedure TRelation.DoAddForeignKeyField(const Value: AnsiString);
+procedure TRelation.DoAddForeignKeyField(const Value: String);
 begin
   if Value = '' then exit;
   if ForeignKeyFields <> '' then ForeignKeyFields := ForeignKeyFields + ';';
   ForeignKeyFields := ForeignKeyFields + Value;
 end;
 
-procedure TRelation.DoAddKeyField(const Value: AnsiString);
+procedure TRelation.DoAddKeyField(const Value: String);
 begin
   if Value = '' then exit;
   if KeyFields <> '' then KeyFields := KeyFields + ';';
@@ -7050,7 +7051,7 @@ begin
     raise Exception.CreateFmt(SInvalidRelation, [TableDef.Name, Name]);
 end;
 
-function TRelation.GetDummyStr: AnsiString;
+function TRelation.GetDummyStr: String;
 begin
   Result := '';
 end;
@@ -7177,7 +7178,7 @@ begin
   Result := Relationship.CaseInsensitive;
 end;
 
-function TRelation.GetCondition: AnsiString;
+function TRelation.GetCondition: String;
 begin
   with Relationship do
     Result := GetCondition(Side(Self));
@@ -7188,31 +7189,31 @@ begin
   Result := Relationship.DeleteAction;
 end;
 
-function TRelation.GetForeignCondition: AnsiString;
+function TRelation.GetForeignCondition: String;
 begin
   with Relationship do
     Result := GetCondition(OppositeSide[Side(Self)]);
 end;
 
-function TRelation.GetForeignKeyFields: AnsiString;
+function TRelation.GetForeignKeyFields: String;
 begin
   with Relationship do
     Result := GetKeyFields(OppositeSide[Side(Self)]);
 end;
 
-function TRelation.GetForeignTable: AnsiString;
+function TRelation.GetForeignTable: String;
 begin
   with Relationship do
     Result := GetTableName(OppositeSide[Side(Self)]);
 end;
 
-function TRelation.GetKeyFields: AnsiString;
+function TRelation.GetKeyFields: String;
 begin
   with Relationship do
     Result := GetKeyFields(Side(Self));
 end;
 
-function TRelation.GetPeerRelationName: AnsiString;
+function TRelation.GetPeerRelationName: String;
 begin
   with Relationship do
     Result := GetRelationName(OppositeSide[Side(Self)]);
@@ -7254,34 +7255,34 @@ begin
   Result := Relationship.UpdateAction;
 end;
 
-procedure TRelation.SetDeleteErrorMessage(const Value: AnsiString);
+procedure TRelation.SetDeleteErrorMessage(const Value: String);
 begin
   Relationship.DeleteErrorMessage := Value;
 end;
 
-procedure TRelation.SetPeerRelationName(const Value: AnsiString);
+procedure TRelation.SetPeerRelationName(const Value: String);
 begin
   with Relationship do
     SetRelationName(OppositeSide[Side(Self)], Value);
 end;
 
-procedure TRelation.SetRequireRecordErrorMessage(const Value: AnsiString);
+procedure TRelation.SetRequireRecordErrorMessage(const Value: String);
 begin
   Relationship.RequireRecordErrorMessage := Value;
 end;
 
-procedure TRelation.SetUpdateErrorMessage(const Value: AnsiString);
+procedure TRelation.SetUpdateErrorMessage(const Value: String);
 begin
   Relationship.UpdateErrorMessage := Value;
 end;
 
-function TRelation.GetDescription: AnsiString;
+function TRelation.GetDescription: String;
 begin
   with Relationship do
     Result := GetRelDescription(Side(Self));
 end;
 
-procedure TRelation.SetDescription(const Value: AnsiString);
+procedure TRelation.SetDescription(const Value: String);
 begin
   with Relationship do
     SetRelDescription(Side(Self), Value);
@@ -7297,12 +7298,12 @@ begin
   Result := Relationship.ItemID;
 end;
 
-function TRelation.GetRelationshipName: AnsiString;
+function TRelation.GetRelationshipName: String;
 begin
   Result := Relationship.Name;
 end;
 
-procedure TRelation.SetRelationshipName(const Value: AnsiString);
+procedure TRelation.SetRelationshipName(const Value: String);
 begin
   Relationship.Name := Value;
 end;
@@ -7329,7 +7330,7 @@ begin
   Result := Relationship.Side(Self);
 end;
 {
-function TRelation.GetAutoName(const Prefix: AnsiString): AnsiString;
+function TRelation.GetAutoName(const Prefix: String): String;
 begin
   Result := TSchemaItemsCollection(Collection).GetAutoName(GetSchemaClassName, Prefix);
 end;
@@ -7353,7 +7354,7 @@ begin
   Result := TRelation(inherited Add);
 end;
 
-function TRelations.Find(const Name: AnsiString): TRelation;
+function TRelations.Find(const Name: String): TRelation;
 begin
   Result := TRelation(inherited Find(Name));
 end;
@@ -7384,7 +7385,7 @@ begin
   Dest.PropsEqual := Result;
 end;
 
-function TTableConstraint.GetSchemaClassName: AnsiString;
+function TTableConstraint.GetSchemaClassName: String;
 begin
   Result := 'Constraint';
 end;
@@ -7396,7 +7397,7 @@ begin
   Result := TTableConstraint(inherited Add);
 end;
 
-function TTableConstraints.Find(const Name: AnsiString): TTableConstraint;
+function TTableConstraints.Find(const Name: String): TTableConstraint;
 begin
   Result := TTableConstraint(inherited Find(Name));
 end;
@@ -7451,7 +7452,7 @@ begin
   Result := FUpdateKeys;
 end;
 
-procedure TAggregateLinkData.AddKey(const KeyValue: AnsiString);
+procedure TAggregateLinkData.AddKey(const KeyValue: String);
 begin
   if FUpdateKeys = nil then
   begin
@@ -7527,7 +7528,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TTableDefinition.ObjectRenamed(const OldName: AnsiString);
+procedure TTableDefinition.ObjectRenamed(const OldName: String);
 var
   I: Integer;
 begin
@@ -7561,16 +7562,16 @@ begin
     end;
 end;
 
-function TTableDefinition.PartOfIndex(const Fields: AnsiString; CaseInsensitive: Boolean): Boolean;
+function TTableDefinition.PartOfIndex(const Fields: String; CaseInsensitive: Boolean): Boolean;
 begin
   Result := IndexDefs.GetIndexForFields(Fields, CaseInsensitive) <> nil;
 end;
 
-function TTableDefinition.IsUniqueKey(const Fields: AnsiString; CaseInsensitive: Boolean): Boolean;
+function TTableDefinition.IsUniqueKey(const Fields: String; CaseInsensitive: Boolean): Boolean;
 var
   PK: TIndexDefinition;
   Idx, I: Integer;
-  FieldName: AnsiString;
+  FieldName: String;
 begin
   Result := False;
   // Fields contains all fields, comprising one of unique indexes
@@ -7595,7 +7596,7 @@ begin
   end;
 end;
 
-procedure TTableDefinition.GetFieldList(List: TList; const FieldNames: AnsiString);
+procedure TTableDefinition.GetFieldList(List: TList; const FieldNames: String);
 var
   Pos: Integer;
   Field: TFieldDefinition;
@@ -7608,10 +7609,10 @@ begin
   end;
 end;
 
-procedure TTableDefinition.GetFieldList(List: TStrings; const FieldNames: AnsiString);
+procedure TTableDefinition.GetFieldList(List: TStrings; const FieldNames: String);
 var
   Pos: Integer;
-  FieldName: AnsiString;
+  FieldName: String;
   Field: TFieldDefinition;
 begin
   Pos := 1;
@@ -7682,14 +7683,14 @@ begin
   FAggregateLinks.Clear;
 end;
 
-function TTableDefinition.GetObjectType: AnsiString;
+function TTableDefinition.GetObjectType: String;
 begin
   Result := FObjectType;
   if Result = '' then
     Result := FName;
 end;
 
-procedure TTableDefinition.SetObjectType(const Value: AnsiString);
+procedure TTableDefinition.SetObjectType(const Value: String);
 begin
   if Value <> FObjectType then
   begin
@@ -7699,7 +7700,7 @@ begin
   end;
 end;
 
-procedure TTableDefinition.CheckObjectTypeUnique(const NewValue: AnsiString);
+procedure TTableDefinition.CheckObjectTypeUnique(const NewValue: String);
 var I: Integer;
 begin
   if NewValue = '' then exit;
@@ -7714,7 +7715,7 @@ begin
   Result := FObjectType <> '';
 end;
 
-procedure TTableDefinition.SetPropValue(const PropName, Value: AnsiString);
+procedure TTableDefinition.SetPropValue(const PropName, Value: String);
 begin
   if AnsiSameText(PropName, 'AddDefinition') then
     FDefinition.Text := FDefinition.Text + Value else
@@ -7821,7 +7822,7 @@ begin
   end;
 end;
 
-function TTableDefinition.GetSchemaClassName: AnsiString;
+function TTableDefinition.GetSchemaClassName: String;
 begin
   if IsView then
     Result := 'View' else
@@ -7848,7 +7849,7 @@ begin
   Result := Triggers.Count > 0;
 end;
 
-function TTableDefinition.GetPrimaryKeyFields: AnsiString;
+function TTableDefinition.GetPrimaryKeyFields: String;
 var
   PK: TIndexDefinition;
 begin
@@ -7869,7 +7870,7 @@ begin
 end;
 
 function TTableDefinition.FindConstraint(
-  const Name: AnsiString): TTableCollectionItem;
+  const Name: String): TTableCollectionItem;
 begin
   Result := IndexDefs.Find(Name);
   if (Result <> nil) and (ixPrimary in TIndexDefinition(Result).Options) then exit;
@@ -7916,7 +7917,7 @@ begin
   FDefinition.Assign(Value);
 end;
 
-procedure TTableDefinition.UpdateDefinition(const Value: AnsiString = '');
+procedure TTableDefinition.UpdateDefinition(const Value: String = '');
 begin
   if IsView and (FDefinition.Count > 0) then
     FDefinition.Insert(0, 'CREATE VIEW ' + Schema.FormatName(Name, Value));
@@ -7942,7 +7943,7 @@ begin
   inherited SetItem(Index, Value);
 end;
 
-function TTableDefinitions.Find(const Name: AnsiString): TTableDefinition;
+function TTableDefinitions.Find(const Name: String): TTableDefinition;
 begin
   Result := TTableDefinition(inherited Find(Name));
 end;
@@ -8003,7 +8004,7 @@ begin
   Result := FItems;
 end;
 
-procedure TEnumeration.ObjectRenamed(const OldName: AnsiString);
+procedure TEnumeration.ObjectRenamed(const OldName: String);
 var
   I, J: Integer;
 begin
@@ -8017,7 +8018,7 @@ begin
         Enumeration := Self.Name;
 end;
 
-function TEnumeration.GetDisplayLabel: AnsiString;
+function TEnumeration.GetDisplayLabel: String;
 begin
   Result := GetDisplayName;
 end;
@@ -8049,10 +8050,10 @@ begin
   Dest.PropsEqual := Result;
 end;
 
-function TEnumeration.GetDelphiDecl: AnsiString;
+function TEnumeration.GetDelphiDecl: String;
 var
   I: Integer;
-  EnumConstName, EnumConstValue, EnumConstDescription: AnsiString;
+  EnumConstName, EnumConstValue, EnumConstDescription: String;
 begin
   Result := '';
   for I := 0 to Items.Count - 1 do
@@ -8076,7 +8077,7 @@ begin
   Result := TEnumeration(inherited GetItem(Index));
 end;
 
-function TEnumerations.Find(const Name: AnsiString): TEnumeration;
+function TEnumerations.Find(const Name: String): TEnumeration;
 begin
   Result := TEnumeration(inherited Find(Name));
 end;
@@ -8122,17 +8123,17 @@ begin
   Result := TableName + '.' + FName;
 end;
 
-function TTriggerDefinition.GetTableName: AnsiString;
+function TTriggerDefinition.GetTableName: String;
 begin
   Result := TableDef.TableName;
 end;
 
-function TTriggerDefinition.GetSchemaClassName: AnsiString;
+function TTriggerDefinition.GetSchemaClassName: String;
 begin
   Result := 'Trigger';
 end;
 
-procedure TTriggerDefinition.SetPropValue(const PropName, Value: AnsiString);
+procedure TTriggerDefinition.SetPropValue(const PropName, Value: String);
 begin
   if AnsiSameText(PropName, 'AddDefinition') then
     FDefinition := FDefinition + #13#10 + Value
@@ -8151,7 +8152,7 @@ begin
     Exclude(FTriggerWhen, Idx);
 end;
 
-procedure TTriggerDefinition.UpdateDefinition(const Value: AnsiString = '');
+procedure TTriggerDefinition.UpdateDefinition(const Value: String = '');
 
   function ClientSide: Boolean;
   begin
@@ -8190,7 +8191,7 @@ begin
   Result := TModuleDefinition(inherited Add);
 end;
 
-function TModuleDefinitions.Find(const Name: AnsiString): TModuleDefinition;
+function TModuleDefinitions.Find(const Name: String): TModuleDefinition;
 begin
   Result := TModuleDefinition(inherited Find(Name));
 end;
@@ -8209,7 +8210,7 @@ end;
 
 { TModuleDefinition }
 
-function TModuleDefinition.GetSchemaClassName: AnsiString;
+function TModuleDefinition.GetSchemaClassName: String;
 begin
   Result := 'Module';
 end;
@@ -8237,14 +8238,14 @@ begin
   Dest.PropsEqual := Result;
 end;
 
-function TCustomObject.GetSchemaClassName: AnsiString;
+function TCustomObject.GetSchemaClassName: String;
 begin
   Result := FSchemaClassName;
   if Result = '' then
     Result := 'Custom Object';
 end;
 
-procedure TCustomObject.SetSchemaClassName(const Value: AnsiString);
+procedure TCustomObject.SetSchemaClassName(const Value: String);
 begin
   FSchemaClassName := Value;
   // validate rename +++
@@ -8252,13 +8253,13 @@ end;
 
 { TCustomObjects }
 
-function TCustomObjects.Add(const ASchemaClassName: AnsiString = ''): TCustomObject;
+function TCustomObjects.Add(const ASchemaClassName: String = ''): TCustomObject;
 begin
   Result := TCustomObject(inherited Add);
   Result.FSchemaClassName := ASchemaClassName;
 end;
 
-function TCustomObjects.Find(const Name: AnsiString): TCustomObject;
+function TCustomObjects.Find(const Name: String): TCustomObject;
 begin
   Result := TCustomObject(inherited Find(Name));
 end;
@@ -8293,16 +8294,16 @@ type
     FCustomFieldProps: TStrings;
     FDefaultValues: TStrings;
 
-    FTargetDB: AnsiString;
-    FSchemaName: AnsiString;
-    FSchemaID: AnsiString;
+    FTargetDB: String;
+    FSchemaName: String;
+    FSchemaID: String;
     FVersion: TSchemaVersion;
-    FDescription: AnsiString;
-    FCompanyName: AnsiString;
-    FLegalCopyright: AnsiString;
-    FAuthor: AnsiString;
+    FDescription: String;
+    FCompanyName: String;
+    FLegalCopyright: String;
+    FAuthor: String;
     FEncloseIdentifiersInQuotes: Boolean;
-    FSysTable: AnsiString;
+    FSysTable: String;
 
     procedure SetCustomObjects(const Value: TCustomObjects);
     procedure SetDefaultValues(const Value: TStrings);
@@ -8319,8 +8320,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
   published
-    property TargetDB: AnsiString read FTargetDB write FTargetDB;
-    property SchemaID: AnsiString read FSchemaID write FSchemaID;
+    property TargetDB: String read FTargetDB write FTargetDB;
+    property SchemaID: String read FSchemaID write FSchemaID;
     property Domains: TDomains read FDomains write SetDomains;
     property Sequences: TSequences read FSequences write SetSequences;
     property ViewDefs: TViewDefinitions read FViewDefs write SetViewDefs;
@@ -8334,13 +8335,13 @@ type
     property CustomFieldProps: TStrings read FCustomFieldProps write SetCustomFieldProps;
     property DefaultValues: TStrings read FDefaultValues write SetDefaultValues;
 
-    property SchemaName: AnsiString read FSchemaName write FSchemaName;
-    property Description: AnsiString read FDescription write FDescription;
-    property Author: AnsiString read FAuthor write FAuthor;
-    property CompanyName: AnsiString read FCompanyName write FCompanyName;
-    property LegalCopyright: AnsiString read FLegalCopyright write FLegalCopyright;
+    property SchemaName: String read FSchemaName write FSchemaName;
+    property Description: String read FDescription write FDescription;
+    property Author: String read FAuthor write FAuthor;
+    property CompanyName: String read FCompanyName write FCompanyName;
+    property LegalCopyright: String read FLegalCopyright write FLegalCopyright;
     property EncloseIdentifiersInQuotes: Boolean read FEncloseIdentifiersInQuotes write FEncloseIdentifiersInQuotes default True;
-    property SystemTableName: AnsiString read FSysTable write FSysTable;
+    property SystemTableName: String read FSysTable write FSysTable;
 
     { These properties are deprecated and obsolete. Left for backward compatibility only. }
     property MinorVersion: SmallInt read FVersion.Minor write FVersion.Minor;
@@ -8731,14 +8732,14 @@ begin
   end;
 end;
 
-procedure TDatabaseSchema.LoadFromFile(const FileName: AnsiString);
+procedure TDatabaseSchema.LoadFromFile(const FileName: String);
 begin
   if AnsiSameText(ExtractFileExt(FileName), '.dsd') then
     LoadFromDSDFile(FileName)
   else LoadFromDBSFile(FileName);
 end;
 
-procedure TDatabaseSchema.LoadFromDBSFile(const FileName: AnsiString);
+procedure TDatabaseSchema.LoadFromDBSFile(const FileName: String);
 var
   F: TFileStream;
 begin
@@ -8754,7 +8755,7 @@ type
   TDiagram = class (TComponent)
   public
     procedure DoOnReadError(Reader: TReader; const Message: String; var Handled: Boolean);
-    procedure ReadFromResFile(const FileName: AnsiString);
+    procedure ReadFromResFile(const FileName: String);
   end;
 
 procedure TDiagram.DoOnReadError(Reader: TReader; const Message: String;
@@ -8763,7 +8764,7 @@ begin
   Handled := True;
 end;
 
-procedure TDiagram.ReadFromResFile(const FileName: AnsiString);
+procedure TDiagram.ReadFromResFile(const FileName: String);
 var
   Stream: TFileStream;
   Reader: TReader;
@@ -8783,7 +8784,7 @@ begin
   end;
 end;
 
-procedure TDatabaseSchema.LoadFromDSDFile(const FileName: AnsiString);
+procedure TDatabaseSchema.LoadFromDSDFile(const FileName: String);
 const
   STORED_DOCUMENT_NAME = 'StoredDocument';
 var
@@ -8802,7 +8803,7 @@ begin
   end;
 end;
 
-procedure TDatabaseSchema.LoadFromStr(Value: AnsiString);
+procedure TDatabaseSchema.LoadFromStr(Value: String);
 var
   Stream: TMemoryStream;
 begin
@@ -8816,7 +8817,7 @@ begin
   end;
 end;
 
-function TDatabaseSchema.SaveToStr: AnsiString;
+function TDatabaseSchema.SaveToStr: String;
 var
   Stream: TMemoryStream;
 begin
@@ -8831,7 +8832,7 @@ begin
   end;
 end;
 
-procedure TDatabaseSchema.SaveToFile(const FileName: AnsiString);
+procedure TDatabaseSchema.SaveToFile(const FileName: String);
 var
   F: TFileStream;
 begin
@@ -8843,12 +8844,12 @@ begin
   end;
 end;
 
-function TDatabaseSchema.GetVersionLabel: AnsiString;
+function TDatabaseSchema.GetVersionLabel: String;
 begin
   Result := VersionToStr(FVersion);
 end;
 
-procedure TDatabaseSchema.SetVersionLabel(const Value: AnsiString);
+procedure TDatabaseSchema.SetVersionLabel(const Value: String);
 begin
   // Ignore this...
 end;
@@ -8869,9 +8870,9 @@ begin
 end;
 
 function TDatabaseSchema.GetTableDef(Table: TDataSet;
-  const TableName: AnsiString): TTableDefinition;
+  const TableName: String): TTableDefinition;
 var
-  TempTableName: AnsiString;
+  TempTableName: String;
   Idx: Integer;
 begin
   Result := nil;
@@ -8892,12 +8893,12 @@ begin
 end;
 
 function TDatabaseSchema.GetTableDef(
-  const TableName: AnsiString): TTableDefinition;
+  const TableName: String): TTableDefinition;
 begin
   Result := GetTableDef(nil, TableName);
 end;
 
-function TDatabaseSchema.GetObjectTable(const ObjectType: AnsiString): TTableDefinition;
+function TDatabaseSchema.GetObjectTable(const ObjectType: String): TTableDefinition;
 var
   I: Integer;
 begin
@@ -9062,7 +9063,7 @@ begin
       FTableDefs[I].FieldDefs[J].AssignFromDomain;
 end;
 
-function TDatabaseSchema.TopLevelUnique(Item: TSchemaCollectionItem; const NewName: AnsiString): Boolean;
+function TDatabaseSchema.TopLevelUnique(Item: TSchemaCollectionItem; const NewName: String): Boolean;
 
   function UniqueInCollection(Collection: TSchemaItemsCollection): Boolean;
   var
@@ -9113,7 +9114,7 @@ begin
   end;
 end;
 
-function TDatabaseSchema.GetSchemaID: AnsiString;
+function TDatabaseSchema.GetSchemaID: String;
 var
   Guid: TGUID;
 begin
@@ -9251,7 +9252,7 @@ begin
 end;
 
 function TDatabaseSchema.FindIndexGlobal(
-  const IndexName: AnsiString): TIndexDefinition;
+  const IndexName: String): TIndexDefinition;
 var
   I: Integer;
 begin
@@ -9353,7 +9354,7 @@ begin
   FReadLibVersion := dbSchemaLibVersion;
 end;
 
-procedure TDatabaseSchema.SetDSDFileName(const Value: AnsiString);
+procedure TDatabaseSchema.SetDSDFileName(const Value: String);
 begin
   if FDSDFileName <> Value then
   begin
@@ -9421,7 +9422,7 @@ begin
 end;
 
 procedure TDatabaseSchema.DoSQLFieldTypeChanged(
-  Item: TSchemaCollectionItem; const Value: AnsiString);
+  Item: TSchemaCollectionItem; const Value: String);
 begin
   if not ((csLoading in ComponentState) or IsUpdating) then
   begin
@@ -9430,7 +9431,7 @@ begin
   end;
 end;
 
-function TDatabaseSchema.FormatName(const Name, Fmt: AnsiString): AnsiString;
+function TDatabaseSchema.FormatName(const Name, Fmt: String): String;
 begin
   if EncloseIdentifiersInQuotes then
     Result := dbSchema.FormatName(Name, Fmt)
@@ -9726,7 +9727,7 @@ end;
 procedure TSchemaVersionHistory.AddVersion(NewVersion, Difference: TDBSchemaVersion);
 var
   Counter: Integer;
-  Temp: AnsiString;
+  Temp: String;
 begin
   if VersionCount > 0 then
   begin
@@ -9906,17 +9907,19 @@ procedure TDataSetReference.UpdateField(PropInfo: PPropInfo; Data: Pointer);
 var
   TypeData: PTypeData;
   Fld: TField;
+  PropName: String;
 begin
   TypeData := GetTypeData(PropInfo^.PropType^);
   if (TypeData <> nil) and TypeData^.ClassType.InheritsFrom(TField) then
   begin
     if (FDataSet <> nil) and (FDataSet.FieldCount > 0) then
     begin
-      Fld := FDataSet.FindField(PropInfo^.Name);
-      if (Fld = nil) and (PropInfo^.Name[1] = '_') then
-        Fld := FDataSet.FindField(copy(PropInfo^.Name, 2, MaxInt));
+      PropName := String(PropInfo^.Name);
+      Fld := FDataSet.FindField(PropName);
+      if (Fld = nil) and (PropName[1] = '_') then
+        Fld := FDataSet.FindField(copy(PropName, 2, MaxInt));
       if Fld = nil then
-        DatabaseErrorFmt(SDataSetRefFieldNotFound, [PropInfo^.Name, FDataSet.Name]);
+        DatabaseErrorFmt(SDataSetRefFieldNotFound, [PropName, FDataSet.Name]);
 
       SetObjectProp(Self, PropInfo, Fld)
     end else
@@ -9931,7 +9934,7 @@ begin
   TypeData := GetTypeData(PropInfo^.PropType^);
   if (TypeData <> nil) and TypeData^.ClassType.InheritsFrom(TField) then
     SetObjectProp(Self, PropInfo,
-      CreateField(FDataSet, TFieldClass(TypeData^.ClassType), PropInfo^.Name));
+      CreateField(FDataSet, TFieldClass(TypeData^.ClassType), String(PropInfo^.Name)));
 end;
 
 procedure TDataSetReference.Refresh;
@@ -9993,9 +9996,9 @@ end;
 
 function TActiveTransaction.WriteChange(TableDef: TTableDefinition;
   ObjectKey: Variant; AChangeType: TChangeType; SnapshotID: Integer = -1;
-  const UserName: AnsiString = ''; ChangeStatus: TChangeStatus = csActive): Boolean;
+  const UserName: String = ''; ChangeStatus: TChangeStatus = csActive): Boolean;
 var
-  StrKey, StrObjType: AnsiString;
+  StrKey, StrObjType: String;
   I: Integer;
   State: TObjectState;
 begin

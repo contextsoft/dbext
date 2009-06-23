@@ -1,9 +1,9 @@
 object frmVersionDemo: TfrmVersionDemo
   Left = 316
   Top = 286
-  Width = 612
-  Height = 466
   Caption = 'Schema Versions Demo'
+  ClientHeight = 432
+  ClientWidth = 604
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -132,7 +132,7 @@ object frmVersionDemo: TfrmVersionDemo
           'RY KEY (CustomerID)'#13#10');'#13#10#13#10'CREATE INDEX ByName ON Customers(Last' +
           'Name,FirstName);'#13#10
         Iterate = False
-        VersionLabel = '1.1'
+        VersionLabel = '1.01'
         ItemID = 17
       end
       item
@@ -142,11 +142,12 @@ object frmVersionDemo: TfrmVersionDemo
           'LTER TABLE Customers '#13#10'  ADD CareOf VARCHAR(40),'#13#10'  ADD MobilePh' +
           'one VARCHAR(20),'#13#10'  ADD Fax VARCHAR(20);'#13#10
         Iterate = False
-        VersionLabel = '1.2'
+        VersionLabel = '1.02'
         ItemID = 21
       end>
     TableDefs = <
       item
+        Category = 'References'
         Name = 'Customers'
         Description = 'Customers'
         FieldDefs = <
@@ -154,8 +155,10 @@ object frmVersionDemo: TfrmVersionDemo
             Name = 'CustomerID'
             Description = 'Customer #'
             Required = True
+            SQLFieldType = 'AUTOINC'
             Attributes = [faRequired]
             DataType = ftAutoInc
+            Size = 0
             DefaultExpression = '0'
             Identity = True
             ItemID = 1
@@ -164,6 +167,7 @@ object frmVersionDemo: TfrmVersionDemo
             Name = 'CompanyName'
             Description = 'Company'
             Required = True
+            SQLFieldType = 'VARCHAR'
             Attributes = [faRequired]
             DataType = ftString
             Size = 40
@@ -173,6 +177,7 @@ object frmVersionDemo: TfrmVersionDemo
             Name = 'LastName'
             Description = 'Last Name'
             Required = True
+            SQLFieldType = 'VARCHAR'
             Attributes = [faRequired]
             DataType = ftString
             Size = 40
@@ -181,6 +186,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'FirstName'
             Description = 'First Name'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 40
             ItemID = 4
@@ -188,6 +194,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'Initial'
             Description = 'Initial'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 5
             ItemID = 5
@@ -195,6 +202,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'StreetNo'
             Description = 'Street #'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 20
             ItemID = 6
@@ -202,6 +210,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'Street'
             Description = 'Street'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 60
             ItemID = 7
@@ -209,6 +218,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'City'
             Description = 'City'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 80
             ItemID = 8
@@ -216,6 +226,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'State'
             Description = 'State'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 15
             ItemID = 9
@@ -223,6 +234,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'Zip'
             Description = 'Zip'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 12
             ItemID = 10
@@ -230,6 +242,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'HomePhone'
             Description = 'HomePhone'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 20
             ItemID = 11
@@ -237,6 +250,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'WorkPhone'
             Description = 'WorkPhone'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 20
             ItemID = 12
@@ -244,6 +258,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'CareOf'
             Description = 'C/O'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 40
             ItemID = 18
@@ -251,6 +266,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'MobilePhone'
             Description = 'MobilePhone'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 20
             ItemID = 19
@@ -258,6 +274,7 @@ object frmVersionDemo: TfrmVersionDemo
           item
             Name = 'Fax'
             Description = 'Fax'
+            SQLFieldType = 'VARCHAR'
             DataType = ftString
             Size = 20
             ItemID = 20
@@ -304,12 +321,54 @@ object frmVersionDemo: TfrmVersionDemo
           end>
         ObjectType = 'Customers222'
         TypePrefix = 'T'
-        Category = 'References'
+        IsView = False
         ItemID = 16
+      end
+      item
+        Name = 'Table1'
+        FieldDefs = <
+          item
+            Name = 'Field1'
+            Description = #207#224#248#224' '#232' '#239#229#242#255
+            Required = True
+            SQLFieldType = 'VARCHAR'
+            Attributes = [faRequired]
+            DataType = ftString
+            Size = 20
+            ItemID = 23
+          end>
+        IndexDefs = <
+          item
+            Name = 'PK_Table1'
+            IndexFields = <
+              item
+                Name = 'Field1'
+                Descending = False
+                CaseInsensitive = False
+                ItemID = 1
+              end>
+            Options = [ixPrimary, ixUnique]
+            ItemID = 24
+          end>
+        IsView = False
+        ItemID = 22
       end>
     SchemaName = 'Database'
-    LibVersion = 204
+    LibVersion = 301
     DSDFileName = 'Database.dsd'
+    DefaultValues.Strings = (
+      'Enumeration.'
+      'Domain.'
+      'Sequence.'
+      'Table.'
+      'Field.'
+      'Index.'
+      'IndexField.'
+      'Trigger.'
+      'Constraint.'
+      'View.'
+      'Relationship.'
+      'StoredProc.')
     Left = 64
     Top = 168
     SchemaGUID = '{7736A6A6-3CD0-43AE-99FD-F62F0896EDD7}'

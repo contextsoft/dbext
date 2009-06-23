@@ -18,20 +18,20 @@ type
     ['{E6B82E14-AC0F-41DF-B055-24548FE11EBE}']
 
     { Creates inactive table component. Assigns table name property. }
-    function CreateTable(const TableName: AnsiString): TDataSet;
+    function CreateTable(const TableName: String): TDataSet;
     { Creates inactive table component. Assigns SQL property. }
-    function CreateQuery(const Statement: AnsiString): TDataSet;
+    function CreateQuery(const Statement: String): TDataSet;
 
     { Returns assignable SQL property. }
-    function GetQuerySQL(Query: TDataSet): AnsiString;
-    procedure SetQuerySQL(Query: TDataSet; const Statement: AnsiString);
+    function GetQuerySQL(Query: TDataSet): String;
+    procedure SetQuerySQL(Query: TDataSet; const Statement: String);
     { Returns assignable Params property. }
     procedure GetQueryParams(Query: TDataSet; Params: TParams);
     procedure SetQueryParams(Query: TDataSet; Params: TParams);
     { Executes query that does not return result set. }
     procedure ExecSQL(Query: TDataSet);
     { Executes statement that may return result set. }
-    function ExecuteStatement(SQL: AnsiString; ResultSet: Pointer = nil): Integer;
+    function ExecuteStatement(SQL: String; ResultSet: Pointer = nil): Integer;
 
     function FindKey(Table: TDataSet; const KeyValues: array of const): Boolean;
 
@@ -40,7 +40,7 @@ type
     function GetIndexDefs(DataSet: TDataSet): TIndexDefs;
   end;
 
-  function FindCtxDatabase(const DatabaseName: AnsiString): TComponent;
+  function FindCtxDatabase(const DatabaseName: String): TComponent;
   function GetCtxDataType(AType: TFieldType): TCtxDataType;
 
 const
@@ -94,7 +94,7 @@ begin
   end;
 end;
 
-function FindCtxDatabase(const DatabaseName: AnsiString): TComponent;
+function FindCtxDatabase(const DatabaseName: String): TComponent;
 var
   I: Integer;
   DB: ICtxDatabase;

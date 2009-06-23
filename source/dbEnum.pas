@@ -19,13 +19,28 @@
 (******************************************************************************)
 unit dbEnum;
 
+{$I CtxVer.inc}
+
 interface
 
 uses
 {$IFnDEF VER130}
   Variants,
 {$ENDIF}
-  DB, Classes;
+  DB, SysUtils, Classes;
+
+{$IFDEF D2009_ORLATER}
+type
+  TDataSetBookmark = TBytes;
+const
+  NilBookmark = nil;
+{$ELSE}
+type
+  TDataSetBookmark = String;
+  TRecordBuffer = PChar;
+const
+  NilBookmark = '';
+{$ENDIF}
 
 type
   {:$ TDBCustomEnumeration is a TDataSet descendant, representing a simple }
@@ -49,24 +64,24 @@ type
     function GetValues(const Key: String): String;
   protected
     { Overriden abstract methods (required) }
-    function AllocRecordBuffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; override;
-    procedure FreeRecordBuffer(var Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
-    procedure GetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer); override;
-    function GetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): TBookmarkFlag; override;
-    function GetRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; GetMode: TGetMode; DoCheck: Boolean): TGetResult; override;
+    function AllocRecordBuffer: TRecordBuffer; override;
+    procedure FreeRecordBuffer(var Buffer: TRecordBuffer); override;
+    procedure GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
+    function GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag; override;
+    function GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode; DoCheck: Boolean): TGetResult; override;
     function GetRecordSize: Word; override;
     procedure InternalClose; override;
     procedure InternalFirst; override;
     procedure InternalGotoBookmark(Bookmark: Pointer); override;
     procedure InternalHandleException; override;
     procedure InternalInitFieldDefs; override;
-    procedure InternalInitRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
+    procedure InternalInitRecord(Buffer: TRecordBuffer); override;
     procedure InternalLast; override;
     procedure InternalOpen; override;
-    procedure InternalSetToRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
+    procedure InternalSetToRecord(Buffer: TRecordBuffer); override;
     function IsCursorOpen: Boolean; override;
-    procedure SetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Value: TBookmarkFlag); override;
-    procedure SetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer); override;
+    procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag); override;
+    procedure SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
   protected
     { Additional overrides (optional) }
     function GetRecordCount: Integer; override;
@@ -140,7 +155,7 @@ resourcestring
 
 implementation
 
-uses Windows, SysUtils, Forms;
+uses Windows, Forms;
 
 type
   { TRecInfo }
@@ -256,27 +271,27 @@ begin
   else DatabaseError(SBookmarkNotFound);
 end;
 
-procedure TDBCustomEnumeration.InternalSetToRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TDBCustomEnumeration.InternalSetToRecord(Buffer: TRecordBuffer);
 begin
   InternalGotoBookmark(@PRecInfo(Buffer + FRecInfoOfs).Bookmark);
 end;
 
-function TDBCustomEnumeration.GetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): TBookmarkFlag;
+function TDBCustomEnumeration.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
 begin
   Result := PRecInfo(Buffer + FRecInfoOfs).BookmarkFlag;
 end;
 
-procedure TDBCustomEnumeration.SetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Value: TBookmarkFlag);
+procedure TDBCustomEnumeration.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
 begin
   PRecInfo(Buffer + FRecInfoOfs).BookmarkFlag := Value;
 end;
 
-procedure TDBCustomEnumeration.GetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer);
+procedure TDBCustomEnumeration.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
   PInteger(Data)^ := PRecInfo(Buffer + FRecInfoOfs).Bookmark;
 end;
 
-procedure TDBCustomEnumeration.SetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer);
+procedure TDBCustomEnumeration.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
   PRecInfo(Buffer + FRecInfoOfs).Bookmark := PInteger(Data)^;
 end;
@@ -288,12 +303,12 @@ begin
   Result := 4 * MaxStrLen;
 end;
 
-function TDBCustomEnumeration.AllocRecordBuffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+function TDBCustomEnumeration.AllocRecordBuffer: TRecordBuffer;
 begin
   GetMem(Result, FRecBufSize);
 end;
 
-procedure TDBCustomEnumeration.FreeRecordBuffer(var Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TDBCustomEnumeration.FreeRecordBuffer(var Buffer: TRecordBuffer);
 begin
   FreeMem(Buffer, FRecBufSize);
 end;
@@ -320,10 +335,10 @@ begin
   Result := Trim(copy(Str, P + Length(Delim), Length(Str)));
 end;
 
-function TDBCustomEnumeration.GetRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; GetMode: TGetMode;
+function TDBCustomEnumeration.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
   DoCheck: Boolean): TGetResult;
 var
-  KeyValue: AnsiString;
+  KeyValue: String;
   S: AnsiString;
 begin
   if FItems.Count < 1 then
@@ -345,14 +360,24 @@ begin
     end;
     if Result = grOK then
     begin
-      KeyValue := LeftPart(FItems[FCurRec], '=');
+      (*
+      KeyValue := AnsiString(LeftPart(FItems[FCurRec], '='));
       StrLCopy(PAnsiChar(Buffer), PAnsiChar(KeyValue), MaxStrLen);
-      S := RightPart(FItems[FCurRec], '=');
+      StrLCopy(PAnsiChar(Buffer) + MaxStrLen, PAnsiChar(AnsiString(RightPart(FItems[FCurRec], '=')), MaxStrLen);
+      StrLCopy(PAnsiChar(Buffer) + MaxStrLen * 2, PAnsiChar(FDescriptions.Values[KeyValue]), MaxStrLen);
+      StrLCopy(PAnsiChar(Buffer) + MaxStrLen * 3, PAnsiChar(FShortDescriptions.Values[KeyValue]), MaxStrLen);
+      *)
+
+      KeyValue := LeftPart(FItems[FCurRec], '=');
+      S := AnsiString(KeyValue);
+      StrLCopy(PAnsiChar(Buffer), PAnsiChar(S), MaxStrLen);
+      S := AnsiString(RightPart(FItems[FCurRec], '='));
       StrLCopy(PAnsiChar(Buffer) + MaxStrLen, PAnsiChar(S), MaxStrLen);
-      S := PAnsiChar(FDescriptions.Values[KeyValue]);
+      S := PAnsiChar(AnsiString(FDescriptions.Values[KeyValue]));
       StrLCopy(PAnsiChar(Buffer) + MaxStrLen * 2, PAnsiChar(S), MaxStrLen);
-      S := PAnsiChar(FShortDescriptions.Values[KeyValue]);
+      S := PAnsiChar(AnsiString(FShortDescriptions.Values[KeyValue]));
       StrLCopy(PAnsiChar(Buffer) + MaxStrLen * 3, PAnsiChar(S), MaxStrLen);
+
       with PRecInfo(Buffer + FRecInfoOfs)^ do
       begin
         BookmarkFlag := bfCurrent;
@@ -363,7 +388,7 @@ begin
   end;
 end;
 
-procedure TDBCustomEnumeration.InternalInitRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TDBCustomEnumeration.InternalInitRecord(Buffer: TRecordBuffer);
 begin
   FillChar(Buffer^, RecordSize, 0);
 end;
@@ -377,7 +402,7 @@ begin
   else begin
     if Buffer <> nil then begin
       StrLCopy(PAnsiChar(Buffer), PAnsiChar(ActiveBuffer) + (Field.FieldNo - 1) * MaxStrLen, Field.Size);
-      Result := PAnsiChar(Buffer)^ <> #0;
+      Result := PChar(Buffer)^ <> #0;
     end
     else begin
       Result := True;

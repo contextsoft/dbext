@@ -7,20 +7,35 @@
 (*  Contains:
 (*              TDBRecord = class(TDataSet)
 (*
-(*  Copyright (c) 2004-2007 Michael Baytalsky
+(*  Copyright (c) 2004-2009 Michael Baytalsky
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbRecord.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 2.14
-(*  DELPHI\BCB  : Delphi 5,6,7,2005,2006,2007; C++Builder 6.0, 2006
+(*  VERSION     : 3.01
+(*  DELPHI\BCB  : Delphi 5,6,7,2005,2006,2007,2009; C++Builder 6.0, 2006,2009
 (*
 (******************************************************************************)
 unit dbRecord;
 
+{$I CtxVer.inc}
+
 interface
 
 uses SysUtils, Classes, Forms, DB;
+
+{$IFDEF D2009_ORLATER}
+type
+  TDataSetBookmark = TBytes;
+const
+  NilBookmark = nil;
+{$ELSE}
+type
+  TDataSetBookmark = String;
+  TRecordBuffer = PChar;
+const
+  NilBookmark = '';
+{$ENDIF}
 
 type
   BufArray = array [0..1000] of Byte;
@@ -39,18 +54,18 @@ type
     FRecordSize: Integer;
     FCursorOpen: Boolean;
     FFieldOffs: TList;
-    FRecord: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
-    FOldRecord: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+    FRecord: TRecordBuffer;
+    FOldRecord: TRecordBuffer;
 
     { Overriden abstract methods (required) }
-    function AllocRecordBuffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; override;
-    procedure FreeRecordBuffer(var Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
-    function GetRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; GetMode: TGetMode; DoCheck: Boolean): TGetResult; override;
+    function AllocRecordBuffer: TRecordBuffer; override;
+    procedure FreeRecordBuffer(var Buffer: TRecordBuffer); override;
+    function GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode; DoCheck: Boolean): TGetResult; override;
     function GetRecordSize: Word; override;
     procedure InternalClose; override;
     procedure InternalHandleException; override;
     procedure InternalInitFieldDefs; override;
-    procedure InternalInitRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
+    procedure InternalInitRecord(Buffer: TRecordBuffer); override;
     procedure InternalOpen; override;
 
     procedure InternalInsert; override;
@@ -59,24 +74,24 @@ type
     function IsCursorOpen: Boolean; override;
 
     { Bookmarks - not supported }
-    procedure GetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer); override;
-    function GetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): TBookmarkFlag; override;
-    procedure SetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Value: TBookmarkFlag); override;
-    procedure SetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer); override;
+    procedure GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
+    function GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag; override;
+    procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag); override;
+    procedure SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
     procedure InternalGotoBookmark(Bookmark: Pointer); override;
-
+    
     procedure InternalAddRecord(Buffer: Pointer; Append: Boolean); override;
     procedure InternalDelete; override;
     procedure InternalFirst; override;
     procedure InternalLast; override;
-    procedure InternalSetToRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
+    procedure InternalSetToRecord(Buffer: TRecordBuffer); override;
   protected
     { Additional overrides (optional) }
     function GetRecordCount: Integer; override;
     function GetCanModify: Boolean; override;
     procedure CheckActive; override;
     procedure DefChanged(Sender: TObject); override;
-    function GetActiveRecBuf(var RecBuf: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): boolean;
+    function GetActiveRecBuf(var RecBuf: TRecordBuffer): boolean;
   public
     {:$ Creates an instance of TDBRecord component. }
     constructor Create(AOwner: TComponent); override;
@@ -124,17 +139,17 @@ begin
   inherited CheckActive;
 end;
 
-function TDBRecord.AllocRecordBuffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+function TDBRecord.AllocRecordBuffer: TRecordBuffer;
 begin
   GetMem(Result, FRecordSize);
 end;
 
-procedure TDBRecord.FreeRecordBuffer(var Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TDBRecord.FreeRecordBuffer(var Buffer: TRecordBuffer);
 begin
   FreeMem(Buffer, FRecordSize);
 end;
 
-procedure TDBRecord.InternalInitRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TDBRecord.InternalInitRecord(Buffer: TRecordBuffer);
 begin
   FillChar(Buffer^, RecordSize, 0);
 end;
@@ -147,7 +162,7 @@ end;
 function TDBRecord.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
 var
   FieldOffset: Integer;
-  Ptr: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+  Ptr: TRecordBuffer;
 begin
   Result := False;
   if not IsEmpty and (Field.Index >= 0) and GetActiveRecBuf(Ptr) then
@@ -164,7 +179,7 @@ end;
 procedure TDBRecord.SetFieldData(Field: TField; Buffer: Pointer);
 var
   FieldOffset: Integer;
-  Ptr: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+  Ptr: TRecordBuffer;
 begin
   if (Field.Index >= 0) and GetActiveRecBuf(Ptr) then
   begin
@@ -179,7 +194,7 @@ begin
   end;
 end;
 
-function TDBRecord.GetRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; GetMode: TGetMode;
+function TDBRecord.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
   DoCheck: Boolean): TGetResult;
 begin
   Result := grOK;
@@ -297,7 +312,7 @@ begin
   inherited;
 end;
 
-function TDBRecord.GetActiveRecBuf(var RecBuf: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): Boolean;
+function TDBRecord.GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean;
 begin
   case State of
     dsBlockRead,
@@ -326,20 +341,20 @@ begin
   DatabaseError(SCapabilityNotSupported, Self);
 end;
 
-procedure TDBRecord.GetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer);
+procedure TDBRecord.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
 end;
 
-function TDBRecord.GetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): TBookmarkFlag;
+function TDBRecord.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
 begin
   Result := bfCurrent;
 end;
 
-procedure TDBRecord.SetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer);
+procedure TDBRecord.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
 end;
 
-procedure TDBRecord.SetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Value: TBookmarkFlag);
+procedure TDBRecord.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
 begin
 end;
 
@@ -355,7 +370,7 @@ procedure TDBRecord.InternalLast;
 begin
 end;
 
-procedure TDBRecord.InternalSetToRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TDBRecord.InternalSetToRecord(Buffer: TRecordBuffer);
 begin
 end;
 

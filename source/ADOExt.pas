@@ -33,8 +33,8 @@ type
   TADORangeCursor = class (TDBRangeCursor)
   public
     constructor Create(Database: TADOConnectionExt; Relation: TRelation; KeyValues: Variant);
-    constructor CreateExt(Database: TADOConnectionExt; const TableName, KeyFields, TableFilter: AnsiString;
-      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: AnsiString = '');
+    constructor CreateExt(Database: TADOConnectionExt; const TableName, KeyFields, TableFilter: String;
+      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: String = '');
     destructor Destroy; override;
   end;
 
@@ -43,24 +43,24 @@ type
   protected
     { Protected declarations }
     FSchema: TDatabaseSchema;
-    FSystemTableName: AnsiString;
-    FDatabaseName: AnsiString;
-    FVersionStr: AnsiString;
+    FSystemTableName: String;
+    FDatabaseName: String;
+    FVersionStr: String;
 
-    function GetDatabaseName: AnsiString;
-    procedure SetDatabaseName(const Value: AnsiString);
-    function GetVersionLabel: AnsiString;
-    procedure SetVersionLabel(const Value: AnsiString);
+    function GetDatabaseName: String;
+    procedure SetDatabaseName(const Value: String);
+    function GetVersionLabel: String;
+    procedure SetVersionLabel(const Value: String);
 
     { Replication support }
     function GetSchema: TDatabaseSchema;
     procedure SetSchema(Value: TDatabaseSchema);
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
 
-    function GetDatabaseURL: AnsiString;
-    procedure SetDatabaseURL(const Value: AnsiString);
+    function GetDatabaseURL: String;
+    procedure SetDatabaseURL(const Value: String);
 
-    function GetDriverName: AnsiString;
+    function GetDriverName: String;
 
     { Checks if the database is connected }
     procedure CheckActive;
@@ -74,10 +74,10 @@ type
     destructor Destroy; override;
 
     {:: Creates TTableExt component, corresponding to TableName. }
-    function CreateTable(const TableName: AnsiString): TDataSet; virtual;
+    function CreateTable(const TableName: String): TDataSet; virtual;
 
     {:: Creates TQueryExt component, corresponding to Statement. }
-    function CreateQuery(const Statement: AnsiString): TDataSet;
+    function CreateQuery(const Statement: String): TDataSet;
 
     { Schema related methods. Schema must be assigned for them to work }
     {:$ Updates database schema from the physical database tables. }
@@ -101,26 +101,26 @@ type
 
     function FindKey(Table: TDataSet; const KeyValues: array of const): Boolean;
 
-    function GetRangeCursor(const TableName, KeyFields, TableFilter: AnsiString;
-      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: AnsiString = ''): TDBRangeCursor; overload;
+    function GetRangeCursor(const TableName, KeyFields, TableFilter: String;
+      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: String = ''): TDBRangeCursor; overload;
     function GetRangeCursor(Relation: TRelation; KeyValues: Variant): TDBRangeCursor; overload;
 
     { Returns assignable SQL property. }
-    function GetQuerySQL(Query: TDataSet): AnsiString;
-    procedure SetQuerySQL(Query: TDataSet; const Statement: AnsiString);
+    function GetQuerySQL(Query: TDataSet): String;
+    procedure SetQuerySQL(Query: TDataSet; const Statement: String);
     { Returns assignable Params property. }
     procedure GetQueryParams(Query: TDataSet; Params: TParams);
     procedure SetQueryParams(Query: TDataSet; Params: TParams);
     { Executes query that does not return result set. }
     procedure ExecSQL(Query: TDataSet);
     { Executes statement that may return result set. }
-    function ExecuteStatement(SQL: AnsiString; ResultSet: Pointer = nil): Integer;
+    function ExecuteStatement(SQL: String; ResultSet: Pointer = nil): Integer;
 
     function CreateCommand: TCtxDataCommand;
 
     { Parent object is always a table or schema. }
     function GetIndexDefs(DataSet: TDataSet): TIndexDefs;
-    function GetSystemTableName: AnsiString;
+    function GetSystemTableName: String;
   published
     { Published properties }
     {:$ Reference to a TDatabaseSchema component. }
@@ -129,19 +129,19 @@ type
     property Schema: TDatabaseSchema read FSchema write SetSchema;
     {:$ Text presentation of the database version. }
     {:: This property is effectively read-only. Any text assigned to it will be ignored. }
-    property VersionLabel: AnsiString read GetVersionLabel write SetVersionLabel stored False;
+    property VersionLabel: String read GetVersionLabel write SetVersionLabel stored False;
     {:$ The name of the System table. }
     {:: The default value of this property is 'system'. }
-    property SystemTableName: AnsiString read GetSystemTableName write FSystemTableName;
+    property SystemTableName: String read GetSystemTableName write FSystemTableName;
     {:$ Specifies the uniform path to the database. }
-    property DatabaseURL: AnsiString read GetDatabaseURL write SetDatabaseURL stored false;
-    property DatabaseName: AnsiString read FDatabaseName write SetDatabaseName;
+    property DatabaseURL: String read GetDatabaseURL write SetDatabaseURL stored false;
+    property DatabaseName: String read FDatabaseName write SetDatabaseName;
   end;
 
   {:$ Retrieves database URL from the TADOConnection component and the connected Session component. }
-  function GetDatabaseURL(ADOConnection: TADOConnection): AnsiString;
+  function GetDatabaseURL(ADOConnection: TADOConnection): String;
   {:$ Assigned database and session parameters accoriding to the provided database URL. }
-  procedure SetDatabaseURL(ADOConnection: TADOConnection; DatabaseURL: AnsiString);
+  procedure SetDatabaseURL(ADOConnection: TADOConnection; DatabaseURL: String);
 
   procedure Register;
 
@@ -162,12 +162,12 @@ begin
   RegisterComponents('Database Extensions', [TADOConnectionExt]);
 end;
 
-function GetDatabaseURL(ADOConnection: TADOConnection): AnsiString;
+function GetDatabaseURL(ADOConnection: TADOConnection): String;
 begin
   Result := ADOConnection.ConnectionString;
 end;
 
-procedure SetDatabaseURL(ADOConnection: TADOConnection; DatabaseURL: AnsiString);
+procedure SetDatabaseURL(ADOConnection: TADOConnection; DatabaseURL: String);
 begin
   ADOConnection.ConnectionString := DatabaseURL
 end;
@@ -182,11 +182,11 @@ begin
 end;
 
 constructor TADORangeCursor.CreateExt(Database: TADOConnectionExt;
-  const TableName, KeyFields, TableFilter: AnsiString;
+  const TableName, KeyFields, TableFilter: String;
   CaseInsensitive: Boolean; KeyValues: Variant;
-  const ExtraKeyFields: AnsiString = '');
+  const ExtraKeyFields: String = '');
 var
-  RangeFilter: AnsiString;
+  RangeFilter: String;
   Table: TADOTable;
 begin
   if (TableName = '') then
@@ -264,7 +264,7 @@ begin
   SetDatabaseVersion(Self, Value);
 end;
 
-function TADOConnectionExt.GetVersionLabel: AnsiString;
+function TADOConnectionExt.GetVersionLabel: String;
 begin
   if Connected then
   begin
@@ -295,7 +295,7 @@ begin
   FSchema := Value;
 end;
 
-procedure TADOConnectionExt.SetVersionLabel(const Value: AnsiString);
+procedure TADOConnectionExt.SetVersionLabel(const Value: String);
 begin
   // Ignore this.
 end;
@@ -320,24 +320,24 @@ begin
   Result := InTransaction;
 end;
 
-function TADOConnectionExt.GetDriverName: AnsiString;
+function TADOConnectionExt.GetDriverName: String;
 begin
   Result := 'ADO';
 end;
 
-function TADOConnectionExt.GetDatabaseURL: AnsiString;
+function TADOConnectionExt.GetDatabaseURL: String;
 begin
   Result := ADOExt.GetDatabaseURL(Self);
 end;
 
-procedure TADOConnectionExt.SetDatabaseURL(const Value: AnsiString);
+procedure TADOConnectionExt.SetDatabaseURL(const Value: String);
 begin
   ADOExt.SetDatabaseURL(Self, Value);
 end;
 
 function TADOConnectionExt.GetRangeCursor(const TableName, KeyFields,
-  TableFilter: AnsiString; CaseInsensitive: Boolean; KeyValues: Variant;
-  const ExtraKeyFields: AnsiString): TDBRangeCursor;
+  TableFilter: String; CaseInsensitive: Boolean; KeyValues: Variant;
+  const ExtraKeyFields: String): TDBRangeCursor;
 begin
   Result := TADORangeCursor.CreateExt(Self, TableName, KeyFields,
     TableFilter, CaseInsensitive, KeyValues, ExtraKeyFields);
@@ -354,18 +354,18 @@ begin
   Result := FSchema;
 end;
 
-function TADOConnectionExt.GetDatabaseName: AnsiString;
+function TADOConnectionExt.GetDatabaseName: String;
 begin
   Result := FDatabaseName;
 end;
 
-procedure TADOConnectionExt.SetDatabaseName(const Value: AnsiString);
+procedure TADOConnectionExt.SetDatabaseName(const Value: String);
 begin
   FDatabaseName := Value;
   RegisterCtxDataProvider(Self);
 end;
 
-function TADOConnectionExt.CreateTable(const TableName: AnsiString): TDataSet;
+function TADOConnectionExt.CreateTable(const TableName: String): TDataSet;
 begin
   Result := TADOTable.Create(nil);
   try
@@ -377,7 +377,7 @@ begin
   end;
 end;
 
-function TADOConnectionExt.CreateQuery(const Statement: AnsiString): TDataSet;
+function TADOConnectionExt.CreateQuery(const Statement: String): TDataSet;
 begin
   Result := TADOQuery.Create(nil);
   try
@@ -396,7 +396,7 @@ begin
   TADOQuery(Query).ExecSQL;
 end;
 
-function TADOConnectionExt.ExecuteStatement(SQL: AnsiString; ResultSet: Pointer = nil): Integer;
+function TADOConnectionExt.ExecuteStatement(SQL: String; ResultSet: Pointer = nil): Integer;
 var
   RS: _RecordSet;
   Cmd: TADOCommand;
@@ -446,13 +446,13 @@ begin
     TADOQuery(Query).Parameters.ParamByName(Params[I].Name).Value := Params[I].Value;
 end;
 
-function TADOConnectionExt.GetQuerySQL(Query: TDataSet): AnsiString;
+function TADOConnectionExt.GetQuerySQL(Query: TDataSet): String;
 begin
   Result := TADOQuery(Query).SQL.Text;
 end;
 
 procedure TADOConnectionExt.SetQuerySQL(Query: TDataSet;
-  const Statement: AnsiString);
+  const Statement: String);
 begin
   TADOQuery(Query).SQL.Text := Statement;
 end;
@@ -475,7 +475,7 @@ var
   I, J, Idx, DefIdx: Integer;
   Table: TADOTable;
   Tables: TStringList;
-  LogicalTableName: AnsiString;
+  LogicalTableName: String;
 begin
   CheckActive;
   CheckSchema;
@@ -610,13 +610,11 @@ var
   TI: TIndexDefinition;
   TC: TTableConstraint;
   TR: TRelationship;
-  Temp: AnsiString;
+  Temp: String;
   AdoDataType: DataTypeEnum;
   AdoDataSize: Integer;
 
-  Restrict: OleVariant;
-
-  function FindCheck(const AName: AnsiString): TTableConstraint;
+  function FindCheck(const AName: string): TTableConstraint;
   var
     I: integer;
   begin
@@ -629,7 +627,7 @@ var
     Result := nil;    
   end;
 
-  function AdoRuleToAction(const ARule: AnsiString): TRelationAction;
+  function AdoRuleToAction(const ARule: string): TRelationAction;
   begin
     Result := raIgnore;
     if AnsiSameText(ARule, 'CASCADE') then
@@ -717,120 +715,88 @@ begin
   try
     DS.Connection := Self;
     DS.CursorLocation := clUseClient;
-
-    //Restrict := EmptyParam;
-    Restrict := VarArrayOf([NULL, 'DATA']);
-    try
-    OpenSchema(siTables, Restrict, EmptyParam, DS);
+    OpenSchema(siTables, EmptyParam, EmptyParam, DS);
     DS.Active := True;
     while not DS.Eof do
     begin
       if not AnsiSameText(DS.FieldByName('TABLE_NAME').AsString, GetSystemTableName) then
         if AnsiSameText(DS.FieldByName('TABLE_TYPE').AsString, 'TABLE') then
-        try
           with Schema.TableDefs.Add do
           begin
             Name := DS.FieldByName('TABLE_NAME').AsString;
             Description := DS.FieldByName('DESCRIPTION').AsString;
           end;
-        except
-        end;
       DS.Next;
-    end;
-    except
-      Application.HandleException(Self);
-      //ShowMessage('Tables Error');
     end;
     DS.Active := False;
 
-
-    Restrict := VarArrayOf([NULL, 'DATA']);
-
-    try
-    OpenSchema(siColumns, Restrict, EmptyParam, DS);
+    OpenSchema(siColumns, EmptyParam, EmptyParam, DS);
     DS.Active := True;
     DS.Sort := 'TABLE_NAME, ORDINAL_POSITION';
     while not DS.Eof do
     begin
       TD := Schema.TableDefs.Find(DS.FieldByName('TABLE_NAME').AsString);
       if TD <> nil then
-      try
-        with TD.FieldDefs.Add do
-        begin
-          Name := DS.FieldByName('COLUMN_NAME').AsString;
-          AdoDataType := DS.FieldByName('DATA_TYPE').AsInteger;
-          AdoDataSize := DS.FieldByName('CHARACTER_MAXIMUM_LENGTH').AsInteger;
-          if (AdoDataType in [adBSTR, adWChar, adVarWChar]) and (AdoDataSize = 0) then
-            AdoDataType := adLongVarWChar
-          else if (AdoDataType = adChar) and (AdoDataSize = 0) then
-            AdoDataType := adLongVarChar;
+      with TD.FieldDefs.Add do
+      begin
+        Name := DS.FieldByName('COLUMN_NAME').AsString;
+        AdoDataType := DS.FieldByName('DATA_TYPE').AsInteger;
+        AdoDataSize := DS.FieldByName('CHARACTER_MAXIMUM_LENGTH').AsInteger;
+        if (AdoDataType in [adBSTR, adWChar, adVarWChar]) and (AdoDataSize = 0) then
+          AdoDataType := adLongVarWChar
+        else if (AdoDataType = adChar) and (AdoDataSize = 0) then
+          AdoDataType := adLongVarChar;
 
-          DataType := ADOTypeToFieldType(AdoDataType);
-          if DS.FieldByName('COLUMN_HASDEFAULT').AsBoolean then
-            DefaultExpression := DS.FieldByName('COLUMN_DEFAULT').AsString;
-          Required := not DS.FieldByName('IS_NULLABLE').AsBoolean;
-          Size := AdoDataSize;
-          Precision := DS.FieldByName('NUMERIC_PRECISION').AsInteger;
-          SetPropValue('Scale', DS.FieldByName('NUMERIC_SCALE').AsString);
-          Description := DS.FieldByName('DESCRIPTION').AsString;
-        end;
-      except
+        DataType := ADOTypeToFieldType(AdoDataType);
+        if DS.FieldByName('COLUMN_HASDEFAULT').AsBoolean then
+          DefaultExpression := DS.FieldByName('COLUMN_DEFAULT').AsString;
+        Required := not DS.FieldByName('IS_NULLABLE').AsBoolean;
+        Size := AdoDataSize;
+        Precision := DS.FieldByName('NUMERIC_PRECISION').AsInteger;
+        SetPropValue('Scale', DS.FieldByName('NUMERIC_SCALE').AsString);
+        Description := DS.FieldByName('DESCRIPTION').AsString;
       end;
       DS.Next;
     end;
-    except
-      ShowMessage('Fields Error')
-    end;
     DS.Active := False;
 
+    UpdateAutoIncFields;
 
-    Restrict := VarArrayOf([NULL, 'DATA']);
-    //UpdateAutoIncFields;
-    try
-      OpenSchema(siIndexes, Restrict, EmptyParam, DS);
-      DS.Active := True;
-      DS.Sort := 'TABLE_NAME, INDEX_NAME, ORDINAL_POSITION';
-
-      while not DS.Eof do
+    OpenSchema(siIndexes, EmptyParam, EmptyParam, DS);
+    DS.Active := True;
+    DS.Sort := 'TABLE_NAME, INDEX_NAME, ORDINAL_POSITION';
+    while not DS.Eof do
+    begin
+      TD := Schema.TableDefs.Find(DS.FieldByName('TABLE_NAME').AsString);
+      if TD <> nil then
       begin
-        TD := Schema.TableDefs.Find(DS.FieldByName('TABLE_NAME').AsString);
-        if TD <> nil then
+        Temp := DS.FieldByName('INDEX_NAME').AsString;
+        TI := TD.IndexDefs.Find(Temp);
+        if TI = nil then
         begin
-          Temp := DS.FieldByName('INDEX_NAME').AsString;
-          TI := TD.IndexDefs.Find(Temp);
-          if TI = nil then
-          begin
-            TI := TD.IndexDefs.Add;
-            TI.Name := DS.FieldByName('INDEX_NAME').AsString;
-            TI.PrimaryKey := DS.FieldByName('PRIMARY_KEY').AsBoolean;
-            TI.Unique := DS.FieldByName('UNIQUE').AsBoolean;
-            TI.SetPropValue('Clustered', DS.FieldByName('CLUSTERED').AsString);
-          end;
-          try
-            with TI.IndexFields.Add do
-            begin
-              Name := DS.FieldByName('COLUMN_NAME').AsString;
-              Descending := DS.FieldByName('COLLATION').AsInteger = DB_COLLATION_DESC;
-            end;
-          except
-          end;
+          TI := TD.IndexDefs.Add;
+          TI.Name := DS.FieldByName('INDEX_NAME').AsString;
+          TI.PrimaryKey := DS.FieldByName('PRIMARY_KEY').AsBoolean;
+          TI.Unique := DS.FieldByName('UNIQUE').AsBoolean;
+          TI.SetPropValue('Clustered', DS.FieldByName('CLUSTERED').AsString);
         end;
-        DS.Next;
+        with TI.IndexFields.Add do
+        begin
+          Name := DS.FieldByName('COLUMN_NAME').AsString;
+          Descending := DS.FieldByName('COLLATION').AsInteger = DB_COLLATION_DESC;
+        end;
       end;
-    except
+      DS.Next;
     end;
     DS.Active := False;
 
-
-    try
-    OpenSchema(siViews, Restrict, EmptyParam, DS);
+    OpenSchema(siViews, EmptyParam, EmptyParam, DS);
     DS.Active := True;
     DS.Sort := '';
     while not DS.Eof do
     begin
       Temp := DS.FieldByName('TABLE_SCHEMA').AsString;
       if not AnsiSameText(Temp, 'INFORMATION_SCHEMA') and not AnsiSameText(Temp, 'sys') then
-      try
         with Schema.ViewDefs.Add do
         begin
           Name := DS.FieldByName('TABLE_NAME').AsString;
@@ -841,15 +807,9 @@ begin
             Definition.Text := 'CREATE VIEW ' + FormatName(Name, 'b') + ' AS ' + Temp;
           Description := DS.FieldByName('DESCRIPTION').AsString;
         end;
-      except
-      end;
       DS.Next;
     end;
-    except
-    end;
     DS.Active := False;
-
-
 
     (* -- skip procedures, nothing but name is returned
     OpenSchema(siProcedures, EmptyParam, EmptyParam, DS);
@@ -876,8 +836,7 @@ begin
     DS.Active := False;
     *)
 
-    try
-    OpenSchema(siTableConstraints, Restrict, EmptyParam, DS);
+    OpenSchema(siTableConstraints, EmptyParam, EmptyParam, DS);
     DS.Active := True;
     DS.Sort := '';
     while not DS.Eof do
@@ -886,69 +845,53 @@ begin
       begin
         TD := Schema.TableDefs.Find(DS.FieldByName('TABLE_NAME').AsString);
         if TD <> nil then
-      try
         with TD.Constraints.Add do
         begin
           Name := DS.FieldByName('CONSTRAINT_NAME').AsString;
           Description := DS.FieldByName('DESCRIPTION').AsString;
         end;
-      except
-      end;
       end;
       DS.Next;
     end;
-    except
+    DS.Active := False;
+
+    OpenSchema(siCheckConstraints, EmptyParam, EmptyParam, DS);
+    DS.Active := True;
+    DS.Sort := '';
+    while not DS.Eof do
+    begin
+      TC := FindCheck(DS.FieldByName('CONSTRAINT_NAME').AsString);
+      if TC <> nil then
+        TC.Check := DS.FieldByName('CHECK_CLAUSE').AsString;
+      DS.Next;
     end;
     DS.Active := False;
 
-    try
-      OpenSchema(siCheckConstraints, Restrict, EmptyParam, DS);
-      DS.Active := True;
-      DS.Sort := '';
-      while not DS.Eof do
-      begin
-        TC := FindCheck(DS.FieldByName('CONSTRAINT_NAME').AsString);
-        if TC <> nil then
-          TC.Check := DS.FieldByName('CHECK_CLAUSE').AsString;
-        DS.Next;
-      end;
-    except
-    end;
-    DS.Active := False;
-
-    try
-    OpenSchema(siForeignKeys, Restrict, EmptyParam, DS);
+    OpenSchema(siForeignKeys, EmptyParam, EmptyParam, DS);
     DS.Active := True;
     DS.Sort := 'FK_NAME, ORDINAL';
     while not DS.Eof do
     begin
       Temp := DS.FieldByName('FK_NAME').AsString;
       TR := Schema.Relationships.Find(Temp);
-      try
-        if TR = nil then
-        begin
-          TR := Schema.Relationships.Add;
-          TR.Name := DS.FieldByName('FK_NAME').AsString;
-          TR.DetailRelationName := TR.Name;
-          TR.MasterTableName := DS.FieldByName('PK_TABLE_NAME').AsString;
-          TR.DetailTableName := DS.FieldByName('FK_TABLE_NAME').AsString;
-          TR.MasterKeyFields := DS.FieldByName('PK_COLUMN_NAME').AsString;
-          TR.DetailKeyFields := DS.FieldByName('FK_COLUMN_NAME').AsString;
-          TR.UpdateAction := AdoRuleToAction(DS.FieldByName('UPDATE_RULE').AsString);
-          TR.DeleteAction := AdoRuleToAction(DS.FieldByName('DELETE_RULE').AsString);
-        end else
-        begin
-          TR.MasterKeyFields := TR.MasterKeyFields + ';' + DS.FieldByName('PK_COLUMN_NAME').AsString;
-          TR.DetailKeyFields := TR.DetailKeyFields + ';' + DS.FieldByName('FK_COLUMN_NAME').AsString;
-        end;
-      except
+      if TR = nil then
+      begin
+        TR := Schema.Relationships.Add;
+        TR.Name := DS.FieldByName('FK_NAME').AsString;
+        TR.DetailRelationName := TR.Name;
+        TR.MasterTableName := DS.FieldByName('PK_TABLE_NAME').AsString;
+        TR.DetailTableName := DS.FieldByName('FK_TABLE_NAME').AsString;
+        TR.MasterKeyFields := DS.FieldByName('PK_COLUMN_NAME').AsString;
+        TR.DetailKeyFields := DS.FieldByName('FK_COLUMN_NAME').AsString;
+        TR.UpdateAction := AdoRuleToAction(DS.FieldByName('UPDATE_RULE').AsString);
+        TR.DeleteAction := AdoRuleToAction(DS.FieldByName('DELETE_RULE').AsString);
+      end else
+      begin
+        TR.MasterKeyFields := TR.MasterKeyFields + ';' + DS.FieldByName('PK_COLUMN_NAME').AsString;
+        TR.DetailKeyFields := TR.DetailKeyFields + ';' + DS.FieldByName('FK_COLUMN_NAME').AsString;
       end;
       DS.Next;
     end;
-    except
-    end;
-    DS.Active := False;
-
 
     Schema.UpdateRelationships;
 
@@ -961,7 +904,7 @@ begin
   end;
 end;
 
-function TADOConnectionExt.GetSystemTableName: AnsiString;
+function TADOConnectionExt.GetSystemTableName: String;
 begin
   if Trim(FSystemTableName) = '' then
     Result := defSysTableName else

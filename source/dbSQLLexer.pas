@@ -2,7 +2,7 @@
 (*
 (*  Context Database Extensions Suite
 (*
-(*  Contains: TSQLLexer class implementing generic SQL lexer & parser.
+(*  Contains: TSQLLexer class implementing generic SQL lexer & parser. 
 (*
 (*  Copyright (c) 2004-2007 Michael Baytalsky
 (*
@@ -14,6 +14,8 @@
 (*
 (******************************************************************************)
 unit dbSQLLexer;
+
+{$I CtxVer.inc}
 
 interface
 
@@ -31,65 +33,65 @@ type
   TSQLLexer = class
   protected
     FStream: TStream;
-    FBuffer: AnsiString;
+    FBuffer: String;
     FBufPos: Integer;
     FBufSize: Integer;
     FBufLen: Integer;
-    FNextChar: AnsiChar;
-    FToken: AnsiString;
+    FNextChar: Char;
+    FToken: String;
     FTokenID: Integer;
     FLinePos: Integer;
     FLineNo: Integer;
     FTokenBeginPos: Integer;
     FTokenLen: Integer;
-    FTokenBuf: AnsiString;
+    FTokenBuf: String;
     FTokenBufSize: Integer;
 
     FComments: TStringList;
     FLiteralPrefixes: TStringList;
     FCommentChars: set of AnsiChar;
-    FTermChar: AnsiChar;
+    FTermChar: Char;
     FOwnStream: Boolean;
-    FTerm: AnsiString;
-    FSetTermCommand: AnsiString;
+    FTerm: String;
+    FSetTermCommand: String;
 
-    procedure SetTerm(const Value: AnsiString);
-    function GetComments: AnsiString;
-    function GetPrefixes: AnsiString;
-    procedure SetComments(const Value: AnsiString);
-    procedure SetPrefixes(const Value: AnsiString);
+    procedure SetTerm(const Value: String);
+    function GetComments: String;
+    function GetPrefixes: String;
+    procedure SetComments(const Value: String);
+    procedure SetPrefixes(const Value: String);
     procedure ReadBuffer;
     function GetPosition: Integer;
-    function ExtractQuotedToken(const Quote: AnsiChar; ATokenID: Integer): Integer;
+    function ExtractQuotedToken(const Quote: Char; ATokenID: Integer): Integer;
     function ParseComments: Integer;
-    procedure AddTokenChar(const C: AnsiChar);
+    procedure AddTokenChar(const C: Char);
   public
     constructor Create(AStream: TStream; BufSize: Integer = 1024); overload;
-    constructor Create(const SQLString: AnsiString); overload;
+    constructor Create(const SQLString: String); overload;
     destructor Destroy; override;
 
     procedure GetNextChar;
     function GetNextToken: Integer;
 
     // Reads next statement and returns false if end of script is reached
-    function NextStatement(var Statement: AnsiString): Boolean;
+    function NextStatement(var Statement: String): Boolean;
 
-    procedure ExtractBlock(StartPos, EndPos: Integer; var Buffer: AnsiString);
-    procedure ParsePragmaComments(const Pragma: AnsiString);
+    procedure ExtractBlock(StartPos, EndPos: Integer; var Buffer: String);
+    procedure ParsePragmaComments(const Pragma: String);
 
     property Stream: TStream read FStream;
     property Position: Integer read GetPosition;
     property TokenBeginPos: Integer read FTokenBeginPos;
 
-    property Comments: AnsiString read GetComments write SetComments;
-    property LiteralPrefixes: AnsiString read GetPrefixes write SetPrefixes;
-    property Term: AnsiString read FTerm write SetTerm;
-    property SetTermCommand: AnsiString read FSetTermCommand write FSetTermCommand;
+    property Comments: String read GetComments write SetComments;
+    property LiteralPrefixes: String read GetPrefixes write SetPrefixes;
+    property Term: String read FTerm write SetTerm;
+    property SetTermCommand: String read FSetTermCommand write FSetTermCommand;
 
     property LineNo: Integer read FLineNo;
     property LinePos: Integer read FLinePos;
-    property NextChar: AnsiChar read FNextChar;
-    property Token: AnsiString read FToken;
+    property NextChar: Char read FNextChar;
+    property Token: String read FToken;
     property TokenID: Integer read FTokenID;
   end;
 
@@ -117,13 +119,11 @@ resourcestring
 
 implementation
 
-{$IFnDEF VER200}
-  {$I D2009.inc}
-{$ENDIF}
+{$I CtxD2009.inc}
 
 { Helper Routines }
 
-function MatchText(SubStr, Str: AnsiString; var SP: Integer): Boolean;
+function MatchText(SubStr, Str: String; var SP: Integer): Boolean;
 var
   I: Integer;
 begin
@@ -141,7 +141,7 @@ begin
   while (SP <= Length(Str)) and (Str[SP] = ' ') do Inc(SP);
 end;
 
-function NextToken(const Str: AnsiString; Delimiter: AnsiChar; var SP: Integer): AnsiString;
+function NextToken(const Str: String; Delimiter: Char; var SP: Integer): String;
 var
   BP: Integer;
 begin
@@ -163,12 +163,12 @@ begin
   if SP <= Length(Str) then Inc(SP); // Skip delimiter
 end;
 
-function GetDelimitedText(Strings: TStrings): AnsiString;
+function GetDelimitedText(Strings: TStrings): string;
 const
   ctQuoteChar = '"';
   ctDelimiter = ';';
 var
-  S: String;
+  S: string;
   P: PChar;
   I, ACount: Integer;
 begin
@@ -192,19 +192,19 @@ begin
         {$ENDIF}
         if (P^ <> #0) then S := AnsiQuotedStr(S, ctQuoteChar);
         Result := Result + S + ctDelimiter;
-      end;                       
+      end;
       System.Delete(Result, Length(Result), 1);
     end;
   end;
 end;
 
-procedure SetDelimitedText(Strings: TStrings; const Value: String);
+procedure SetDelimitedText(Strings: TStrings; const Value: string);
 const
   ctQuoteChar = '"';
   ctDelimiter = ';';
 var
   P, P1: PChar;
-  S: String;
+  S: string;
 begin
   with Strings do
   begin
@@ -265,7 +265,7 @@ begin
   end;
 end;
 
-function LeftPart(const Str, Delimiter: AnsiString): AnsiString;
+function LeftPart(const Str, Delimiter: String): String;
 var
   P: Integer;
 begin
@@ -275,7 +275,7 @@ begin
   else Result := copy(Str, 1, P - 1);
 end;
 
-function RightPart(const Str, Delimiter: AnsiString): AnsiString;
+function RightPart(const Str, Delimiter: String): String;
 var
   P: Integer;
 begin
@@ -312,7 +312,7 @@ begin
   GetNextChar;
 end;
 
-constructor TSQLLexer.Create(const SQLString: AnsiString);
+constructor TSQLLexer.Create(const SQLString: String);
 begin
   Create(TStringStream.Create(SQLString));
   FOwnStream := True;
@@ -327,17 +327,17 @@ begin
   inherited;
 end;
 
-function TSQLLexer.GetComments: AnsiString;
+function TSQLLexer.GetComments: String;
 begin
   Result := GetDelimitedText(FComments);
 end;
 
-function TSQLLexer.GetPrefixes: AnsiString;
+function TSQLLexer.GetPrefixes: String;
 begin
   Result := FLiteralPrefixes.CommaText;
 end;
 
-procedure TSQLLexer.SetComments(const Value: AnsiString);
+procedure TSQLLexer.SetComments(const Value: String);
 var
   I: Integer;
 begin
@@ -347,13 +347,13 @@ begin
   while I < FComments.Count do
     if FComments[I] <> '' then
     begin
-      Include(FCommentChars, AnsiString(FComments[I])[1]);
+      Include(FCommentChars, AnsiChar(FComments[I][1]));
       Inc(I);
     end else
       FComments.Delete(I);
 end;
 
-procedure TSQLLexer.SetPrefixes(const Value: AnsiString);
+procedure TSQLLexer.SetPrefixes(const Value: String);
 begin
   FLiteralPrefixes.CommaText := Value;
 end;
@@ -387,7 +387,7 @@ begin
   end;
 end;
 
-procedure TSQLLexer.ExtractBlock(StartPos, EndPos: Integer; var Buffer: AnsiString);
+procedure TSQLLexer.ExtractBlock(StartPos, EndPos: Integer; var Buffer: String);
 var
   SavePos: Integer;
 begin
@@ -402,7 +402,7 @@ begin
   end;
 end;
 
-function TSQLLexer.ExtractQuotedToken(const Quote: AnsiChar; ATokenID: Integer): Integer;
+function TSQLLexer.ExtractQuotedToken(const Quote: Char; ATokenID: Integer): Integer;
 begin
   Result := ATokenID;
   AddTokenChar(FNextChar);
@@ -412,7 +412,7 @@ begin
     begin
       AddTokenChar(FNextChar);
       GetNextChar;
-      if not ((Quote in ['''', '"', '`']) and (FNextChar = Quote)) then break;
+      if not (CharInSet(Quote, ['''', '"', '`']) and (FNextChar = Quote)) then break;
     end;
     if FNextChar = #0 then
       raise Exception.Create(SUnexpectedEndOfToken);
@@ -429,7 +429,7 @@ end;
 function TSQLLexer.ParseComments: Integer;
 var
   MatchCount, Len, P, I: Integer;
-  CommentBegin, CommentEnd, Str: AnsiString;
+  CommentBegin, CommentEnd, Str: String;
 begin
   Result := tokenUnknown;
   Str := FNextChar; // this is already begin of comments
@@ -489,7 +489,7 @@ end;
 function TSQLLexer.GetNextToken: Integer;
 var
   IsTerm, DotDelimitedID: Boolean;
-  PrevChar: AnsiChar;
+  PrevChar: Char;
 begin
   Result := tokenUnknown;
   if FTokenID = tokenEOLN then
@@ -498,7 +498,7 @@ begin
     FLinePos := 1;
   end;
   // Skip delimiters
-  while FNextChar in setDelimiters do
+  while CharInSet(FNextChar, setDelimiters) do
     GetNextChar;
 
   DotDelimitedID := False;
@@ -527,13 +527,13 @@ begin
       end
       else begin
         // Extract comments
-        if (FNextChar in FCommentChars) and not DotDelimitedID then
+        if CharInSet(FNextChar, FCommentChars) and not DotDelimitedID then
         begin
           PrevChar := FNextChar;
           Result := ParseComments;
           if Result <> tokenComment then
             Result := Ord(PrevChar);
-        end else if (FNextChar in setSpecialChars) and not DotDelimitedID then
+        end else if CharInSet(FNextChar, setSpecialChars) and not DotDelimitedID then
         begin
           if FNextChar = FTerm then
             Result := tokenTerm
@@ -542,7 +542,7 @@ begin
         end else
         begin
           IsTerm := FNextChar = FTermChar;
-          while (FNextChar in setTokenChars - FCommentChars) and (IsTerm or (FNextChar <> FTermChar)) do
+          while CharInSet(FNextChar, setTokenChars - FCommentChars) and (IsTerm or (FNextChar <> FTermChar)) do
           begin
             AddTokenChar(FNextChar);
             GetNextChar;
@@ -569,7 +569,7 @@ begin
       AddTokenChar('.');
       Result := tokenIdentifier;
       GetNextChar;
-      if FNextChar in [#0..#32, '''', ';', ',', '(', ')'] then break;
+      if CharInSet(FNextChar, [#0..#32, '''', ';', ',', '(', ')']) then break;
     end;
   until not DotDelimitedID;
 
@@ -581,7 +581,7 @@ begin
   else FToken := copy(FTokenBuf, 1, FTokenLen);
 end;
 
-procedure TSQLLexer.AddTokenChar(const C: AnsiChar);
+procedure TSQLLexer.AddTokenChar(const C: Char);
 begin
   if FTokenLen >= FTokenBufSize then
   begin
@@ -592,21 +592,23 @@ begin
   FTokenBuf[FTokenLen] := C;
 end;
 
-procedure TSQLLexer.SetTerm(const Value: AnsiString);
+procedure TSQLLexer.SetTerm(const Value: String);
 begin
   if FTerm <> Value then
   begin
     FTerm := Value;
-    if (FTerm <> '') and (FTerm[1] in setTokenChars) and not (FTerm[1] in setAlphaNum) then
+    if (FTerm <> '') and CharInSet(FTerm[1], setTokenChars)
+      and not CharInSet(FTerm[1], setAlphaNum)
+    then
       FTermChar := FTerm[1]
     else FTermChar := #0;
   end;
 end;
 
-procedure TSQLLexer.ParsePragmaComments(const Pragma: AnsiString);
+procedure TSQLLexer.ParsePragmaComments(const Pragma: String);
 var
   SP: Integer;
-  PropName, PropValue: AnsiString;
+  PropName, PropValue: String;
 begin
   // Engine: DBISAM; Comments: "//"; Delimiter: ";"; SetTerm: "SET TERM";
   SP := 1;
@@ -623,7 +625,7 @@ begin
   end;
 end;
 
-function TSQLLexer.NextStatement(var Statement: AnsiString): Boolean;
+function TSQLLexer.NextStatement(var Statement: String): Boolean;
 var
   CmdPos, StartPos, EndPos: Integer;
   Matching, FirstToken: Boolean;

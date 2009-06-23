@@ -34,8 +34,8 @@ type
   TIBRangeCursor = class (TDBRangeCursor)
   public
     constructor Create(Database: TIBDatabaseExt; Relation: TRelation; KeyValues: Variant);
-    constructor CreateExt(Database: TIBDatabaseExt; const TableName, KeyFields, TableFilter: AnsiString;
-      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: AnsiString = '');
+    constructor CreateExt(Database: TIBDatabaseExt; const TableName, KeyFields, TableFilter: String;
+      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: String = '');
     destructor Destroy; override;
   end;
 
@@ -44,23 +44,23 @@ type
   protected
     { Protected declarations }
     FSchema: TDatabaseSchema;
-    FSystemTableName: AnsiString;
-    FVersionStr: AnsiString;
+    FSystemTableName: String;
+    FVersionStr: String;
 
-    function GetDatabaseName: AnsiString;
-    procedure SetDatabaseName(const Value: AnsiString);
-    function GetVersionLabel: AnsiString;
-    procedure SetVersionLabel(const Value: AnsiString);
+    function GetDatabaseName: String;
+    procedure SetDatabaseName(const Value: String);
+    function GetVersionLabel: String;
+    procedure SetVersionLabel(const Value: String);
 
     { Replication support }
     function GetSchema: TDatabaseSchema;
     procedure SetSchema(Value: TDatabaseSchema);
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
 
-    function GetDatabaseURL: AnsiString;
-    procedure SetDatabaseURL(const Value: AnsiString);
+    function GetDatabaseURL: String;
+    procedure SetDatabaseURL(const Value: String);
 
-    function GetDriverName: AnsiString;
+    function GetDriverName: String;
 
     { Checks if the database is connected }
     procedure CheckActive;
@@ -74,10 +74,10 @@ type
     destructor Destroy; override;
 
     {:: Creates TTableExt component, corresponding to TableName. }
-    function CreateTable(const TableName: AnsiString): TDataSet; virtual;
+    function CreateTable(const TableName: String): TDataSet; virtual;
 
     {:: Creates TQueryExt component, corresponding to Statement. }
-    function CreateQuery(const Statement: AnsiString): TDataSet;
+    function CreateQuery(const Statement: String): TDataSet;
 
     { Schema related methods. Schema must be assigned for them to work }
     {:$ Updates database schema from the physical database tables. }
@@ -98,25 +98,25 @@ type
 
     function FindKey(Table: TDataSet; const KeyValues: array of const): Boolean;
 
-    function GetRangeCursor(const TableName, KeyFields, TableFilter: AnsiString;
-      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: AnsiString = ''): TDBRangeCursor; overload;
+    function GetRangeCursor(const TableName, KeyFields, TableFilter: String;
+      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: String = ''): TDBRangeCursor; overload;
     function GetRangeCursor(Relation: TRelation; KeyValues: Variant): TDBRangeCursor; overload;
 
     { Returns assignable SQL property. }
-    function GetQuerySQL(Query: TDataSet): AnsiString;
-    procedure SetQuerySQL(Query: TDataSet; const Statement: AnsiString);
+    function GetQuerySQL(Query: TDataSet): String;
+    procedure SetQuerySQL(Query: TDataSet; const Statement: String);
     { Returns assignable Params property. }
     procedure GetQueryParams(Query: TDataSet; Params: TParams);
     procedure SetQueryParams(Query: TDataSet; Params: TParams);
     { Executes query that does not return result set. }
     procedure ExecSQL(Query: TDataSet);
-    function ExecuteStatement(SQL: AnsiString; ResultSet: Pointer): Integer;
+    function ExecuteStatement(SQL: String; ResultSet: Pointer): Integer;
 
     function CreateCommand: TCtxDataCommand;
 
     { Parent object is always a table or schema. }
     function GetIndexDefs(DataSet: TDataSet): TIndexDefs;
-    function GetSystemTableName: AnsiString;
+    function GetSystemTableName: String;
   published
     { Published properties }
     {:$ Reference to a TDatabaseSchema component. }
@@ -125,19 +125,19 @@ type
     property Schema: TDatabaseSchema read FSchema write SetSchema;
     {:$ Text presentation of the database version. }
     {:: This property is effectively read-only. Any text assigned to it will be ignored. }
-    property VersionLabel: AnsiString read GetVersionLabel write SetVersionLabel stored False;
+    property VersionLabel: String read GetVersionLabel write SetVersionLabel stored False;
     {:$ The name of the System table. }
     {:: The default value of this property is 'system'. }
-    property SystemTableName: AnsiString read GetSystemTableName write FSystemTableName;
+    property SystemTableName: String read GetSystemTableName write FSystemTableName;
     {:$ Specifies the uniform path to the database. }
-    property DatabaseURL: AnsiString read GetDatabaseURL write SetDatabaseURL stored false;
-    property DatabaseName: AnsiString read GetDatabaseName write SetDatabaseName;
+    property DatabaseURL: String read GetDatabaseURL write SetDatabaseURL stored false;
+    property DatabaseName: String read GetDatabaseName write SetDatabaseName;
   end;
 
   {:$ Retrieves database URL from the TDatabase component and the connected Session component. }
-  function GetDatabaseURL(IBDatabase: TIBDatabase): AnsiString;
+  function GetDatabaseURL(IBDatabase: TIBDatabase): String;
   {:$ Assigned database and session parameters accoriding to the provided database URL. }
-  procedure SetDatabaseURL(IBDatabase: TIBDatabase; DatabaseURL: AnsiString);
+  procedure SetDatabaseURL(IBDatabase: TIBDatabase; DatabaseURL: String);
 
 resourcestring
   SDatabaseClosed = 'Cannot perform this operation on a closed database';
@@ -150,9 +150,6 @@ implementation
 
 uses IBCustomDataSet, Math;
 
-const
-  defSysTableName = 'SysTable';
-
 procedure Register;
 begin
   RegisterComponents('Database Extensions', [TIBDatabaseExt]);
@@ -160,12 +157,12 @@ end;
 
 { General Helper Rountines }
 
-function GetDatabaseURL(IBDatabase: TIBDatabase): AnsiString;
+function GetDatabaseURL(IBDatabase: TIBDatabase): String;
 begin
   Result := IBDatabase.DatabaseName;
 end;
 
-procedure SetDatabaseURL(IBDatabase: TIBDatabase; DatabaseURL: AnsiString);
+procedure SetDatabaseURL(IBDatabase: TIBDatabase; DatabaseURL: String);
 begin
   IBDatabase.DatabaseName := DatabaseURL;
 end;
@@ -180,11 +177,11 @@ begin
 end;
 
 constructor TIBRangeCursor.CreateExt(Database: TIBDatabaseExt;
-  const TableName, KeyFields, TableFilter: AnsiString;
+  const TableName, KeyFields, TableFilter: String;
   CaseInsensitive: Boolean; KeyValues: Variant;
-  const ExtraKeyFields: AnsiString = '');
+  const ExtraKeyFields: String = '');
 var
-  RangeFilter: AnsiString;
+  RangeFilter: String;
   Table: TIBTable;
 begin
   if (TableName = '') then
@@ -227,7 +224,7 @@ constructor TIBDatabaseExt.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FSchema := nil;
-  FSystemTableName := defSysTableName;
+  FSystemTableName := 'SysTable';
   FVersionStr := '';
 end;
 
@@ -262,7 +259,7 @@ begin
   SetDatabaseVersion(Self, Value);
 end;
 
-function TIBDatabaseExt.GetVersionLabel: AnsiString;
+function TIBDatabaseExt.GetVersionLabel: String;
 begin
   if Connected then
   begin
@@ -293,7 +290,7 @@ begin
   FSchema := Value;
 end;
 
-procedure TIBDatabaseExt.SetVersionLabel(const Value: AnsiString);
+procedure TIBDatabaseExt.SetVersionLabel(const Value: String);
 begin
   // Ignore this.
 end;
@@ -318,24 +315,24 @@ begin
   Result := DefaultTransaction.InTransaction;
 end;
 
-function TIBDatabaseExt.GetDriverName: AnsiString;
+function TIBDatabaseExt.GetDriverName: String;
 begin
   Result := 'IB\FB';
 end;
 
-function TIBDatabaseExt.GetDatabaseURL: AnsiString;
+function TIBDatabaseExt.GetDatabaseURL: String;
 begin
   Result := IBExt.GetDatabaseURL(Self);
 end;
 
-procedure TIBDatabaseExt.SetDatabaseURL(const Value: AnsiString);
+procedure TIBDatabaseExt.SetDatabaseURL(const Value: String);
 begin
   IBExt.SetDatabaseURL(Self, Value);
 end;
 
 function TIBDatabaseExt.GetRangeCursor(const TableName, KeyFields,
-  TableFilter: AnsiString; CaseInsensitive: Boolean; KeyValues: Variant;
-  const ExtraKeyFields: AnsiString): TDBRangeCursor;
+  TableFilter: String; CaseInsensitive: Boolean; KeyValues: Variant;
+  const ExtraKeyFields: String): TDBRangeCursor;
 begin
   Result := TIBRangeCursor.CreateExt(Self, TableName, KeyFields,
     TableFilter, CaseInsensitive, KeyValues, ExtraKeyFields);
@@ -352,18 +349,18 @@ begin
   Result := FSchema;
 end;
 
-function TIBDatabaseExt.GetDatabaseName: AnsiString;
+function TIBDatabaseExt.GetDatabaseName: String;
 begin
   Result := inherited DatabaseName;
 end;
 
-procedure TIBDatabaseExt.SetDatabaseName(const Value: AnsiString);
+procedure TIBDatabaseExt.SetDatabaseName(const Value: String);
 begin
   inherited DatabaseName := Value;
   RegisterCtxDataProvider(Self);
 end;
 
-function TIBDatabaseExt.CreateTable(const TableName: AnsiString): TDataSet;
+function TIBDatabaseExt.CreateTable(const TableName: String): TDataSet;
 begin
   Result := TIBTable.Create(nil);
   try
@@ -378,7 +375,7 @@ begin
   end;
 end;
 
-function TIBDatabaseExt.CreateQuery(const Statement: AnsiString): TDataSet;
+function TIBDatabaseExt.CreateQuery(const Statement: String): TDataSet;
 begin
   Result := TIBQuery.Create(nil);
   with TIBQuery(Result) do
@@ -402,7 +399,7 @@ begin
     TIBQuery(Query).Transaction.CommitRetaining;
 end;
 
-function TIBDatabaseExt.ExecuteStatement(SQL: AnsiString;
+function TIBDatabaseExt.ExecuteStatement(SQL: String;
   ResultSet: Pointer): Integer;
 var
   Q: TIBQuery;
@@ -438,13 +435,13 @@ begin
   TIBQuery(Query).Params.AssignValues(Params);
 end;
 
-function TIBDatabaseExt.GetQuerySQL(Query: TDataSet): AnsiString;
+function TIBDatabaseExt.GetQuerySQL(Query: TDataSet): String;
 begin
   Result := TIBQuery(Query).SQL.Text;
 end;
 
 procedure TIBDatabaseExt.SetQuerySQL(Query: TDataSet;
-  const Statement: AnsiString);
+  const Statement: String);
 begin
   TIBQuery(Query).SQL.Text := Statement;
 end;
@@ -467,7 +464,7 @@ var
   I, J, Idx, DefIdx: Integer;
   Table: TIBTable;
   Tables: TStringList;
-  LogicalTableName: AnsiString;
+  LogicalTableName: String;
 begin
   CheckActive;
   CheckSchema;
@@ -560,11 +557,9 @@ begin
   end;
 end;
 
-function TIBDatabaseExt.GetSystemTableName: AnsiString;
+function TIBDatabaseExt.GetSystemTableName: String;
 begin
-  if Trim(FSystemTableName) = '' then
-    Result := defSysTableName else
-    Result := FSystemTableName;
+  Result := FSystemTableName;
 end;
 
 procedure TIBDatabaseExt.DoConnect;

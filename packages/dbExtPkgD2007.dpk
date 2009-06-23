@@ -44,7 +44,8 @@ requires
   dbxcds,
   ibxpress,
   dsnap,
-  adortl;
+  adortl,
+  CtxCommonPkgD2007;
 
 contains
   ADOExt in '..\source\ADOExt.pas',
@@ -80,6 +81,7 @@ contains
   fDataTableWizard in '..\source\designtime\fDataTableWizard.pas' {frmDataTableWizard},
   fDBAdapterEditor in '..\source\designtime\fDBAdapterEditor.pas' {frmDBAdapterEditor},
   fSelectCommandTypes in '..\source\designtime\fSelectCommandTypes.pas' {frmSelectCommandTypes},
-  fSelFields in '..\source\designtime\fSelFields.pas' {frmSelectFields};
+  fSelFields in '..\source\designtime\fSelFields.pas' {frmSelectFields},
+  CtxDataSetCommandBuilder in '..\source\CtxDataSetCommandBuilder.pas';
 
 end.

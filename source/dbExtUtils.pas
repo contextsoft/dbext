@@ -53,20 +53,20 @@ type
     function GetActiveTransaction: TActiveTransaction;
     function GetEnabledTriggers: TSelectTriggers;
 
-    function AddVirtualKey(const TableName, KeyFields: AnsiString; KeyValues: Variant; CaseInsensitive: Boolean = False): Integer;
-    function VirtualKeyExists(const VirtualKey: AnsiString): Boolean;
+    function AddVirtualKey(const TableName, KeyFields: String; KeyValues: Variant; CaseInsensitive: Boolean = False): Integer;
+    function VirtualKeyExists(const VirtualKey: String): Boolean;
     procedure DeleteVirtualKey(VirtualKeyID: Integer);
 
-    procedure DoProgress(const Operation: AnsiString; PercentDone: Byte; var Abort: Boolean);
+    procedure DoProgress(const Operation: String; PercentDone: Byte; var Abort: Boolean);
 
     function GetReplicationID: Integer;
     procedure SetReplicationID(Value: Integer);
     function GetSnapshotID: Integer;
     procedure SetSnapshotID(Value: Integer);
-    function GetUserName: AnsiString;
-    procedure SetUserName(const Value: AnsiString);
-    function GetObjectsTableName: AnsiString;
-    function GetSystemTableName: AnsiString;
+    function GetUserName: String;
+    procedure SetUserName(const Value: String);
+    function GetObjectsTableName: String;
+    function GetSystemTableName: String;
 
     { Public properties - a matter of convinience }
     property ActiveTransaction: TActiveTransaction read GetActiveTransaction;
@@ -74,15 +74,15 @@ type
     property SystemTable: TSystemTable read GetSystemTable;
 
     {:$ The name of the current user. }
-    property UserName: AnsiString read GetUserName write SetUserName;
+    property UserName: String read GetUserName write SetUserName;
   end;
 
   TDataSetContext = class (TExpressionContext)
-    class function GetItem(context: pointer; const name: AnsiString): variant; override;
+    class function GetItem(context: pointer; const name: string): variant; override;
   end;
 
   TDataSetContextOldVal = class (TExpressionContext)
-    class function GetItem(context: pointer; const name: AnsiString): variant; override;
+    class function GetItem(context: pointer; const name: string): variant; override;
   end;
 
 type
@@ -103,10 +103,10 @@ type
   {:$ TMacro represents a query macro. }
   TMacro = class (TCollectionItem)
   protected
-    FValue: AnsiString;
-    FName: AnsiString;
-    procedure SetName(const Value: AnsiString);
-    procedure SetValue(const Value: AnsiString);
+    FValue: String;
+    FName: String;
+    procedure SetName(const Value: String);
+    procedure SetValue(const Value: String);
     {:$ Specifies the name of the TMacro as it appears in Object Inspector. }
     function GetDisplayName: String; override;
   public
@@ -118,14 +118,14 @@ type
     destructor Destroy; override;
     {:$ Assigns instance of TMacro object from the Source object. }
     procedure Assign(Source: TPersistent); override;
-    {:$ Returns AnsiString value of this macro. }
+    {:$ Returns string value of this macro. }
     {:! This property is provided for compatibility with RX query supporting macros. }
-    property AsString: AnsiString read FValue write SetValue;
+    property AsString: String read FValue write SetValue;
   published
     {:$ Specifies the name of this macro. }
-    property Name: AnsiString read FName write SetName;
-    {:$ Returns AnsiString value of this macro. }
-    property Value: AnsiString read FValue write SetValue;
+    property Name: String read FName write SetName;
+    {:$ Returns string value of this macro. }
+    property Value: String read FValue write SetValue;
   end;
 
   {:$ TMacros represents a collection of query macros. }
@@ -134,19 +134,19 @@ type
     function GetItem(Index: Integer): TMacro;
     procedure SetItem(Index: Integer; const Value: TMacro);
 
-    function AddMacro(const MacroName: AnsiString; Data: Pointer): AnsiString;
-    function ExpandMacro(const MacroName: AnsiString; Data: Pointer): AnsiString;
+    function AddMacro(const MacroName: String; Data: Pointer): String;
+    function ExpandMacro(const MacroName: String; Data: Pointer): String;
   public
     {:$ Assign values from the macros collection provided in Source parameter. }
     procedure AssignValues(Source: TMacros);
     {:$ Expands template, replacing macro names with their values. }
-    function ExpandMacros(const Template, MacroBegin, MacroEnd: AnsiString): AnsiString;
+    function ExpandMacros(const Template, MacroBegin, MacroEnd: String): String;
     {:$ Parses template and extracts macro names. }
-    procedure ParseTemplate(const Template, MacroBegin, MacroEnd: AnsiString);
+    procedure ParseTemplate(const Template, MacroBegin, MacroEnd: String);
     {:$ Update names of macros from new template keeping values of the unchanged parameters. }
-    procedure UpdateMacros(const Template, MacroBegin, MacroEnd: AnsiString);
+    procedure UpdateMacros(const Template, MacroBegin, MacroEnd: String);
     {:$ Finds macro by name. Returns nil if no macro with this name found. }
-    function Find(const Name: AnsiString): TMacro;
+    function Find(const Name: String): TMacro;
     {:$ Provides array-like access to contained macros. }
     property Items[Index: Integer]: TMacro read GetItem write SetItem; default;
   end;
@@ -156,13 +156,13 @@ type
   {:$ Move document's item up (Dist < 0) or down (Dist > 0) in list. }
   function MoveItem(ItemNoField: TField; Dist: Integer = 1): Boolean;
 
-  function EvaluateFilter(DataSet: TDataSet; const FilterExpr: AnsiString): Boolean;
-  procedure EvaluateCondition(Table: TDataSet; const Condition: AnsiString; var Value, OldValue: Boolean);
+  function EvaluateFilter(DataSet: TDataSet; const FilterExpr: String): Boolean;
+  procedure EvaluateCondition(Table: TDataSet; const Condition: String; var Value, OldValue: Boolean);
 
-  function ExecuteSQL(Database: IDatabaseExt; const Statement: AnsiString;
+  function ExecuteSQL(Database: IDatabaseExt; const Statement: String;
     ReturnSet: Boolean = True; ReportProgress: Boolean = False): TDataSet;
   function ExecuteSQLParam(Database: IDatabaseExt; const Statement,
-    ParamNames: AnsiString; ParamValues: Variant; ParamDataSet: TDataSet; ReturnSet,
+    ParamNames: String; ParamValues: Variant; ParamDataSet: TDataSet; ReturnSet,
     ReportProgress: Boolean): TDataSet;
 
   procedure SetPrivateCalcBuffer(DataSet: TDataSet; Buffer: PChar);
@@ -175,7 +175,7 @@ type
   procedure UpdateFieldsFromSchema(DataSet: TDataSet; Schema: TDatabaseSchema);
   {:$ Returns full path to a directory (Dir) relative to current application
   {:$ directory the application's exe is located }
-  function GetRelativePath(const Dir: AnsiString): AnsiString;
+  function GetRelativePath(const Dir: String): String;
 
   {:$ Executes Error constraints from schema. }
   procedure ExecuteErrorConstraints(Database: IDatabaseExt; Table: TDataSet; ChangeType: TChangeType; TableDef: TTableDefinition);
@@ -275,11 +275,7 @@ uses TypInfo;
 
 function UpdateItemNo(ItemNoField: TField): Integer;
 var
-  {$IFDEF VER200}
-  B: TBookmark;
-  {$ELSE}
-  B: string;
-  {$ENDIF}
+  B: TDataSetBookmark;
   IsCurrent: Boolean;
 begin
   Result := 1;
@@ -366,12 +362,12 @@ begin
   end;
 end;
 
-function EvaluateFilter(DataSet: TDataSet; const FilterExpr: AnsiString): Boolean;
+function EvaluateFilter(DataSet: TDataSet; const FilterExpr: String): Boolean;
 begin
   Result := dbExtParser.EvaluateExpression(FilterExpr, DataSet, TDataSetContext);
 end;
 
-procedure EvaluateCondition(Table: TDataSet; const Condition: AnsiString; var Value, OldValue: Boolean);
+procedure EvaluateCondition(Table: TDataSet; const Condition: String; var Value, OldValue: Boolean);
 var
   ConditionExprToken: TEvaluator;
 begin
@@ -394,11 +390,7 @@ end;
 
 function CalcSum(Fld: TField): Double;
 var
-  {$IFDEF VER200}
-  B: TBookmark;
-  {$ELSE}
-  B: string;
-  {$ENDIF}
+  B: TDataSetBookmark;
 begin
   Result := 0;
   if Fld = nil then exit;
@@ -425,17 +417,17 @@ begin
   end;
 end;
 
-function ExecuteSQL(Database: IDatabaseExt; const Statement: AnsiString;
+function ExecuteSQL(Database: IDatabaseExt; const Statement: String;
   ReturnSet: Boolean = True; ReportProgress: Boolean = False): TDataSet;
 begin
   Result := ExecuteSQLParam(Database, Statement, '', NULL, nil, ReturnSet, ReportProgress);
 end;
 
 function ExecuteSQLParam(Database: IDatabaseExt; const Statement,
-  ParamNames: AnsiString; ParamValues: Variant; ParamDataSet: TDataSet; ReturnSet,
+  ParamNames: String; ParamValues: Variant; ParamDataSet: TDataSet; ReturnSet,
   ReportProgress: Boolean): TDataSet;
 var
-  ParamName: AnsiString;
+  ParamName: String;
   P, I: Integer;
   Fld: TField;
   Param: TParam;
@@ -509,7 +501,7 @@ var
   KeyChanged: Boolean;
   OldConditionValue, ConditionValue: Boolean;
   Cursor: TDBRangeCursor;
-  VirtualKey: AnsiString;
+  VirtualKey: String;
 begin
   if TableDef = nil then exit;
   if not (ChangeType in [ctDeleted, ctInserted, ctModified]) then exit;
@@ -1243,7 +1235,7 @@ var
   FieldsList: TList;
   ResultValues: Variant;
   FirstField: TField;
-  ResultFields, LookupID: AnsiString;
+  ResultFields, LookupID: String;
 begin
   SetPrivateCalcBuffer(DataSet, Buffer);
 
@@ -1307,8 +1299,8 @@ end;
 procedure UpdateFieldsFromSchema(DataSet: TDataSet; Schema: TDatabaseSchema);
 var
   I, P, TblIdx, FldIdx: Integer;
-  OriginTable, OriginField: AnsiString;
-  LastOriginTable, TempStr: AnsiString;
+  OriginTable, OriginField: String;
+  LastOriginTable, TempStr: String;
   FldDef: TFieldDefinition;
   Instance: TField;
 begin
@@ -1366,7 +1358,7 @@ begin
   end;
 end;
 
-function GetRelativePath(const Dir: AnsiString): AnsiString;
+function GetRelativePath(const Dir: String): String;
 begin
   {$IFDEF VER130}
   Result := IncludeTrailingBackslash(ExtractFilePath(ParamStr(0))) + Dir;
@@ -1501,8 +1493,6 @@ begin
         ReverseEngineer;
         Data := StrToVarArray(Schema.SaveToStr);
       end;
-      dvGetSystemTableName: Data := Schema.SystemTableName;
-      dvSetSystemTableName: Schema.SystemTableName := VarToStr(Data);
       dvGetVersion: Data := VersionToStr(GetVersion);
       dvSetVersion: SetVersion(StrToVersion(Data));
       dvExecuteSQL: begin
@@ -1519,7 +1509,7 @@ end;
 { TDataSetContext }
 
 class function TDataSetContext.GetItem(context: pointer;
-  const name: AnsiString): variant;
+  const name: string): variant;
 begin
   Result := TDataSet(context).FieldByName(name).Value;
 end;
@@ -1527,7 +1517,7 @@ end;
 { TDataSetContextOldVal }
 
 class function TDataSetContextOldVal.GetItem(context: pointer;
-  const name: AnsiString): variant;
+  const name: string): variant;
 begin
   Result := TDataSet(context).FieldByName(name).OldValue;
 end;
@@ -1591,7 +1581,7 @@ begin
   end;
 end;
 
-function TMacros.ExpandMacro(const MacroName: AnsiString; Data: Pointer): AnsiString;
+function TMacros.ExpandMacro(const MacroName: String; Data: Pointer): String;
 var
   M: TMacro;
 begin
@@ -1601,7 +1591,7 @@ begin
   else Result := '';
 end;
 
-function TMacros.AddMacro(const MacroName: AnsiString; Data: Pointer): AnsiString;
+function TMacros.AddMacro(const MacroName: String; Data: Pointer): String;
 begin
   Result := '';
   if Find(MacroName) = nil then
@@ -1609,12 +1599,12 @@ begin
 end;
 
 function TMacros.ExpandMacros(const Template, MacroBegin,
-  MacroEnd: AnsiString): AnsiString;
+  MacroEnd: String): String;
 begin
   Result := ParseFields(Template, MacroBegin, MacroEnd, ExpandMacro, nil);
 end;
 
-function TMacros.Find(const Name: AnsiString): TMacro;
+function TMacros.Find(const Name: String): TMacro;
 var
   I: Integer;
 begin
@@ -1638,14 +1628,14 @@ begin
 end;
 
 procedure TMacros.ParseTemplate(const Template, MacroBegin,
-  MacroEnd: AnsiString);
+  MacroEnd: String);
 begin
   Clear;
   ParseFields(Template, MacroBegin, MacroEnd, AddMacro, nil);
 end;
 
 procedure TMacros.UpdateMacros(const Template, MacroBegin,
-  MacroEnd: AnsiString);
+  MacroEnd: String);
 var
   TempMacros: TMacros;
 begin
@@ -1690,12 +1680,12 @@ begin
   else Result := inherited GetDisplayName;
 end;
 
-procedure TMacro.SetName(const Value: AnsiString);
+procedure TMacro.SetName(const Value: String);
 begin
   FName := Value;
 end;
 
-procedure TMacro.SetValue(const Value: AnsiString);
+procedure TMacro.SetValue(const Value: String);
 begin
   FValue := Value;
 end;

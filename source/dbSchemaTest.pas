@@ -128,7 +128,7 @@ type
 
   TDBSchemaMessageCodes = set of TDBSchemaMessageCode;
 
-  TOnStatusMessage = procedure (Sender: TObject; const StatusMessage: AnsiString) of object;
+  TOnStatusMessage = procedure (Sender: TObject; const StatusMessage: String) of object;
   TOnResultMessage = procedure (Sender: TObject; ResultMessage: TDBSchemaMessage) of object;
 
   TDBSchemaMessage = class (TCollectionItem)
@@ -136,45 +136,45 @@ type
     FCode: TDBSchemaMessageCode;
     FObjectType: TDBSchemaMessageObject;
     FSeverity: TDBSchemaMessageSeverity;
-    FObjectNames: array [TDBSchemaMessageObject] of AnsiString;
-    FContextInfo: AnsiString;
+    FObjectNames: array [TDBSchemaMessageObject] of String;
+    FContextInfo: String;
     FContextObject: TObject;
 
-    function GetDefaultMessage: AnsiString;
-    function GetContextName: AnsiString;
+    function GetDefaultMessage: String;
+    function GetContextName: String;
   public
     constructor Create(Collection: TCollection); override;
     procedure Assign(Source: TPersistent); override;
 
-    function GetNames(Index: TDBSchemaMessageObject): AnsiString;
-    procedure SetNames(const Index: TDBSchemaMessageObject; const Value: AnsiString);
+    function GetNames(Index: TDBSchemaMessageObject): String;
+    procedure SetNames(const Index: TDBSchemaMessageObject; const Value: String);
 
     {:$ Specifies the text that appears in list view. }
     function GetDisplayName: String; override;
 
-    function GetField(const FieldText: AnsiString; Data: Pointer): AnsiString;
-    property DefaultMessage: AnsiString read GetDefaultMessage;
+    function GetField(const FieldText: String; Data: Pointer): String;
+    property DefaultMessage: String read GetDefaultMessage;
     property ContextObject: TObject read FContextObject write FContextObject;
   published
     property Code: TDBSchemaMessageCode read FCode write FCode default smcNone;
     property Severity:  TDBSchemaMessageSeverity read FSeverity write FSeverity default smsError;
     property ObjectType: TDBSchemaMessageObject read FObjectType write FObjectType default smoSchema;
-    property ContextInfo: AnsiString read FContextInfo write FContextInfo;
+    property ContextInfo: String read FContextInfo write FContextInfo;
 
-    property ContextName: AnsiString read GetContextName;
-    property TableName: AnsiString index smoTable read GetNames write SetNames;
-    property EnumName: AnsiString index smoEnum read GetNames write SetNames;
-    property FieldName: AnsiString index smoField read GetNames write SetNames;
-    property IndexName: AnsiString index smoIndex read GetNames write SetNames;
-    property RelationName: AnsiString index smoRelation read GetNames write SetNames;
-    property TriggerName: AnsiString index smoTrigger read GetNames write SetNames;
-    property RelationshipName: AnsiString index smoRelationship read GetNames write SetNames;
-    property DomainName: AnsiString index smoDomain read GetNames write SetNames;
-    property ViewName: AnsiString index smoView read GetNames write SetNames;
-    property StoredProcName: AnsiString index smoStoredProc read GetNames write SetNames;
-    property SequenceName: AnsiString index smoSequence read GetNames write SetNames;
-    property TableConstraintName: AnsiString index smoTableConstraint read GetNames write SetNames;
-    property CustomObjectName: AnsiString index smoCustomObject read GetNames write SetNames;
+    property ContextName: String read GetContextName;
+    property TableName: String index smoTable read GetNames write SetNames;
+    property EnumName: String index smoEnum read GetNames write SetNames;
+    property FieldName: String index smoField read GetNames write SetNames;
+    property IndexName: String index smoIndex read GetNames write SetNames;
+    property RelationName: String index smoRelation read GetNames write SetNames;
+    property TriggerName: String index smoTrigger read GetNames write SetNames;
+    property RelationshipName: String index smoRelationship read GetNames write SetNames;
+    property DomainName: String index smoDomain read GetNames write SetNames;
+    property ViewName: String index smoView read GetNames write SetNames;
+    property StoredProcName: String index smoStoredProc read GetNames write SetNames;
+    property SequenceName: String index smoSequence read GetNames write SetNames;
+    property TableConstraintName: String index smoTableConstraint read GetNames write SetNames;
+    property CustomObjectName: String index smoCustomObject read GetNames write SetNames;
   end;
 
   { collection of TDBSchemaMessage }
@@ -202,8 +202,8 @@ type
     FOnStatusMessage: TOnStatusMessage;
     FErrorCount: integer;
 
-    procedure SetDisabledMessages(const Value: AnsiString);
-    function GetDisabledMessages: AnsiString;
+    procedure SetDisabledMessages(const Value: String);
+    function GetDisabledMessages: String;
     procedure SetMessages(const Value: TDBSchemaMessages);
     procedure SetSchema(const Value: TDatabaseSchema);
   public
@@ -211,7 +211,7 @@ type
     destructor Destroy; override;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
 
-    function IsValidIdentifier(Obj: TObject; const Str: AnsiString): Boolean;
+    function IsValidIdentifier(Obj: TObject; const Str: String): Boolean;
     function IsNameUnique(Item: TSchemaCollectionItem): Boolean;
     procedure TestEnumeration(Enumeration: TEnumeration); virtual;
     procedure TestTable(TableDef: TTableDefinition); virtual;
@@ -232,9 +232,9 @@ type
     function IsCodeDisabled(Code: TDBSchemaMessageCode): Boolean;
     function AddResult(Code: TDBSchemaMessageCode = smcNone; ObjectType: TDBSchemaMessageObject = smoSchema;
       Severity: TDBSchemaMessageSeverity = smsError;
-      ContextObject: TObject = nil; ContextInfo: AnsiString = ''): TDBSchemaMessage;
-    procedure DoStatus(const StatusMessage: AnsiString);
-    property DisabledMessages: AnsiString read GetDisabledMessages write SetDisabledMessages;
+      ContextObject: TObject = nil; ContextInfo: String = ''): TDBSchemaMessage;
+    procedure DoStatus(const StatusMessage: String);
+    property DisabledMessages: String read GetDisabledMessages write SetDisabledMessages;
     property DBEngineProfile: TDBEngineProfile read FDBEngineProfile;
     property ErrorCount: integer read FErrorCount;
   published
@@ -376,7 +376,7 @@ resourcestring
   SIdentifierIsTooLong = 'Identifier exceeds maximum allowed length for this database';
 
 const
-  DBSchemaMessageCodeMessages: array [TDBSchemaMessageCode] of AnsiString = ('',
+  DBSchemaMessageCodeMessages: array [TDBSchemaMessageCode] of String = ('',
     SInvalidSchemaName,
     SEnumInvalidName,
     SEnumEmpty,
@@ -462,7 +462,7 @@ const
 
     SUnknown);
 
-  DBSchemaMessageSeverityDisplayText: array [TDBSchemaMessageSeverity] of AnsiString =
+  DBSchemaMessageSeverityDisplayText: array [TDBSchemaMessageSeverity] of String =
     (SHint, SWarning, SError);
 
   function GetSchemaMessageObject(Obj: TObject): TDBSchemaMessageObject;
@@ -540,20 +540,20 @@ begin
   end else inherited;
 end;
 
-function TDBSchemaMessage.GetDefaultMessage: AnsiString;
+function TDBSchemaMessage.GetDefaultMessage: String;
 begin
   Result := ParseFields(DBSchemaMessageCodeMessages[Code], '<%', '%>', GetField, nil);
   if ContextInfo <> '' then
     Result := Result + ' (''' + ContextInfo + ''')';
 end;
 
-function TDBSchemaMessage.GetNames(Index: TDBSchemaMessageObject): AnsiString;
+function TDBSchemaMessage.GetNames(Index: TDBSchemaMessageObject): String;
 begin
   Result := FObjectNames[Index];
 end;
 
 procedure TDBSchemaMessage.SetNames(const Index: TDBSchemaMessageObject;
-  const Value: AnsiString);
+  const Value: String);
 begin
   FObjectNames[Index] := Value;
 end;
@@ -565,14 +565,14 @@ begin
     DefaultMessage]);
 end;
 
-function TDBSchemaMessage.GetField(const FieldText: AnsiString; Data: Pointer): AnsiString;
+function TDBSchemaMessage.GetField(const FieldText: String; Data: Pointer): String;
 begin
   if IsPublishedProp(Self, FieldText) then
     Result := GetPropValue(Self, FieldText)
   else Result := 'ERROR';
 end;
 
-function TDBSchemaMessage.GetContextName: AnsiString;
+function TDBSchemaMessage.GetContextName: String;
 begin
   Result := '';
   if (ContextObject <> nil) and ContextObject.InheritsFrom(TSchemaCollectionItem) then
@@ -644,7 +644,7 @@ end;
 
 function TDBSchemaTester.AddResult(Code: TDBSchemaMessageCode;
   ObjectType: TDBSchemaMessageObject; Severity: TDBSchemaMessageSeverity;
-  ContextObject: TObject; ContextInfo: AnsiString): TDBSchemaMessage;
+  ContextObject: TObject; ContextInfo: String): TDBSchemaMessage;
 begin
   if Severity = smsError then
     inc(FErrorCount);
@@ -689,23 +689,23 @@ begin
   end;
 end;
 
-procedure TDBSchemaTester.DoStatus(const StatusMessage: AnsiString);
+procedure TDBSchemaTester.DoStatus(const StatusMessage: String);
 begin
   if Assigned(FOnStatusMessage) then
     FOnStatusMessage(Self, StatusMessage);
 end;
 
-procedure TDBSchemaTester.SetDisabledMessages(const Value: AnsiString);
+procedure TDBSchemaTester.SetDisabledMessages(const Value: String);
 begin
   FDisabledMessages.CommaText := Value;
 end;
 
-function TDBSchemaTester.GetDisabledMessages: AnsiString;
+function TDBSchemaTester.GetDisabledMessages: String;
 begin
   Result := FDisabledMessages.CommaText;
 end;
 
-function TDBSchemaTester.IsValidIdentifier(Obj: TObject; const Str: AnsiString): Boolean;
+function TDBSchemaTester.IsValidIdentifier(Obj: TObject; const Str: String): Boolean;
 var
   I: Integer;
 begin
@@ -780,8 +780,8 @@ end;
 procedure TDBSchemaTester.TestEnumeration(Enumeration: TEnumeration);
 var
   I: Integer;
-  ConstValue: AnsiString;
-  ConstName: AnsiString;
+  ConstValue: String;
+  ConstName: String;
   EqPos: Integer;
   Values: TStringList;
   IntValue: Integer;
@@ -851,12 +851,12 @@ begin
 
     FIdentifiers.Add(TypePrefix + TableName);
 
-    if (not IsView{ or FDBEngineProfile.ViewSupport(FieldDefs.ClassType)}) and
+    if (not IsView or FDBEngineProfile.ViewSupport(FieldDefs.ClassType)) and
       (FieldDefs.Count = 0) then
       AddResult(smcTableNoFieldsDefined, smoTable, smsError, TableDef);
 
 
-    if (not IsView {or (FDBEngineProfile.ViewSupport(Relations.ClassType) and FDBEngineProfile.ViewSupport(IndexDefs.ClassType))}) and
+    if (not IsView or (FDBEngineProfile.ViewSupport(Relations.ClassType) and FDBEngineProfile.ViewSupport(IndexDefs.ClassType))) and
       (Replicate or (Relations.Count > 0)) and (GetPrimaryIndex = nil) then
       AddResult(smcTableNoPrimaryIndex, smoTable, smsWarning, TableDef);
 
@@ -884,7 +884,7 @@ var
   Relation: TRelation;
   D: TDomain;
   En: TEnumeration;
-  EngFldType: AnsiString;
+  EngFldType: String;
 begin
   // Testing field definition
   with FieldDef do
@@ -1048,7 +1048,7 @@ end;
 
 procedure TDBSchemaTester.TestDomain(Domain: TDomain);
 var
-  EngFldType: AnsiString;
+  EngFldType: String;
 begin
   // Testing Domain definition
   with Domain do

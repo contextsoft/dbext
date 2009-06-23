@@ -15,6 +15,8 @@
 (******************************************************************************)
 unit SQLExt;
 
+{$I CtxVer.inc}
+
 interface
 
 uses
@@ -23,7 +25,13 @@ uses
   FmtBcd,
 {$ENDIF}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Db, CtxDataTypes, CtxDataSetCommand, CtxDBIntf, dbSchema, DBCommon, DBXpress, SQLExpr;
+  Db, CtxDataTypes, CtxDataSetCommand, CtxDBIntf, dbSchema, DBCommon,
+  {$IFDEF D2009_ORLATER}
+  DBCommonTypes,
+  {$ELSE}
+  DBXpress,
+  {$ENDIF}
+  SQLExpr;
 
 type
   TSQLConnectionExt = class;
@@ -33,25 +41,25 @@ type
   protected
     { Protected declarations }
     FSchema: TDatabaseSchema;
-    FSystemTableName: AnsiString;
-    FDatabaseName: AnsiString;
+    FSystemTableName: String;
+    FDatabaseName: String;
     FTransactionDesc: TTransactionDesc;
-    FVersionStr: AnsiString;
+    FVersionStr: String;
 
-    function GetDatabaseName: AnsiString;
-    procedure SetDatabaseName(const Value: AnsiString);
-    function GetVersionLabel: AnsiString;
-    procedure SetVersionLabel(const Value: AnsiString);
+    function GetDatabaseName: String;
+    procedure SetDatabaseName(const Value: String);
+    function GetVersionLabel: String;
+    procedure SetVersionLabel(const Value: String);
 
     { Replication support }
     function GetSchema: TDatabaseSchema;
     procedure SetSchema(Value: TDatabaseSchema);
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
 
-    function GetDatabaseURL: AnsiString;
-    procedure SetDatabaseURL(const Value: AnsiString);
+    function GetDatabaseURL: String;
+    procedure SetDatabaseURL(const Value: String);
 
-    function GetDriverName: AnsiString;
+    function GetDriverName: String;
 
     { Checks if the database is connected }
     procedure CheckActive;
@@ -66,10 +74,10 @@ type
     destructor Destroy; override;
 
     {:: Creates TSQLTable component, corresponding to TableName. }
-    function CreateTable(const TableName: AnsiString): TDataSet;
+    function CreateTable(const TableName: String): TDataSet;
 
     {:: Creates TSQLQuery component, corresponding to Statement. }
-    function CreateQuery(const Statement: AnsiString): TDataSet;
+    function CreateQuery(const Statement: String): TDataSet;
 
     { Schema related methods. Schema must be assigned for them to work }
     {:$ Updates database schema from the physical database tables. }
@@ -91,27 +99,27 @@ type
 
     function FindKey(Table: TDataSet; const KeyValues: array of const): Boolean;
 
-    function GetRangeCursor(const TableName, KeyFields, TableFilter: AnsiString;
-      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: AnsiString = ''): TDBRangeCursor; overload;
+    function GetRangeCursor(const TableName, KeyFields, TableFilter: String;
+      CaseInsensitive: Boolean; KeyValues: Variant; const ExtraKeyFields: String = ''): TDBRangeCursor; overload;
     function GetRangeCursor(Relation: TRelation; KeyValues: Variant): TDBRangeCursor; overload;
 
     { Returns assignable SQL property. }
-    function GetQuerySQL(Query: TDataSet): AnsiString;
-    procedure SetQuerySQL(Query: TDataSet; const Statement: AnsiString);
+    function GetQuerySQL(Query: TDataSet): String;
+    procedure SetQuerySQL(Query: TDataSet; const Statement: String);
     { Returns assignable Params property. }
     procedure GetQueryParams(Query: TDataSet; Params: TParams);
     procedure SetQueryParams(Query: TDataSet; Params: TParams);
     { Executes query that does not return result set. }
     procedure ExecSQL(Query: TDataSet);
-    function ExecuteStatement(SQL: AnsiString; ResultSet: Pointer): Integer;
+    function ExecuteStatement(SQL: String; ResultSet: Pointer): Integer;
 
     { Parent object is always a table or schema. }
     function GetIndexDefs(DataSet: TDataSet): TIndexDefs;
-    function GetSystemTableName: AnsiString;
+    function GetSystemTableName: String;
 
     function CreateCommand: TCtxDataCommand;
 
-    //property DriverRegistryFile;
+    // property DriverRegistryFile;
     {:$ Transaction Descriptor Record }
     property TransactionDesc: TTransactionDesc read FTransactionDesc write FTransactionDesc;
   published
@@ -122,19 +130,19 @@ type
     property Schema: TDatabaseSchema read FSchema write SetSchema;
     {:$ Text presentation of the database version. }
     {:: This property is effectively read-only. Any text assigned to it will be ignored. }
-    property VersionLabel: AnsiString read GetVersionLabel write SetVersionLabel stored False;
+    property VersionLabel: String read GetVersionLabel write SetVersionLabel stored False;
     {:$ The name of the System table. }
     {:: The default value of this property is 'system'. }
-    property SystemTableName: AnsiString read GetSystemTableName write FSystemTableName;
+    property SystemTableName: String read GetSystemTableName write FSystemTableName;
     {:$ Specifies the uniform path to the database. }
-    property DatabaseURL: AnsiString read GetDatabaseURL write SetDatabaseURL stored false;
-    property DatabaseName: AnsiString read GetDatabaseName write SetDatabaseName;
+    property DatabaseURL: String read GetDatabaseURL write SetDatabaseURL stored false;
+    property DatabaseName: String read GetDatabaseName write SetDatabaseName;
   end;
 
   {:$ Retrieves database URL from the TDatabase component and the connected Session component. }
-  function GetDatabaseURL(SQLConnection: TSQLConnection): AnsiString;
+  function GetDatabaseURL(SQLConnection: TSQLConnection): String;
   {:$ Assigned database and session parameters accoriding to the provided database URL. }
-  procedure SetDatabaseURL(SQLConnection: TSQLConnection; DatabaseURL: AnsiString);
+  procedure SetDatabaseURL(SQLConnection: TSQLConnection; DatabaseURL: String);
 
   procedure Register;
 
@@ -157,7 +165,7 @@ end;
 
 { General Helper Rountines }
 
-function GetProfileString(Section, Setting, IniFileName: AnsiString): AnsiString;
+function GetProfileString(Section, Setting, IniFileName: string): string;
 var
   IniFile: TMemIniFile;
   List: TStrings;
@@ -176,9 +184,9 @@ begin
   end;
 end;
 
-function GetDatabaseURL(SQLConnection: TSQLConnection): AnsiString;
+function GetDatabaseURL(SQLConnection: TSQLConnection): String;
 var
-  ConnectionType, RemoteHost, DatabaseName: AnsiString;
+  ConnectionType, RemoteHost, DatabaseName: String;
 begin
   ConnectionType := SQLConnection.DriverName;
   RemoteHost := SQLConnection.Params.Values['HostName'];
@@ -188,9 +196,9 @@ begin
   Result := EncodeDatabaseURL(ConnectionType, RemoteHost, DatabaseName);
 end;
 
-procedure SetDatabaseURL(SQLConnection: TSQLConnection; DatabaseURL: AnsiString);
+procedure SetDatabaseURL(SQLConnection: TSQLConnection; DatabaseURL: String);
 var
-  ConnectionType, RemoteHost, DatabaseName: AnsiString;
+  ConnectionType, RemoteHost, DatabaseName: String;
 begin
   DecodeDatabaseURL(DatabaseURL, ConnectionType, RemoteHost, DatabaseName);
   // if RemoteHost = 'LocalHost' then RemoteHost := '';
@@ -249,7 +257,7 @@ begin
   SetDatabaseVersion(Self, Value);
 end;
 
-function TSQLConnectionExt.GetVersionLabel: AnsiString;
+function TSQLConnectionExt.GetVersionLabel: String;
 begin
   if Connected then
   begin
@@ -260,7 +268,7 @@ begin
     Result := VersionToStr(Undefined);
 end;
 
-procedure TSQLConnectionExt.SetVersionLabel(const Value: AnsiString);
+procedure TSQLConnectionExt.SetVersionLabel(const Value: String);
 begin
   // Ignore this.
 end;
@@ -305,24 +313,24 @@ begin
   Result := InTransaction;
 end;
 
-function TSQLConnectionExt.GetDriverName: AnsiString;
+function TSQLConnectionExt.GetDriverName: String;
 begin
   Result := 'DBX';
 end;
 
-function TSQLConnectionExt.GetDatabaseURL: AnsiString;
+function TSQLConnectionExt.GetDatabaseURL: String;
 begin
   Result := SQLExt.GetDatabaseURL(Self);
 end;
 
-procedure TSQLConnectionExt.SetDatabaseURL(const Value: AnsiString);
+procedure TSQLConnectionExt.SetDatabaseURL(const Value: String);
 begin
   SQLExt.SetDatabaseURL(Self, Value);
 end;
 
 function TSQLConnectionExt.GetRangeCursor(const TableName, KeyFields,
-  TableFilter: AnsiString; CaseInsensitive: Boolean; KeyValues: Variant;
-  const ExtraKeyFields: AnsiString): TDBRangeCursor;
+  TableFilter: String; CaseInsensitive: Boolean; KeyValues: Variant;
+  const ExtraKeyFields: String): TDBRangeCursor;
 begin
   DatabaseError(SCapabilityNotSupported); Result := nil;
 end;
@@ -338,26 +346,26 @@ begin
   Result := FSchema;
 end;
 
-function TSQLConnectionExt.GetDatabaseName: AnsiString;
+function TSQLConnectionExt.GetDatabaseName: String;
 begin
   Result := FDatabaseName;
 end;
 
-procedure TSQLConnectionExt.SetDatabaseName(const Value: AnsiString);
+procedure TSQLConnectionExt.SetDatabaseName(const Value: String);
 begin
   // ConnectionName := Value;
   FDatabaseName := Value;
   RegisterCtxDataProvider(Self);
 end;
 
-function TSQLConnectionExt.CreateTable(const TableName: AnsiString): TDataSet;
+function TSQLConnectionExt.CreateTable(const TableName: String): TDataSet;
 begin
   Result := TSQLTable.Create(nil);
   TSQLTable(Result).SQLConnection := Self;
   TSQLTable(Result).TableName := TableName;
 end;
 
-function TSQLConnectionExt.CreateQuery(const Statement: AnsiString): TDataSet;
+function TSQLConnectionExt.CreateQuery(const Statement: String): TDataSet;
 begin
   Result := TSQLQuery.Create(nil);
   with TSQLQuery(Result) do
@@ -375,7 +383,7 @@ begin
   TSQLQuery(Query).ExecSQL;
 end;
 
-function TSQLConnectionExt.ExecuteStatement(SQL: AnsiString;
+function TSQLConnectionExt.ExecuteStatement(SQL: String;
   ResultSet: Pointer): Integer;
 var
   Q: TSQLQuery;
@@ -401,13 +409,13 @@ begin
   TSQLQuery(Query).Params.AssignValues(Params);
 end;
 
-function TSQLConnectionExt.GetQuerySQL(Query: TDataSet): AnsiString;
+function TSQLConnectionExt.GetQuerySQL(Query: TDataSet): String;
 begin
   Result := TSQLQuery(Query).SQL.Text;
 end;
 
 procedure TSQLConnectionExt.SetQuerySQL(Query: TDataSet;
-  const Statement: AnsiString);
+  const Statement: String);
 begin
   TSQLQuery(Query).SQL.Text := Statement;
 end;
@@ -424,7 +432,7 @@ var
   I, J, Idx, DefIdx: Integer;
   Table: TSQLTable;
   Tables: TStringList;
-  LogicalTableName: AnsiString;
+  LogicalTableName: String;
 begin
   CheckActive;
   CheckSchema;
@@ -524,7 +532,7 @@ begin
   DatabaseError(SCapabilityNotSupported);
 end;
 
-function TSQLConnectionExt.GetSystemTableName: AnsiString;
+function TSQLConnectionExt.GetSystemTableName: String;
 begin
   if Trim(FSystemTableName) = '' then
     Result := defSysTableName else

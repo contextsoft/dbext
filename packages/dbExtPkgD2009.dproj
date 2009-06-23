@@ -20,6 +20,8 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_SYMBOL_DEPRECATED>false</DCC_SYMBOL_DEPRECATED>
+			<DCC_UNIT_DEPRECATED>false</DCC_UNIT_DEPRECATED>
 			<DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
 			<DCC_UnitSearchPath>..\source;..\source\designtime;..\..\Common\source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DesignOnlyPackage>true</DesignOnlyPackage>
@@ -115,6 +117,10 @@
 				<Form>frmSelectCommandTypes</Form>
 			</DCCReference>
 			<DCCReference Include="..\source\designtime\fSelFields.pas"/>
+			<DCCReference Include="..\source\CtxDataSetCommandBuilder.pas">
+				<Form>frmCtxDataSetCommandBuilder</Form>
+			</DCCReference>
+			<DCCReference Include="..\source\CtxFieldsUpdater.pas"/>
 			<DCCReference Include="..\source\dbExtReg.dcr"/>
 			<DCCReference Include="..\source\dbRecord.dcr"/>
 			<DCCReference Include="..\source\dbSequence.dcr"/>

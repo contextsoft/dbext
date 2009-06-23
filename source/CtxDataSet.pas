@@ -13,9 +13,24 @@ unit CtxDataSet;
 
 {.$DEFINE _NODATASETFILTER}
 
+{$I CtxVer.inc}
+
 interface
 
 uses SysUtils, Classes, DB, CtxDataTypes, CtxData;
+
+{$IFDEF D2009_ORLATER}
+type
+  TDataSetBookmark = TBytes;
+const
+  NilBookmark = nil;
+{$ELSE}
+type
+  TDataSetBookmark = String;
+  TRecordBuffer = PChar;
+const
+  NilBookmark = '';
+{$ENDIF}
 
 type
   {:$ TCtxDataSet - TDataSet descendant, which can store rows in memory or }
@@ -61,27 +76,28 @@ type
 
     // procedure DataBufferToObject(ABuf: PChar; AObj: TCtxDataRow);
     // function ObjectToDataBuffer(AObj: TCtxDataRow; ABuf: PChar): boolean;
-    function CheckRowBuffer(ARow: TCtxDataRow;
-      ABuf: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): Boolean;
+    function CheckRowBuffer(ARow: TCtxDataRow; ABuf: TRecordBuffer): Boolean;
 
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     { Data buffer access }
     procedure CalcBufSizes;
     { Overriden abstract methods (required) }
-    function AllocRecordBuffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; override;
-    procedure FreeRecordBuffer(var Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
+    function AllocRecordBuffer: TRecordBuffer; override;
+    procedure FreeRecordBuffer(var Buffer: TRecordBuffer); override;
+
     function  _GetFieldSize(AField: TField): integer;
-    procedure _FreeRecordPointers(AData: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
-    procedure GetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer); override;
-    function GetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): TBookmarkFlag; override;
-    function GetRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; GetMode: TGetMode; DoCheck: Boolean): TGetResult; override;
+    procedure _FreeRecordPointers(AData: TRecordBuffer);
+
+    procedure GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
+    function GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag; override;
+    function GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode; DoCheck: Boolean): TGetResult; override;
     function GetRecordSize: Word; override;
     procedure InternalClose; override;
     procedure InternalFirst; override;
     procedure InternalGotoBookmark(Bookmark: Pointer); override;
     procedure InternalHandleException; override;
     procedure InternalInitFieldDefs; override;
-    procedure InternalInitRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
+    procedure InternalInitRecord(Buffer: TRecordBuffer); override;
     procedure InternalLast; override;
     procedure InternalOpen; override;
     procedure InternalEdit; override;
@@ -90,13 +106,13 @@ type
     procedure InternalPost; override;
     procedure InternalCancel; override;
     procedure InternalRefresh; override;
-    procedure InternalSetToRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
+    procedure InternalSetToRecord(Buffer: TRecordBuffer); override;
     function IsCursorOpen: Boolean; override;
     procedure OpenCursor(InfoQuery: Boolean = False); override;
     procedure SetFiltered(Value: Boolean); override;
-    procedure SetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Value: TBookmarkFlag); override;
-    procedure SetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer); override;
-    procedure ClearCalcFields(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}); override;
+    procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag); override;
+    procedure SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
+    procedure ClearCalcFields(Buffer: TRecordBuffer); override;
     procedure DoOnNewRecord; override;
     procedure CreateInternalDataColumns;
     procedure SetOrderBy(const Value: String);
@@ -111,7 +127,7 @@ type
     procedure CheckActive; override;
     function FindRecord(Restart, GoForward: Boolean): boolean; override;
     function LocateObject(const KeyFields: string; const KeyValues: Variant; Options: TLocateOptions): TCtxDataRow;
-    function GetActiveRecBuf(var RecBuf: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): boolean;
+    function GetActiveRecBuf(var RecBuf: TRecordBuffer): boolean;
     //Master-Detail
     procedure SetMasterFields(const Value: string);
     function GetMasterFields: string;
@@ -272,12 +288,13 @@ const
 {$IFnDEF _NODATASETFILTER}
 type
   TDataSetContext = class (TExpressionContext)
-    class function GetItem(context: pointer; const Name: AnsiString): variant; override;
+    class function GetItem(context: pointer; const name: string): variant; override;
   end;
 
 { TDataSetContext }
 
-class function TDataSetContext.GetItem(context: pointer;  const Name: AnsiString): variant;
+class function TDataSetContext.GetItem(context: pointer;
+  const name: string): variant;
 begin
   Result := TDataSet(context).FieldByName(name).Value;
 end;
@@ -382,11 +399,14 @@ end;
 
 destructor TCtxDataSet.Destroy;
 begin
-  Active := False;
-  FCursor.Free;
-  FMasterLink.Free;
-  FFilterEvaluator.Free;
   inherited Destroy;
+  // Active := False;
+  FCursor.Free;
+  FCursor := nil;
+  FMasterLink.Free;
+  FMasterLink := nil;
+  FFilterEvaluator.Free;
+  FFilterEvaluator := nil;
 end;
 
 procedure TCtxDataSet.OnNotifyDataEvent(Context: TObject; DataEvent: TCtxDataEventType);
@@ -395,6 +415,8 @@ begin
     Exit;
 
   case DataEvent of
+    cdeContainerDeactivated:
+      Active := False;
     cdeContainerDataChanged,
     cdeTableDataChanged:
       if Active then
@@ -411,19 +433,19 @@ begin
 end;
 
 
-function TCtxDataSet.AllocRecordBuffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+function TCtxDataSet.AllocRecordBuffer: TRecordBuffer;
 begin
   GetMem(Result, FRecBufSize);
   FillChar(Result^, FRecBufSize, 0);
 end;
 
-procedure TCtxDataSet.FreeRecordBuffer(var Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TCtxDataSet.FreeRecordBuffer(var Buffer: TRecordBuffer);
 begin
   _FreeRecordPointers(Buffer);
   FreeMem(Buffer, FRecBufSize);
 end;
 
-procedure TCtxDataSet._FreeRecordPointers(AData: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TCtxDataSet._FreeRecordPointers(AData: TRecordBuffer);
 var
   I: integer;
   P: pointer;
@@ -563,8 +585,7 @@ begin
 end;
 *)
 
-function TCtxDataSet.CheckRowBuffer(ARow: TCtxDataRow;
-  ABuf: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): Boolean;
+function TCtxDataSet.CheckRowBuffer(ARow: TCtxDataRow; ABuf: TRecordBuffer): Boolean;
 var
   RowIdx: Integer;
 begin
@@ -593,31 +614,34 @@ begin
   inherited CheckActive;
 end;
 
-procedure TCtxDataSet.GetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer);
+procedure TCtxDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
   PRecInfo(Data)^ := PRecInfo(Buffer)^;
 end;
 
-procedure TCtxDataSet.SetBookmarkData(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Data: Pointer);
+procedure TCtxDataSet.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
   PRecInfo(Buffer)^ := PRecInfo(Data)^;
 end;
 
-function TCtxDataSet.GetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): TBookmarkFlag;
+function TCtxDataSet.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
 begin
   Result := PRecInfo(Buffer).Flag;
 end;
 
-procedure TCtxDataSet.SetBookmarkFlag(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}; Value: TBookmarkFlag);
+procedure TCtxDataSet.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
 begin
   PRecInfo(Buffer).Flag := Value;
 end;
 
 function TCtxDataSet.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
 var
-  I,S: integer;
-  B,P: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+  I, S: integer;
+  B, P: TRecordBuffer;
   StrValue: AnsiString;
+  {$IFDEF D2009_ORLATER}
+  WStrValue: WideString;
+  {$ENDIF}
 begin
   Result := False;
   if not GetActiveRecBuf(B) then
@@ -633,6 +657,14 @@ begin
       // String is apparently the only data type stored in buffer
       PRecInfo(B).Obj.GetColumnData(FColumns[I], @StrValue);
       StrPLCopy(Buffer, StrValue, Field.DataSize);
+    end else if Field.DataType = ftWideString then
+    begin
+      {$IFDEF D2009_ORLATER}
+      PRecInfo(B).Obj.GetColumnData(FColumns[I], @WStrValue);
+      StrPLCopy(Buffer, WStrValue, Field.DataSize);
+      {$ELSE}
+      PRecInfo(B).Obj.GetColumnData(FColumns[I], Buffer);
+      {$ENDIF}
     end else
       PRecInfo(B).Obj.GetColumnData(FColumns[I], Buffer);
   end else
@@ -651,7 +683,11 @@ begin
       if Field.DataType = ftString then
         StrPLCopy(Buffer, PAnsiString(P)^, Field.DataSize)
       else if Field.DataType = ftWideString then
+        {$IFDEF D2009_ORLATER}
+        WideString(Buffer) := PWideString(P)^
+        {$ELSE}
         PWideString(Buffer)^ := PWideString(P)^
+        {$ENDIF}
       else if Field.DataType in ARefTypes then
         PAnsiString(Buffer)^ := PAnsiString(P)^
       else
@@ -664,8 +700,11 @@ procedure TCtxDataSet.SetFieldData(Field: TField; Buffer: Pointer);
 var
   I, S: integer;
   P: Pointer;
-  B: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+  B: TRecordBuffer;
   StrValue: AnsiString;
+  {$IFDEF D2009_ORLATER}
+  WStrValue: WideString;
+  {$ENDIF}
 begin
   if State = dsBrowse then
     Edit;
@@ -681,6 +720,14 @@ begin
     begin
       StrValue := PAnsiChar(Buffer);
       PRecInfo(B).Obj.SetColumnData(FColumns[I], @StrValue);
+    end else if Field.DataType = ftWideString then
+    begin
+      {$IFDEF D2009_ORLATER}
+      WStrValue := PWideChar(Buffer);
+      PRecInfo(B).Obj.SetColumnData(FColumns[I], @WStrValue);
+      {$ELSE}
+      PRecInfo(B).Obj.SetColumnData(FColumns[I], Buffer);
+      {$ENDIF}
     end else
       PRecInfo(B).Obj.SetColumnData(FColumns[I], Buffer);
   end else
@@ -697,7 +744,11 @@ begin
       if Field.DataType = ftString then
         PAnsiString(P)^ := PAnsiChar(Buffer)
       else if Field.DataType = ftWideString then
+        {$IFDEF D2009_ORLATER}
+        PWideString(P)^ := WideString(Buffer)
+        {$ELSE}
         PWideString(P)^ := PWideString(Buffer)^
+        {$ENDIF}
       else if Field.DataType in ARefTypes then
         PAnsiString(P)^ := PAnsiString(Buffer)^
       else
@@ -707,14 +758,14 @@ begin
   DataEvent(deFieldChange, Longint(Field));
 end;
 
-procedure TCtxDataSet.ClearCalcFields(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TCtxDataSet.ClearCalcFields(Buffer: TRecordBuffer);
 begin
   // ?
 end;
 
 function TCtxDataSet.GetRecNo: Integer;
 var
-  B: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+  B: TRecordBuffer;
 begin
   if GetActiveRecBuf(B) then
     Result := PRecInfo(B)^.Idx+1 else
@@ -747,7 +798,7 @@ begin
     inherited SetFiltered(Value);
 end;
 
-function TCtxDataSet.GetActiveRecBuf(var RecBuf: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF}): boolean;
+function TCtxDataSet.GetActiveRecBuf(var RecBuf: TRecordBuffer): boolean;
 begin
   case State of
     dsBlockRead, dsBrowse:
@@ -771,7 +822,7 @@ end;
 procedure TCtxDataSet.OnFilterDataRow(ARow: TCtxDataRow; var Accept: boolean);
 var
   SaveState: TDataSetState;
-  B: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+  B: TRecordBuffer;
 begin
   Accept := True;
   if Assigned(OnFilterRecord) or (FFilterEvaluator <> nil) then
@@ -807,8 +858,8 @@ begin
   end;
 end;
 
-function TCtxDataSet.GetRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
-  GetMode: TGetMode; DoCheck: Boolean): TGetResult;
+function TCtxDataSet.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
+  DoCheck: Boolean): TGetResult;
 var
   RecCount:integer;
 begin
@@ -851,8 +902,8 @@ begin
     }
     if Result = grError then
       if DoCheck then
-        DatabaseError('No Records') else
-        FCurRec := -1;
+        DatabaseError(SRecordNotFound)
+      else FCurRec := -1;
   end;
 end;
 
@@ -956,7 +1007,7 @@ begin
   FCursorOpen := False;
 end;
 
-procedure TCtxDataSet.InternalInitRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TCtxDataSet.InternalInitRecord(Buffer: TRecordBuffer);
 begin
   if Buffer <> nil then
   begin
@@ -1115,7 +1166,7 @@ begin
   FieldDefs.Updated := True;
 end;
 
-procedure TCtxDataSet.InternalSetToRecord(Buffer: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF});
+procedure TCtxDataSet.InternalSetToRecord(Buffer: TRecordBuffer);
 begin
   InternalGotoBookmark(Buffer);
 end;
@@ -1244,7 +1295,7 @@ end;
 function TCtxDataSet.Lookup(const KeyFields: string; const KeyValues: Variant; const ResultFields: string): Variant;
 var
   Obj: TCtxDataRow;
-  B: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+  B: TRecordBuffer;
 begin
   Result := null;
   Obj := LocateObject(KeyFields, KeyValues, []);
@@ -1366,7 +1417,7 @@ end;
 
 function TCtxDataSet.GetReferencedRow(Column: TCtxDataColumn): TCtxDataRow;
 var
-  B: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+  B: TRecordBuffer;
 begin
   if GetActiveRecBuf(B) then
     Result := PRecInfo(B)^.Obj.ReferencedRow[Column]
@@ -1440,9 +1491,9 @@ end;
 
 function TCtxDataSet.GetDataRow: TCtxDataRow;
 var
-  B: {$IFDEF VER200}TRecordBuffer{$ELSE}PChar{$ENDIF};
+  B: TRecordBuffer;
 begin
-  if not GetActiveRecBuf(B) then
+  if GetActiveRecBuf(B) then
     Result := PRecInfo(B).Obj
   else Result := nil;
 end;
@@ -1484,7 +1535,7 @@ procedure TCtxBlobStream.LoadBlobData;
 var
   // B: PChar;
   // P: Pointer;
-  S: String;
+  S: AnsiString;
 begin
   SetSize(0);
   FDataset.GetFieldData(FField, @S);
@@ -1507,7 +1558,7 @@ procedure TCtxBlobStream.SaveBlobData;
 var
 //  B: PChar;
 //  P: Pointer;
-  S: String;
+  S: AnsiString;
 begin
   SetLength(S, Size);
   Position := 0;

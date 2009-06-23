@@ -17,6 +17,8 @@
 (******************************************************************************)
 unit dbEngProfile;
 
+{$I CtxVer.inc}
+
 interface
 
 uses Classes, Contnrs, SysUtils, DB, dbSchema;
@@ -275,15 +277,13 @@ implementation
 
 uses {$IFnDEF VER130}dbSQLParser,{$ENDIF} TypInfo, Masks;
 
+{$I CtxD2009.inc}
+
 {$IFDEF VER130}
 function IncludeTrailingPathDelimiter(const Path: String): String;
 begin
   Result := IncludeTrailingBackslash(Path);
 end;
-{$ENDIF}
-
-{$IFnDEF VER200}
-  {$I D2009.inc}
 {$ENDIF}
 
 procedure LoadProfiles(AOwner: TComponent; const Path: String; const FileExt: String = '.dbp');
@@ -482,7 +482,8 @@ end;
 
 constructor TFmtExpression.Parse(const FmtStr: String; var CurPos: Integer);
 var
-  NextChar, NextLiteral: Char;
+  NextChar: Char;
+  NextLiteral: Char;
   CaseExpr: TFmtExpression;
   Token: String;
 
@@ -988,7 +989,7 @@ begin
   begin
     if not TestPropChanged then exit;
     if TestOnly then exit;
-    if CharInSet(PropName[1], ['^', '!']) then exit;
+    if CharInSet(AnsiChar(PropName[1]), ['^', '!']) then exit;
   end;
 
   UseOldValue := PropName[1] = '^';

@@ -9,6 +9,8 @@
 (******************************************************************************)
 unit CtxData;
 
+{$I CtxVer.inc}
+
 interface
 
 uses SysUtils, Classes, Contnrs, CtxDataTypes;
@@ -91,7 +93,7 @@ type
     FOptions: TCtxCompareOptions;
   end;
   {$NODEFINE TCtxOrderByColumn}
-
+ 
   TCtxOrderByColumns = array of TCtxOrderByColumn;
   {$NODEFINE TCtxOrderByColumns}
 
@@ -134,8 +136,6 @@ type
   {:$ while in inactive state, then the data will be reloaded back if possible next time }
   {:$ it is activated. }
   TCtxDataContainer = class (TComponent)
-  private
-    procedure SetStoreDataInDfm(const Value: Boolean);
   protected
     { Designer }
     FDesigner: TCtxDataContainerDesigner;
@@ -156,15 +156,17 @@ type
     FTransactionCounter: Integer;
 
     FSavedData: TStream;
+    FLoadingFromStream: Boolean;
 
     FOnAfterUpdate: TNotifyEvent;
     FOnBeforeUpdate: TNotifyEvent;
     FOnUpdateFailed: TNotifyEvent;
     FOnCalcFields: TCtxCalcFieldsEvent;
 
+    procedure SetStoreDataInDfm(const Value: Boolean);
     procedure SetDataAdapter(const Value: TCtxDataAdapter);
-    function GetParam(const Name: AnsiString): Variant;
-    procedure SetParam(const Name: AnsiString; const Value: Variant);
+    function GetParam(const Name: String): Variant;
+    procedure SetParam(const Name: String; const Value: Variant);
     procedure SetActive(Value: Boolean);
     procedure SetTables(const Value: TCtxDataTables);
     procedure SetRelations(const Value: TCtxDataRelations);
@@ -203,9 +205,9 @@ type
     procedure LoadFromStream(Stream: TStream);
 
     {:$ Saves the content of data container object to a file in binary format. }
-    procedure SaveToFile(const FileName: AnsiString; StoreStructure: Boolean = True; StoreData: Boolean = True);
+    procedure SaveToFile(const FileName: String; StoreStructure: Boolean = True; StoreData: Boolean = True);
     {:$ Loads data container from a file previously created by SaveToFile method. }
-    procedure LoadFromFile(const FileName: AnsiString);
+    procedure LoadFromFile(const FileName: String);
 
     {:$ Fills data container from the the database using DataAdapter. }
     {:$ If DataAdapter is not specified, then the  }
@@ -270,7 +272,7 @@ type
     property Designer: TCtxDataContainerDesigner read FDesigner;
 
     {:$ Provides array-like access to data container parameters as name-value pairs. }
-    property Param[const Name: AnsiString]: Variant read GetParam write SetParam; default;
+    property Param[const Name: String]: Variant read GetParam write SetParam; default;
   published
     {:$ Tables collection contain list of tables (TCtxDataTable item) in the data container. }
     property Tables: TCtxDataTables read FTables write SetTables;
@@ -309,12 +311,12 @@ type
   {:$ TCtxDataCollectionItem is an ancestor for all collection items in data container. }
   TCtxDataCollectionItem = class (TCollectionItem)
   protected
-    FName: AnsiString;
+    FName: String;
     FProps: TStrings;
 
     function GetCollection: TCtxDataCollection;
     procedure SetProps(const Value: TStrings);
-    procedure SetName(const Value: AnsiString); virtual;
+    procedure SetName(const Value: String); virtual;
     function GetItemIndex: Integer;
     procedure SetItemIndex(Value: Integer);
   public
@@ -324,7 +326,7 @@ type
     destructor Destroy; override;
 
     {:$ Specifies name of collection item. }
-    property Name: AnsiString read FName write SetName;
+    property Name: String read FName write SetName;
     property Collection: TCtxDataCollection read GetCollection;
   published
     {:$ Specifies 1-based index of a collection item. This property is not stored and only used }
@@ -340,13 +342,13 @@ type
   public
     {:$ Returns an item in TCtxDataCollection by Name. If item is not found an }
     {:$ exception occurs. }
-    function Get(const AName: AnsiString): TCtxDataCollectionItem;
+    function Get(const AName: String): TCtxDataCollectionItem;
     {:$ Locates an item in TCtxDataCollection by Name. }
-    function Find(const AName: AnsiString): TCtxDataCollectionItem;
+    function Find(const AName: String): TCtxDataCollectionItem;
     {:$ Returns True if AName is not found in the collection, except for an item passed as Item parameter. }
-    function IsUnique(const AName: AnsiString; Item: TCtxDataCollectionItem = nil): Boolean;
+    function IsUnique(const AName: String; Item: TCtxDataCollectionItem = nil): Boolean;
     {:$ Generates an unique item name by appending Counter to the ProposedName. }
-    function GetAutoName(const ProposedName: AnsiString; Counter: Integer = 0): AnsiString; virtual;
+    function GetAutoName(const ProposedName: String; Counter: Integer = 0): String; virtual;
     {:$ Returns list of all item Names in the collection. }
     procedure GetNames(List: TStrings);
     {:$ Returns index of an item in the collection}
@@ -355,6 +357,11 @@ type
 
   TCtxDataTableValidation = (dtvRequiredColumns, dtvPrimaryKey, dtvForeignKeys, dtvReferencedKeys, dtvCalcFields);
   TCtxDataTableValidations = set of TCtxDataTableValidation;
+
+  TCtxColumnMapInfo = class
+    Column: TCtxDataColumn;
+    DataType: TCtxDataType;
+  end;
 
   {:$ TCtxDataTable is a collection item representing data table in data container. }
   TCtxDataTable = class (TCtxDataCollectionItem)
@@ -374,7 +381,7 @@ type
     { Columns }
     FColumns: TCtxDataColumns;
     { Rows }
-    procedure SetName(const Value: AnsiString); override;
+    procedure SetName(const Value: String); override;
     function GetDataContainer: TCtxDataContainer;
     function  GetRow(Idx: Integer): TCtxDataRow;
     function  GetPhysicalRowCount: Integer;
@@ -426,6 +433,9 @@ type
     {:$ This column map will contain DestTable columns corresponding to our column indexes. }
     {:$ The number of items in list is equal to number of columns in this table. }
     function CreateColumnMap(DestTable: TCtxDataTable): TList;
+
+    {:$ This function returns true if data table has one or more column marked at Primary Key.}
+    function HasPKColumns: Boolean;
 
     {:$ Begin batch update of data table and block all notifications. Updating data }
     {:$ table does not block referential integrity checks. In order to do that, use }
@@ -519,7 +529,7 @@ type
     {:$ Locate row in the data table with values in PK columns equal to values of ARow in PK columns.}
     function FindRow(ARow: TCtxDataRow): TCtxDataRow; overload;
     {:$ Locate row in the data table with values in KeyFields columns equal to KeyValues.}
-    function Locate(const KeyFields: AnsiString; const KeyValues: Variant; Options: TCtxCompareOptions): TCtxDataRow;
+    function Locate(const KeyFields: String; const KeyValues: Variant; Options: TCtxCompareOptions): TCtxDataRow;
 
     { Streaming }
     {:$ Read table's data from TReader object. }
@@ -560,7 +570,7 @@ type
   published
     {:$ Contains collection of data columns. }
     property Columns: TCtxDataColumns read FColumns write SetColumns;
-    property DataColumns: TCtxDataColumns read FColumns write SetColumns stored False;
+    property DataColumns: TCtxDataColumns read FColumns write SetColumns stored False; 
     {:$ Specifies the name of this data table in data container. This name must be unique }
     {:$ within the data container. }
     property Name;
@@ -577,9 +587,9 @@ type
     procedure Update(Item: TCollectionItem); override;
   public
     {:$ Returns a data table by Name. If the table is not found an exception occurs. }
-    function Get(const AName: AnsiString): TCtxDataTable;
+    function Get(const AName: String): TCtxDataTable;
     {:$ Locates a data table by Name. }
-    function Find(const AName: AnsiString): TCtxDataTable;
+    function Find(const AName: String): TCtxDataTable;
     {:$ Adds new data table to the collection. }
     function Add: TCtxDataTable;
     {:$ Provides array-like access to elements of DataTables collection. }
@@ -603,14 +613,14 @@ type
     FAttributes: TCtxDataColumnAttributes;
     {Lookup support}
     // FLinkColumn: TCtxDataColumn;
-    FRelationName: AnsiString;
+    FRelationName: String;
     FRelation: TCtxDataRelation;
-    FDisplayLabel: AnsiString;
+    FDisplayLabel: String;
     FRequireValidation: Boolean;
 
-    function GetDataTypeName: AnsiString;
-    procedure SetDataTypeName(const Value: AnsiString);
-    procedure SetName(const Value: AnsiString); override;
+    function GetDataTypeName: String;
+    procedure SetDataTypeName(const Value: String);
+    procedure SetName(const Value: String); override;
     procedure SetDataType(Value: TCtxDataType);
     function GetDataSize: word;
     function GetDisplayName: String; override;
@@ -655,7 +665,7 @@ type
     {:$ Specifies the length associated with variable length data types for this column. }
     property DataLength: word read GetDataLength write SetDataLength;
     {:$ Specifies column name. Identical to Name property. This property is deprecated. }
-    property ColumnName: AnsiString read FName write SetName stored False;
+    property ColumnName: String read FName write SetName stored False;
     {:$ Specifies column name. The names of all columns within a table must be unique. }
     property Name;
 
@@ -669,11 +679,11 @@ type
     property Calculated: Boolean index caCalculated read GetAttr write SetAttr;
 
     {:$ Specifies the dsiplay label for this column. }
-    property DisplayLabel: AnsiString read FDisplayLabel write FDisplayLabel;
+    property DisplayLabel: String read FDisplayLabel write FDisplayLabel;
     {:: Define relation for the columns of type cdtReference. }
-    property RelationName: AnsiString read FRelationName write FRelationName;
+    property RelationName: String read FRelationName write FRelationName;
     {:$ Returns displayable name for column's data type. }
-    property DataTypeName: AnsiString read GetDataTypeName write SetDataTypeName stored False;
+    property DataTypeName: String read GetDataTypeName write SetDataTypeName stored False;
   end;
 
   {:$ TCtxDataColumns is a collection of TCtxDataColumn items. A collection of this }
@@ -691,19 +701,19 @@ type
     {:$ Adds a column to TCtxDataColumns collection. }
     function Add: TCtxDataColumn;
     {:$ Adds a column to TCtxDataColumns collection and assigns values to its properties. }
-    function AddColumn(const AColumnName: AnsiString; ADataType: TCtxDataType;
+    function AddColumn(const AColumnName: String; ADataType: TCtxDataType;
       ARequired: Boolean = False; ADataLength: word = 0): TCtxDataColumn;
     {:$ Finds a column in the TCtxDataColumns collection by Name. }
-    function Find(const AName: AnsiString): TCtxDataColumn;
+    function Find(const AName: String): TCtxDataColumn;
     {:$ Finds a column in the TCtxDataColumns collection by Name. This method raises }
     {:$ exception if the column is not found. }
-    function Get(const AName: AnsiString): TCtxDataColumn;
+    function Get(const AName: String): TCtxDataColumn;
     {:$ Returns list of column items from the list of semi-colon (;) delimited ColumnNames. }
-    procedure GetColumnList(AList: TList; ColumnNames: AnsiString);
+    procedure GetColumnList(AList: TList; ColumnNames: String);
     {:$ Returns array of column items from the list of semi-colon (;) delimited ColumnNames. }
-    function GetColumnArray(ColumnNames: AnsiString): TCtxColumnArray;
+    function GetColumnArray(ColumnNames: String): TCtxColumnArray;
     {:$ Returns an array of sorting descriptors from the list of semi-colon (;) delimited ColumnNames. }
-    function GetOrderByColumns(AColumnNames: AnsiString): TCtxOrderByColumns;
+    function GetOrderByColumns(AColumnNames: String): TCtxOrderByColumns;
 
     {:$ Provides array-like access to column objects contained in this collection. }
     property Columns[Idx: Integer]: TCtxDataColumn read GetColumn; default;
@@ -743,11 +753,11 @@ type
     function GetState(Idx: TCtxDataRowState): Boolean;
     procedure SetState(Idx: TCtxDataRowState; ASet: Boolean);
 
-    function  GetAsVariant(const ColumnName: AnsiString): Variant;
-    procedure SetAsVariant(const ColumnName: AnsiString; Value: Variant);
+    function  GetAsVariant(const ColumnName: String): Variant;
+    procedure SetAsVariant(const ColumnName: String; Value: Variant);
 
-    function GetAsString(Column: TCtxDataColumn): AnsiString;
-    procedure SetAsString(Column: TCtxDataColumn; Value: AnsiString);
+    function GetAsString(Column: TCtxDataColumn): String;
+    procedure SetAsString(Column: TCtxDataColumn; Value: String);
 
     { Buffer access methods }
     procedure InitBuffer(var Buffer: Pointer);
@@ -867,12 +877,12 @@ type
     property Value[Column: TCtxDataColumn]: Variant read GetValue write SetValue; // default;
     {:$ Provides array-like access to original column values as Variants. }
     property OriginalValue[Column: TCtxDataColumn]: Variant read GetOriginalValue;
-    {:$ Provides array-like access to column values as AnsiString. }
-    property AsString[Column: TCtxDataColumn]: AnsiString read GetAsString write SetAsString;
+    {:$ Provides array-like access to column values as String. }
+    property AsString[Column: TCtxDataColumn]: String read GetAsString write SetAsString;
     {:$ Provides array-like access to multi-column values returned and assigned as variant array. }
     property Values[const Columns: TCtxColumnArray]: Variant read GetValues write SetValues;
     {:$ Provides array-like access to column's value by column name. }
-    property Column[const ColumnName: AnsiString]: Variant read GetAsVariant write SetAsVariant; default;
+    property Column[const ColumnName: String]: Variant read GetAsVariant write SetAsVariant; default;
     {:$ Returns values of all columns in a single variant array. }
     property RowValues: Variant read GetRowValues write SetRowValues;
     {:$ Returns row referenced by the value in Column of type cdtReference. }
@@ -889,10 +899,10 @@ type
   TCtxDataRelation = class (TCtxDataCollectionItem)
   protected
     FPrepared: Boolean;
-    FParentColumnNames: AnsiString;
-    FChildColumnNames: AnsiString;
-    FParentTableName: AnsiString;
-    FChildTableName: AnsiString;
+    FParentColumnNames: String;
+    FChildColumnNames: String;
+    FParentTableName: String;
+    FChildTableName: String;
     FOwnRows: Boolean;
     FDeleteAction: TCtxDataRelationAction;
     FUpdateAction: TCtxDataRelationAction;
@@ -904,11 +914,11 @@ type
 
     function GetConstraintActive: Boolean;
     function  GetDataContainer: TCtxDataContainer;
-    procedure SetName(const Value: AnsiString); override;
-    procedure SetChildColumnNames(const Value: AnsiString);
-    procedure SetChildTableName(const Value: AnsiString);
-    procedure SetParentColumnNames(const Value: AnsiString);
-    procedure SetParentTableName(const Value: AnsiString);
+    procedure SetName(const Value: String); override;
+    procedure SetChildColumnNames(const Value: String);
+    procedure SetChildTableName(const Value: String);
+    procedure SetParentColumnNames(const Value: String);
+    procedure SetParentTableName(const Value: String);
     function GetIdentifying: Boolean;
 
     procedure Prepare;
@@ -945,13 +955,13 @@ type
     {:$ Specifies the name for this relation. This name must be unique within data container. }
     property Name;
     {:$ Specifies the name of the parent table. }
-    property ParentTableName: AnsiString read FParentTableName write SetParentTableName;
+    property ParentTableName: String read FParentTableName write SetParentTableName;
     {:$ Specifies the name of the child table. }
-    property ChildTableName: AnsiString read FChildTableName write SetChildTableName;
+    property ChildTableName: String read FChildTableName write SetChildTableName;
     {:$ Specifies names of key columns in the parent table for this relation. }
-    property ParentColumnNames: AnsiString read FParentColumnNames write SetParentColumnNames;
+    property ParentColumnNames: String read FParentColumnNames write SetParentColumnNames;
     {:$ Specifies names of key columns in the child table for this relation. }
-    property ChildColumnNames: AnsiString read FChildColumnNames write SetChildColumnNames;
+    property ChildColumnNames: String read FChildColumnNames write SetChildColumnNames;
     {:$ Specifies whether parent row owns child rows. This is generally true for }
     {:$ relations that describe containment (which means that child rows are part or
     {:$ conatined within the parent row. e.g. document lines within a document). }
@@ -973,10 +983,10 @@ type
     procedure Notify(Item: TCollectionItem; Action: TCollectionNotification); override;
   public
     {:$ Finds a relation in the TCtxDataRelations collection by Name. }
-    function Find(const AName: AnsiString): TCtxDataRelation;
+    function Find(const AName: String): TCtxDataRelation;
     {:$ Finds a relation in the TCtxDataRelations collection by Name. This method raises }
     {:$ exception if the column is not found. }
-    function Get(const AName: AnsiString): TCtxDataRelation;
+    function Get(const AName: String): TCtxDataRelation;
     {:$ Adds a relation to TCtxDataRelations collection. }
     function Add: TCtxDataRelation;
     {:$ Provides array-like access to relations in the TCtxDataRelations collection. }
@@ -999,7 +1009,7 @@ type
     { Filter & Key}
     FKeyValue: Variant;
     FKeyCols: TCtxColumnArray;
-    FKeyColNames: AnsiString;
+    FKeyColNames: String;
     FKeyColCount: Integer;
     FMasterRow: TCtxDataRow;
     FRelation: TCtxDataRelation;
@@ -1029,7 +1039,7 @@ type
     function  DoFilterRow(ARow: TCtxDataRow): Boolean;
     function  DoCompareRows(Row1, Row2: TCtxDataRow): Integer;
     procedure DoNotify(Context: TObject; DataEvent: TCtxDataEventType);
-    function  SetKeyColumns(const AColumnNames: AnsiString): Boolean;
+    function  SetKeyColumns(const AColumnNames: String): Boolean;
     function  SetKeyValue(AKeyValue: Variant): Boolean;
     function  GetColumn(Idx: Integer): TCtxDataColumn;
     procedure SetActive(Value: Boolean); virtual;
@@ -1054,7 +1064,7 @@ type
     {:$ Assigns master row to select all its detail rows for the relation specified by Relation property. }
     procedure SetMasterRow(Value: TCtxDataRow);
     {:$ Assigns column names and key values to filter the rows in this row set. }
-    function SetMasterKey(const AColumnNames: AnsiString; AKeyValue: Variant): Boolean; overload;
+    function SetMasterKey(const AColumnNames: String; AKeyValue: Variant): Boolean; overload;
     {:$ Assigns key values to filter the rows in this row set. The column names must be }
     {:$ previously assigned by call to overloaded SetMasterKey method. }
     function SetMasterKey(AKeyValue: Variant): Boolean; overload;
@@ -1064,7 +1074,7 @@ type
     {:$ Returns 0-based index of a row in this row set. }
     function IndexOfRow(ARow: TCtxDataRow): Integer;
     {:$ Locate row in this row set. }
-    function Locate(const KeyFields: AnsiString; const KeyValues: Variant;
+    function Locate(const KeyFields: String; const KeyValues: Variant;
       Options: TCtxCompareOptions): TCtxDataRow;
     {:$ Find next row in this row set satisfying OnFilterDataRow event. }
     function FindNext(Restart: Boolean = True; GoForward: Boolean = True;
@@ -1114,8 +1124,8 @@ type
 
   TCtxDataAdapter = class (TComponent)
   protected
-    FDisplayName: AnsiString;
-    FDescription: AnsiString;
+    FDisplayName: String;
+    FDescription: String;
     FUpdateCounter: Integer;
   public
     { Container level operations }
@@ -1157,9 +1167,9 @@ type
     procedure UpdateRow(Row: TCtxDataRow); virtual; abstract;
 
     {:$ Specifies Data Adapter's display name. }
-    property DisplayName: AnsiString read FDisplayName write FDisplayName;
+    property DisplayName: String read FDisplayName write FDisplayName;
     {:$ Specifies Data Adapter's description. }
-    property Description: AnsiString read FDescription write FDescription;
+    property Description: String read FDescription write FDescription;
   end;
 
   procedure SetBit(AData: Pointer; Index: Integer; Value: Boolean);
@@ -1171,7 +1181,7 @@ type
     const ParentColumns, ChildColumns: TCtxColumnArray; OnRowEvent: TCtxOnRowEvent; Data: Pointer): Integer;
   function _VarIsNull(Value: Variant): Boolean;
 
-  function DataTypeNameToType(const Value: AnsiString): TCtxDataType;
+  function DataTypeNameToType(const Value: String): TCtxDataType;
 
   procedure InitSchemaContainer(DataContainer: TCtxDataContainer);
   procedure DumpContainerState(Container: TCtxDataContainer; Output: TStrings);
@@ -1202,7 +1212,7 @@ resourcestring
   SUnableToPerformOnActiveDataTable = 'Unable to perform this operation on an active data table';
   SUnableToPerformOnInActiveDataTable = 'Unable to perform this operation on inactive data table';
 
-  SUnableToCastValueToVariant = 'Unable to case column value to variant. Table: %s; Column: %s';
+  SUnableToCastValueToVariant = 'Unable to cast column value to variant. Table: %s; Column: %s';
   SUnableToAssignValueAsVariant = 'Unable to assign column value as variant. Table: %s; Column: %s';
   SUnableToAssignRowFromDifferentTable = 'Unable to assign row from a different table.';
   SDataAdapterIsNotAssigned = 'Unable to preform this operation. Data adapter is not assigned';
@@ -1227,9 +1237,9 @@ resourcestring
   SInvalidRowIndex = 'Invalid row index: %d';
 
 const
-  DataTypeNames: array [TCtxDataType] of AnsiString = (
+  DataTypeNames: array [TCtxDataType] of String = (
     'Unknown', 'SmallInt', 'LargeInt', 'Boolean', 'Integer', 'Float',
-    'DateTime', 'Date', 'Time', 'AnsiString', 'WideString', 'Guid', 'Memo', 'Blob', 'Reference');
+    'DateTime', 'Date', 'Time', 'String', 'WideString', 'Guid', 'Memo', 'Blob', 'Reference');
 
 const
   // Variant types
@@ -1258,15 +1268,15 @@ const
      SizeOf(TDateTime),
      SizeOf(TDateTime),
      SizeOf(TDateTime),
-     SizeOf(AnsiString),
+     SizeOf(String),
      SizeOf(WideString),
      SizeOf(TGuid),
-     SizeOf(AnsiString),
-     SizeOf(AnsiString),
+     SizeOf(String),
+     SizeOf(String),
      SizeOf(Pointer)
   );
 
-function DataTypeNameToType(const Value: AnsiString): TCtxDataType;
+function DataTypeNameToType(const Value: String): TCtxDataType;
 begin
   for Result := Low(TCtxDataType) to High(TCtxDataType) do
     if AnsiSameText(DataTypeNames[Result], Value) then
@@ -1274,7 +1284,7 @@ begin
   Result := cdtUnknown;
 end;
 
-function ExtractColumnName(const Columns: AnsiString; var Pos: Integer; Delimiter: AnsiChar = ';'): AnsiString;
+function ExtractColumnName(const Columns: String; var Pos: Integer; Delimiter: Char = ';'): String;
 var
   I: Integer;
 begin
@@ -1460,9 +1470,9 @@ begin
         end else
           P := PAnsiString(P2)^;
         if coCaseInsensitive in Options then
-          Result := AnsiCompareText(PAnsiString(P1)^, P)
+          Result := AnsiCompareText(String(PAnsiString(P1)^), String(P))
         else
-          Result := AnsiCompareStr(PAnsiString(P1)^, P);
+          Result := AnsiCompareStr(String(PAnsiString(P1)^), String(P));
         if Result < 0 then
           Result := -1 else
         if Result > 0 then
@@ -1476,10 +1486,19 @@ begin
           PW := copy(PWideString(P2)^, 1, I);
         end else
           PW := PWideString(P2)^;
+
+        {$IFDEF D2009_ORLATER}
         if coCaseInsensitive in Options then
-          Result := WideCompareText(PWideString(P1)^, P)
+          Result := AnsiCompareText(PWideString(P1)^, PW)
         else
-          Result := WideCompareStr(PWideString(P1)^, P);
+          Result := AnsiCompareStr(PWideString(P1)^, PW);
+        {$ELSE}
+        if coCaseInsensitive in Options then
+          Result := WideCompareText(PWideString(P1)^, PW)
+        else
+          Result := WideCompareStr(PWideString(P1)^, PW);
+        {$ENDIF}
+
         if Result < 0 then
           Result := -1 else
         if Result > 0 then
@@ -1566,7 +1585,7 @@ procedure DumpContainerState(Container: TCtxDataContainer; Output: TStrings);
 var
   I, R, C: Integer;
   T: TCtxDataTable;
-  Line: AnsiString;
+  Line: String;
 begin
   with Container do
   for I := 0 to Tables.Count - 1 do
@@ -1675,7 +1694,7 @@ begin
   Result := TCtxDataColumn(inherited GetItem(Idx));
 end;
 
-function TCtxDataColumns.Find(const AName: AnsiString): TCtxDataColumn;
+function TCtxDataColumns.Find(const AName: String): TCtxDataColumn;
 var
   I: Integer;
 begin
@@ -1688,7 +1707,7 @@ begin
   Result := nil;
 end;
 
-procedure TCtxDataColumns.GetColumnList(AList: TList; ColumnNames: AnsiString);
+procedure TCtxDataColumns.GetColumnList(AList: TList; ColumnNames: String);
 var
   I: Integer;
 begin
@@ -1699,7 +1718,7 @@ begin
     AList.Add(Get(ExtractColumnName(ColumnNames, I)));
 end;
 
-function TCtxDataColumns.GetColumnArray(ColumnNames: AnsiString): TCtxColumnArray;
+function TCtxDataColumns.GetColumnArray(ColumnNames: String): TCtxColumnArray;
 var
   I, P: Integer;
   F: TCtxDataColumn;
@@ -1716,10 +1735,10 @@ begin
   end;
 end;
 
-function TCtxDataColumns.GetOrderByColumns(AColumnNames: AnsiString): TCtxOrderByColumns;
+function TCtxDataColumns.GetOrderByColumns(AColumnNames: String): TCtxOrderByColumns;
 var
   I, P: Integer;
-  ColName: AnsiString;
+  ColName: String;
   CompareOptions: TCtxCompareOptions;
   F: TCtxDataColumn;
 begin
@@ -1744,14 +1763,14 @@ begin
   inherited;
 end;
 
-function TCtxDataColumns.Get(const AName: AnsiString): TCtxDataColumn;
+function TCtxDataColumns.Get(const AName: String): TCtxDataColumn;
 begin
   Result := Find(AName);
   if Result = nil then
     raise Exception.CreateFmt(SColumnNotFound, [AName, DataTable.Name]);
 end;
 
-function TCtxDataColumns.AddColumn(const AColumnName: AnsiString;
+function TCtxDataColumns.AddColumn(const AColumnName: String;
   ADataType: TCtxDataType; ARequired: Boolean;
   ADataLength: word): TCtxDataColumn;
 begin
@@ -1805,7 +1824,7 @@ begin
   Index := Value;
 end;
 
-procedure TCtxDataCollectionItem.SetName(const Value: AnsiString);
+procedure TCtxDataCollectionItem.SetName(const Value: String);
 begin
   FName := Value;
 end;
@@ -1819,13 +1838,13 @@ end;
 
 constructor TCtxDataTable.Create(ACollection: TCollection);
 begin
-  inherited Create(ACollection);
   FName := '';
   FRowClass := TCtxDataRow;
   FColumns := TCtxDataColumns.Create(Self);
   FUpdateCounter := 0;
   FPrepared := False;
   FRows := TObjectList.Create;
+  inherited Create(ACollection);
 end;
 
 destructor TCtxDataTable.Destroy;
@@ -2229,7 +2248,7 @@ begin
   else Result := nil;
 end;
 
-function TCtxDataTable.Locate(const KeyFields: AnsiString; const KeyValues: Variant; Options: TCtxCompareOptions): TCtxDataRow;
+function TCtxDataTable.Locate(const KeyFields: String; const KeyValues: Variant; Options: TCtxCompareOptions): TCtxDataRow;
 var
   FldList: TCtxColumnArray;
   TempRow: TCtxDataRow;
@@ -2266,7 +2285,7 @@ begin
     if not AnsiSameText(FName, TCtxDataTable(Source).Name) then
       FName := TCtxDataCollection(Collection).GetAutoName(TCtxDataTable(Source).Name);
     Columns := (Source as TCtxDataTable).Columns;
-    // Assign data ???
+    // Do not assign data here
   end else
   inherited Assign(Source);
 end;
@@ -2547,9 +2566,9 @@ begin
   Result := TCtxDataTables(Collection).GetDataContainer;
 end;
 
-procedure TCtxDataTable.SetName(const Value: AnsiString);
+procedure TCtxDataTable.SetName(const Value: String);
 var
-  TmpStr: AnsiString;
+  TmpStr: String;
 begin
   if FName <> Value then
   begin
@@ -2583,41 +2602,47 @@ end;
 procedure TCtxDataTable.ReadData(Reader: TReader);
 var
   R: TCtxDataRow;
-  C: TCtxDataColumn;
-  DT: TCtxDataType;
-  ColMap: TList;
+  C: TCtxColumnMapInfo;
+  ColMap: TObjectList;
 begin
   BeginUpdate;
   try
     if Reader.ReadBoolean then
     begin
       DataContainer.Active := True;
-      ColMap := TList.Create;
+      ColMap := TObjectList.Create;
+      try
+        Reader.ReadListBegin;
+        while not Reader.EndOfList do
+        begin
+          // locate column by name
+          C := TCtxColumnMapInfo.Create;
+          try
+            C.Column := Columns.Find(Reader.ReadString);
+            C.DataType := TCtxDataType(Reader.ReadInteger);
+            // make sure that data type is the same
+            if (C.Column <> nil) and (C.Column.DataType <> C.DataType) then
+              C.Column := nil;
+            ColMap.Add(C);
+          except
+            C.Free;
+            raise;
+          end;
+        end;
+        Reader.ReadListEnd;
 
-      Reader.ReadListBegin;
-      while not Reader.EndOfList do
-      begin
-        // locate column by name
-        C := Columns.Find(Reader.ReadString);
-        DT := TCtxDataType(Reader.ReadInteger);
-        // make sure that data type is the same
-        if (C <> nil) and (C.DataType <> DT) then
-          C := nil;
-        ColMap.Add(C);
+        Reader.ReadListBegin;
+        while not Reader.EndOfList do
+        begin
+          R := NewRow;
+          R.ReadData(Reader, ColMap);
+          Insert(R);
+        end;
+        Reader.ReadListEnd;
+
+      finally
+        ColMap.Free; // All map objects will be disposed
       end;
-
-      Reader.ReadListEnd;
-
-      Reader.ReadListBegin;
-      while not Reader.EndOfList do
-      begin
-        R := NewRow;
-        R.ReadData(Reader, ColMap);
-        Insert(R);
-      end;
-      Reader.ReadListEnd;
-
-      ColMap.Free;
     end;
   finally
     EndUpdate;
@@ -2788,6 +2813,19 @@ begin
   DataContainer.DoCalcFields(ARow);
 end;
 
+function TCtxDataTable.HasPKColumns: Boolean;
+var
+  I: Integer;
+begin
+  for I := 0 to DataColumns.Count - 1 do
+    if DataColumns[I].PrimaryKey then
+    begin
+      Result := True;
+      exit;
+    end;
+  Result := False;
+end;
+
 { TCtxDataColumn }
 
 constructor TCtxDataColumn.Create(Collection: TCollection);
@@ -2823,9 +2861,9 @@ begin
     Result := inherited GetDisplayName;
 end;
 
-procedure TCtxDataColumn.SetName(const Value: AnsiString);
+procedure TCtxDataColumn.SetName(const Value: String);
 var
-  TmpStr: AnsiString;
+  TmpStr: String;
 begin
   if FName <> Value then
   begin
@@ -2916,14 +2954,14 @@ begin
     end;
 end;
 
-function TCtxDataColumn.GetDataTypeName: AnsiString;
+function TCtxDataColumn.GetDataTypeName: String;
 begin
   if DataType = cdtReference then
     Result := '->' + RelationName
   else Result := DataTypeNames[DataType];
 end;
 
-procedure TCtxDataColumn.SetDataTypeName(const Value: AnsiString);
+procedure TCtxDataColumn.SetDataTypeName(const Value: String);
 begin
   if Value = '' then
     DataType := cdtUnknown
@@ -3064,13 +3102,15 @@ begin
       cdtMemo: PAnsiString(P)^ := PAnsiString(ValueBuffer)^;
       cdtBlob: PAnsiString(P)^ := PAnsiString(ValueBuffer)^;
       cdtReference: PObject(P)^ := nil;
-      else Move(ValueBuffer^, P^, Column.BufSize);
-    if Column.DataType = cdtDate then
-      ReplaceTime(PDateTime(P)^, 0) else
-      if Column.DataType = cdtTime then
-        ReplaceDate(PDateTime(P)^, 0);
+      else begin
+        Move(ValueBuffer^, P^, Column.BufSize);
+        if Column.DataType = cdtDate then
+          ReplaceTime(PDateTime(P)^, 0)
+        else if Column.DataType = cdtTime then
+          ReplaceDate(PDateTime(P)^, 0);
+      end;
     end;
-  end;  
+  end;
 end;
 
 procedure TCtxDataRow.InternalGetColumnData(const Column: TCtxDataColumn; var DataBuffer: Pointer; ValueBuffer: Pointer);
@@ -3359,7 +3399,7 @@ begin
           cdtInteger: Writer.WriteInteger(PInteger(P)^);
           cdtFloat: Writer.WriteFloat(PDouble(P)^);
           cdtDateTime, cdtDate, cdtTime: Writer.WriteDate(PDateTime(P)^);
-          cdtString, cdtMemo, cdtBlob: Writer.WriteString(PAnsiString(P)^);
+          cdtString, cdtMemo, cdtBlob: Writer.WriteString(String(PAnsiString(P)^));
           cdtWideString: Writer.WriteWideString(PWideString(P)^);
         end;
       end;
@@ -3380,13 +3420,13 @@ begin
     with DataTable do
       for I := 0 to ColMap.Count - 1 do
       begin
-        Column := ColMap[I];
+        Column := TCtxColumnMapInfo(ColMap[I]).Column;
         NotNull := Reader.ReadBoolean;
         if Column = nil then
         begin
           // Skip stored value
           if NotNull then
-          case Column.DataType of
+          case TCtxColumnMapInfo(ColMap[I]).DataType of
             cdtSmallInt: Reader.ReadInteger;
             cdtLargeInt: Reader.ReadInt64;
             cdtBoolean: Reader.ReadBoolean;
@@ -3410,7 +3450,7 @@ begin
               cdtInteger: PInteger(P)^ := Reader.ReadInteger;
               cdtFloat: PDouble(P)^ := Reader.ReadFloat;
               cdtDateTime, cdtDate, cdtTime: PDateTime(P)^ := Reader.ReadDate;
-              cdtString, cdtMemo, cdtBlob: PAnsiString(P)^ := Reader.ReadString;
+              cdtString, cdtMemo, cdtBlob: PAnsiString(P)^ := AnsiString(Reader.ReadString);
               cdtWideString: PWideString(P)^ := Reader.ReadWideString;
             end;
           end;
@@ -3421,12 +3461,12 @@ end;
 
 { Column access methods }
 
-function TCtxDataRow.GetAsVariant(const ColumnName: AnsiString): Variant;
+function TCtxDataRow.GetAsVariant(const ColumnName: String): Variant;
 begin
   Result := GetValue(DataTable.Columns.Get(ColumnName));
 end;
 
-procedure TCtxDataRow.SetAsVariant(const ColumnName: AnsiString; Value: Variant);
+procedure TCtxDataRow.SetAsVariant(const ColumnName: String; Value: Variant);
 begin
   SetValue(DataTable.Columns.Get(ColumnName), Value);
 end;
@@ -3525,6 +3565,8 @@ begin
         Result := VarFromDateTime(PDateTime(P)^);
       cdtString, cdtMemo, cdtBlob:
         Result := PAnsiString(P)^;
+      cdtWideString:
+        Result := PWideString(P)^;
       else
         raise Exception.CreateFmt(SUnableToCastValueToVariant, [DataTable.Name, Column.Name]);
     end;
@@ -3534,7 +3576,7 @@ end;
 procedure TCtxDataRow.SetValue(Column: TCtxDataColumn;
   const Value: Variant);
 var
-  Buffer: array [0..128] of AnsiChar;
+  Buffer: array [0..128] of char;
   P: Pointer;
 begin
   ASSERT(Column <> nil);
@@ -3558,7 +3600,7 @@ begin
       cdtDateTime, cdtDate, cdtTime:
         PDateTime(P)^ := VarToDateTime(Value);
       cdtString, cdtMemo, cdtBlob:
-        PAnsiString(P)^ := VarToStr(Value);
+        PAnsiString(P)^ := AnsiString(VarToStr(Value));
       cdtWideString:
         PWideString(P)^ := VarToWideStr(Value);
       else
@@ -3572,7 +3614,7 @@ begin
   end;
 end;
 
-function TCtxDataRow.GetAsString(Column: TCtxDataColumn): AnsiString;
+function TCtxDataRow.GetAsString(Column: TCtxDataColumn): String;
 var
   P: Pointer;
 begin
@@ -3591,20 +3633,20 @@ begin
       cdtDateTime: Result := DateTimeToStr(PDateTime(P)^);
       cdtDate: Result := DateToStr(PDateTime(P)^);
       cdtTime: Result := TimeToStr(PDateTime(P)^);      
-      cdtString: Result := PAnsiString(P)^;
+      cdtString: Result := String(PAnsiString(P)^);
       cdtWideString: Result := PWideString(P)^;
       cdtGuid: Result := GUIDToString(PGuid(P)^);
-      cdtMemo: Result := PAnsiString(P)^;
+      cdtMemo: Result := String(PAnsiString(P)^);
       cdtBlob: Result := '{BLOB}';
       cdtReference: Result := '{ROW}';
     end;
   end;
 end;
 
-procedure TCtxDataRow.SetAsString(Column: TCtxDataColumn; Value: AnsiString);
+procedure TCtxDataRow.SetAsString(Column: TCtxDataColumn; Value: String);
 var
   P: Pointer;
-  Buffer: array [0..64] of AnsiChar;
+  Buffer: array [0..64] of char;
 begin
   ASSERT(Column <> nil);
   P := @Buffer[0];
@@ -3617,11 +3659,11 @@ begin
     cdtDateTime: PDateTime(P)^ := StrToDateTime(Value);
     cdtDate: PDateTime(P)^ := StrToDate(Value);
     cdtTime: PDateTime(P)^ := StrToTime(Value);
-    cdtString: PAnsiString(P)^ := Value;
+    cdtString: PAnsiString(P)^ := AnsiString(Value);
     cdtWideString: PWideString(P)^ := Value;
     cdtGuid: PGuid(P)^ := StringToGUID(Value);
-    cdtMemo: PAnsiString(P)^ := Value;
-    cdtBlob: PAnsiString(P)^ := Value;
+    cdtMemo: PAnsiString(P)^ := AnsiString(Value);
+    cdtBlob: PAnsiString(P)^ := AnsiString(Value);
     else
       raise Exception.CreateFmt(SUnableToAssignValueAsVariant, [DataTable.Name, Column.Name]);
   end;
@@ -3856,7 +3898,7 @@ begin
       Tables[I].Prepare;
 
     // Restore data if any
-    if FSavedData <> nil then
+    if (FSavedData <> nil) and not FLoadingFromStream then
     try
       FSavedData.Position := 0;
       LoadFromStream(FSavedData);
@@ -3879,15 +3921,16 @@ begin
   if not FActive then exit;
 
   // Preserve data if any
-  if StoreDataInDfm or PersistentData then
-  for I := 0 to Tables.Count - 1 do
-  if Tables[I].RowCount > 0 then
-  begin
-    FSavedData := TMemoryStream.Create;
-    SaveToStream(FSavedData, False, True);
-    FSavedData.Position := 0;
-    break;
-  end;
+  if not FLoadingFromStream then
+    if StoreDataInDfm or PersistentData then
+    for I := 0 to Tables.Count - 1 do
+    if Tables[I].Prepared and (Tables[I].RowCount > 0) then
+    begin
+      FSavedData := TMemoryStream.Create;
+      SaveToStream(FSavedData, False, True);
+      FSavedData.Position := 0;
+      break;
+    end;
 
   FActive := False;
   NotifyEvent(Self, cdeContainerDeactivated);
@@ -3911,6 +3954,7 @@ end;
 procedure TCtxDataContainer.NotifyEvent(Context: TObject; DataEvent: TCtxDataEventType);
 var
   I: Integer;
+  C: TCtxRowSet;
 begin
   if not IsUpdating
     or (not FNotifiedDeactivate and (DataEvent = cdeContainerDeactivated))
@@ -3920,9 +3964,17 @@ begin
       FDesigner.NotifyEvent(Context, DataEvent);
 
     if (FCursors <> nil) and (FCursors.Count > 0) then
-    for I := 0 to FCursors.Count - 1 do
-      if FCursors[I] <> nil then
-        TCtxRowSet(FCursors[I]).DoNotify(Context, DataEvent);
+    begin
+      I := 0;
+      while I < FCursors.Count do
+      begin
+        C := TCtxRowSet(FCursors[I]);
+        if C <> nil then
+          C.DoNotify(Context, DataEvent);
+        if FCursors.IndexOf(C) >= 0 then
+          Inc(I);
+      end;
+    end;
 
     if IsUpdating and (DataEvent = cdeContainerDeactivated) then
       FNotifiedDeactivate := True;
@@ -3982,7 +4034,7 @@ begin
   Result := FUpdateCounter > 0;
 end;
 
-procedure TCtxDataContainer.LoadFromFile(const FileName: AnsiString);
+procedure TCtxDataContainer.LoadFromFile(const FileName: String);
 var
   Stream: TStream;
 begin
@@ -4003,11 +4055,14 @@ procedure TCtxDataContainer.LoadFromStream(Stream: TStream);
 var
   Reader: TReader;
   WasActive: Boolean;
-  TableName: AnsiString;
+  TableName: String;
 begin
+  ASSERT(not FLoadingFromStream);
+
   WasActive := Active;
   BeginUpdate;
   try
+    FLoadingFromStream := True;
     Reader := TReader.Create(Stream, 4096);
     try
       { Read Structure }
@@ -4033,13 +4088,18 @@ begin
     finally
       Reader.Free;
     end;
-  finally
+
     Active := WasActive or Active;
+  finally
+    // Make sure to dispose saved data here so that container is not loaded
+    // again upon activation below
+    FreeAndNil(FSavedData);
+    FLoadingFromStream := False;
     EndUpdate;
   end;
 end;
 
-procedure TCtxDataContainer.SaveToFile(const FileName: AnsiString; StoreStructure: Boolean = True; StoreData: Boolean = True);
+procedure TCtxDataContainer.SaveToFile(const FileName: String; StoreStructure: Boolean = True; StoreData: Boolean = True);
 var
   Stream: TStream;
 begin
@@ -4118,6 +4178,8 @@ begin
   try
     for I := 0 to Tables.Count - 1 do
       Tables[I].ClearData;
+    // Cleanup saved data also
+    FreeAndNil(FSavedData);
   finally
     EndUpdate;
   end;
@@ -4202,7 +4264,7 @@ begin
   FParams.Assign(Value);
 end;
 
-function TCtxDataContainer.GetParam(const Name: AnsiString): Variant;
+function TCtxDataContainer.GetParam(const Name: String): Variant;
 var
   P: TCtxParameter;
 begin
@@ -4212,7 +4274,7 @@ begin
   else Result := NULL;
 end;
 
-procedure TCtxDataContainer.SetParam(const Name: AnsiString;
+procedure TCtxDataContainer.SetParam(const Name: String;
   const Value: Variant);
 var
   P: TCtxParameter;
@@ -4261,15 +4323,21 @@ procedure TCtxDataContainer.Assign(Source: TPersistent);
 begin
   if Source.InheritsFrom(TCtxDataContainer) then
   begin
-    Active := False;
-    ClearStructure;
-    FTables.Assign(TCtxDataContainer(Source).Tables);
-    FRelations.Assign(TCtxDataContainer(Source).Relations);
-    PersistentData := TCtxDataContainer(Source).PersistentData;
-    StoreDataInDfm := TCtxDataContainer(Source).StoreDataInDfm;
-    Params.Assign(TCtxDataContainer(Source).Params);
-    Active := True;
-    // DataAdapter := TCtxDataContainer(Source).DataAdapter;
+    FLoadingFromStream := True;
+    try
+      Clear; // cleanup all data, including the one saved in container
+      Active := False;
+      ClearStructure;
+      FTables.Assign(TCtxDataContainer(Source).Tables);
+      FRelations.Assign(TCtxDataContainer(Source).Relations);
+      PersistentData := TCtxDataContainer(Source).PersistentData;
+      StoreDataInDfm := TCtxDataContainer(Source).StoreDataInDfm;
+      Params.Assign(TCtxDataContainer(Source).Params);
+      // Active := TCtxDataContainer(Source).Active;
+      // DataAdapter := TCtxDataContainer(Source).DataAdapter;
+    finally
+      FLoadingFromStream := False;
+    end;
   end else
   if Source.InheritsFrom(TStream) then
   begin
@@ -4364,7 +4432,7 @@ end;
 
 { TCtxDataCollection }
 
-function TCtxDataCollection.Find(const AName: AnsiString): TCtxDataCollectionItem;
+function TCtxDataCollection.Find(const AName: String): TCtxDataCollectionItem;
 var
   I: Integer;
 begin
@@ -4376,14 +4444,14 @@ begin
   Result := nil;
 end;
 
-function TCtxDataCollection.Get(const AName: AnsiString): TCtxDataCollectionItem;
+function TCtxDataCollection.Get(const AName: String): TCtxDataCollectionItem;
 begin
   Result := Find(AName);
   if Result = nil then
     raise Exception.CreateFmt(SItemNotFound, [AName]);
 end;
 
-function TCtxDataCollection.GetAutoName(const ProposedName: AnsiString; Counter: Integer = 0): AnsiString;
+function TCtxDataCollection.GetAutoName(const ProposedName: String; Counter: Integer = 0): String;
 begin
   Result := ProposedName;
   if Counter > 0 then
@@ -4423,7 +4491,7 @@ begin
   Result := _TCollection(Self).FItems.IndexOf(Item)
 end;
 
-function TCtxDataCollection.IsUnique(const AName: AnsiString;
+function TCtxDataCollection.IsUnique(const AName: String;
   Item: TCtxDataCollectionItem): Boolean;
 var
   Item2: TCtxDataCollectionItem;
@@ -4439,7 +4507,7 @@ begin
   Result := TCtxDataTable(inherited Add);
 end;
 
-function TCtxDataTables.Find(const AName: AnsiString): TCtxDataTable;
+function TCtxDataTables.Find(const AName: String): TCtxDataTable;
 var
   I: Integer;
 begin
@@ -4452,7 +4520,7 @@ begin
   Result := nil;
 end;
 
-function TCtxDataTables.Get(const AName: AnsiString): TCtxDataTable;
+function TCtxDataTables.Get(const AName: String): TCtxDataTable;
 begin
   Result := Find(AName);
   if Result = nil then
@@ -4533,9 +4601,9 @@ begin
   end;
 end;
 
-procedure TCtxDataRelation.SetName(const Value: AnsiString);
+procedure TCtxDataRelation.SetName(const Value: String);
 var
-  TmpStr: AnsiString;
+  TmpStr: String;
 begin
   if FName <> Value then
   begin
@@ -4552,7 +4620,7 @@ begin
   end;
 end;
 
-procedure TCtxDataRelation.SetChildColumnNames(const Value: AnsiString);
+procedure TCtxDataRelation.SetChildColumnNames(const Value: String);
 begin
   if FChildColumnNames <> Value then
   begin
@@ -4561,7 +4629,7 @@ begin
   end;
 end;
 
-procedure TCtxDataRelation.SetChildTableName(const Value: AnsiString);
+procedure TCtxDataRelation.SetChildTableName(const Value: String);
 begin
   if FChildTableName <> Value then
   begin
@@ -4570,7 +4638,7 @@ begin
   end;
 end;
 
-procedure TCtxDataRelation.SetParentColumnNames(const Value: AnsiString);
+procedure TCtxDataRelation.SetParentColumnNames(const Value: String);
 begin
   if FParentColumnNames <> Value then
   begin
@@ -4579,7 +4647,7 @@ begin
   end;
 end;
 
-procedure TCtxDataRelation.SetParentTableName(const Value: AnsiString);
+procedure TCtxDataRelation.SetParentTableName(const Value: String);
 begin
   if FParentTableName <> Value then
   begin
@@ -4628,7 +4696,7 @@ begin
   Result := TCtxDataRelation(inherited Add);
 end;
 
-function TCtxDataRelations.Find(const AName: AnsiString): TCtxDataRelation;
+function TCtxDataRelations.Find(const AName: String): TCtxDataRelation;
 var
   I: Integer;
 begin
@@ -4641,7 +4709,7 @@ begin
   Result := nil;
 end;
 
-function TCtxDataRelations.Get(const AName: AnsiString): TCtxDataRelation;
+function TCtxDataRelations.Get(const AName: String): TCtxDataRelation;
 begin
   Result := Find(AName);
   if Result = nil then
@@ -4873,7 +4941,7 @@ begin
   Pos := L;
 end;
 
-function TCtxRowSet.Locate(const KeyFields: AnsiString; const KeyValues: Variant;
+function TCtxRowSet.Locate(const KeyFields: String; const KeyValues: Variant;
   Options: TCtxCompareOptions): TCtxDataRow;
 var
   FldList: TCtxColumnArray;
@@ -5132,7 +5200,7 @@ begin
   end;
 end;
 
-function TCtxRowSet.SetKeyColumns(const AColumnNames: AnsiString): Boolean;
+function TCtxRowSet.SetKeyColumns(const AColumnNames: String): Boolean;
 begin
   Result := FKeyColNames <> AColumnNames;
   if Result then
@@ -5153,7 +5221,7 @@ begin
     FKeyValue := AKeyValue;
 end;
 
-function TCtxRowSet.SetMasterKey(const AColumnNames: AnsiString; AKeyValue: Variant): Boolean;
+function TCtxRowSet.SetMasterKey(const AColumnNames: String; AKeyValue: Variant): Boolean;
 begin
   CheckTable;
 
@@ -5186,6 +5254,11 @@ procedure TCtxRowSet.DoNotify(Context: TObject; DataEvent: TCtxDataEventType);
 begin
   if Context <> nil then
   case DataEvent of
+    cdeContainerDeactivated:
+    begin
+      if Assigned(FOnNotifyDataEvent) then
+        FOnNotifyDataEvent(Context, DataEvent);
+    end;
     cdeContainerDataChanged,
     cdeTableDataChanged:
       if (DataEvent = cdeContainerDataChanged) or (Context = FDataTable) then

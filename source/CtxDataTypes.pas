@@ -11,6 +11,8 @@
 (******************************************************************************)
 unit CtxDataTypes;
 
+{$I CtxVer.inc}
+
 interface
 
 uses SysUtils, Classes {$IFnDEF VER130}, Variants{$ENDIF};
@@ -33,11 +35,11 @@ type
     { Property handlers }
     procedure SetConnected(Value: Boolean);
     function GetConnected: Boolean;
-    function GetDatabaseName: AnsiString;
-    procedure SetDatabaseName(const Value: AnsiString);
-    function GetDriverName: AnsiString;
-    function GetDatabaseURL: AnsiString;
-    procedure SetDatabaseURL(const Value: AnsiString);
+    function GetDatabaseName: String;
+    procedure SetDatabaseName(const Value: String);
+    function GetDriverName: String;
+    function GetDatabaseURL: String;
+    procedure SetDatabaseURL(const Value: String);
 
     { Transactions }
     procedure StartTransaction;
@@ -50,36 +52,36 @@ type
 
     { Properties }
     property Connected: Boolean read GetConnected write SetConnected;
-    property DatabaseName: AnsiString read GetDatabaseName write SetDatabaseName;
-    property DatabaseURL: AnsiString read GetDatabaseURL write SetDatabaseURL;
-    property DriverName: AnsiString read GetDriverName;
+    property DatabaseName: String read GetDatabaseName write SetDatabaseName;
+    property DatabaseURL: String read GetDatabaseURL write SetDatabaseURL;
+    property DriverName: String read GetDriverName;
     property InTransaction: Boolean read GetInTransaction;
   end;
 
   {:$ TCtxParameter collection item represents a single parameter in a TCtxParameters parameters collection.}
   TCtxParameter = class (TCollectionItem)
   protected
-    FName: AnsiString;
+    FName: String;
     FDataType: TCtxDataType;
     FParamType: TCtxParamType;
     FDataSize: Integer;
-    FSourceColumn: AnsiString;
+    FSourceColumn: String;
     FRowVersion: TCtxDataRowVersion;
     // FIsMacro: Boolean;
-    // FLookupContext: AnsiString;
+    // FLookupContext: String;
   public
     FValue: Variant;
     {:$ Copies the contents from another TCtxParameter object. }
     procedure Assign(Source: TPersistent); override;
     {:$ Specifies the name of the TCtxParameter as it appears in Object Inspector. }
-    function GetDisplayName: String; override;
+    function GetDisplayName: string; override;
     {:$ Returns the effective name of the source column. If SourceColumn property }
     {:$ is empty, then the parameter name is assumed instead. }
-    function GetSourceName: AnsiString;
+    function GetSourceName: string;
     // procedure GetLookupList(List: TStrings); virtual; abstract;
   published
     {:$ Specifies the name of the parameter. }
-    property Name: AnsiString read FName write FName;
+    property Name: String read FName write FName;
     {:$ Specifies the value of the parameter. }
     property Value: Variant read FValue write FValue;
     {:$ Specifies the data type of the parameter. }
@@ -89,12 +91,12 @@ type
     {:$ Specifies the data size for the parameter when appicable. }
     property DataSize: Integer read FDataSize write FDataSize;
     {:$ Specifies the source column, this parameter is linked to. }
-    property SourceColumn: AnsiString read FSourceColumn write FSourceColumn;
+    property SourceColumn: String read FSourceColumn write FSourceColumn;
     {:$ Specifies the version of row, this parameter should take its value from. }
     property RowVersion: TCtxDataRowVersion read FRowVersion write FRowVersion;
     // property IsMacro: Boolean read FIsMacro write FIsMacro default False;
     // property IsArray: Boolean read GetIsArray write SetIsArray default False;
-    // property LookupContext: AnsiString read FLookupContext write FLookupContext;
+    // property LookupContext: String read FLookupContext write FLookupContext;
   end;
 
   {:$ TCtxParameters collection contains a list of TCtxParameter items.}
@@ -108,30 +110,30 @@ type
     {:$ Creates and adds a new TCtxParameter item to the TCtxParameters collection. }
     function Add: TCtxParameter;
     {:$ Creates and adds a new TCtxParameter item to the TCtxParameters collection. }
-    function AddParameter(const Name: AnsiString; ParamType: TCtxParamType;
+    function AddParameter(const Name: String; ParamType: TCtxParamType;
       DataType: TCtxDataType = cdtUnknown; DataSize: Integer = 0): TCtxParameter;
     {:$ Finds a parameter by name in parameters collection. }
-    function Find(const Name: AnsiString): TCtxParameter;
+    function Find(const Name: String): TCtxParameter;
     {:$ Finds a parameter by name in parameters collection. Rasies exception if }
     {:$ the parameter is not found. }
-    function Get(const Name: AnsiString): TCtxParameter;
+    function Get(const Name: String): TCtxParameter;
     {:$ Assigns value to a parameter by name. }
-    procedure AssignByName(const Name: AnsiString; Value: Variant);
+    procedure AssignByName(const Name: String; Value: Variant);
     {:$ Clear all parameter values. }
     procedure ClearValues;
     {:$ Returns variant-array containing all parameter values from parameters of output or result type. }
     function GetOutputValues: Variant;
     {:$ Returns a valid parameter name by replacing invalid characters with underscores. }
-    function GetParamName(const ProposedName: AnsiString): AnsiString;
+    function GetParamName(const ProposedName: String): String;
     {:$ Generate unique parameter name based on a proposed name. }
-    function GetAutoName(const ProposedName: AnsiString; Counter: Integer = 0): AnsiString;
+    function GetAutoName(const ProposedName: String; Counter: Integer = 0): String;
     {:$ Assign parameter values by name from a different set of parameters. }
     procedure AssignValues(Source: TCtxParameters); overload;
     {:$ Assign parameter values by order from a variant or variant array. }
     procedure AssignValues(Values: Variant); overload;
 
-    // procedure GetLookupList(const LookupContext: AnsiString; List: TStrings); virtual; abstract;
-    // function GetLookupElement(const LookupContext, ElementKey: AnsiString): AnsiString; virtual; abstract;
+    // procedure GetLookupList(const LookupContext: String; List: TStrings); virtual; abstract;
+    // function GetLookupElement(const LookupContext, ElementKey: String): String; virtual; abstract;
 
     {:$ Provides array-like access to the TCtxParameter items in the collection by index. }
     property Items[Index: Integer]: TCtxParameter read GetItem write SetItem; default;
@@ -143,7 +145,7 @@ type
   TCtxDataCommand = class (TPersistent)
   protected
     FCommandType: TCtxCommandType;
-    FCommandText: AnsiString;
+    FCommandText: String;
     FParams: TCtxParameters;
     FFields: TCtxParameters;
     FDataProvider: ICtxDataProvider;
@@ -151,7 +153,7 @@ type
 
     procedure SetParams(const Value: TCtxParameters);
     procedure SetCommandType(Value: TCtxCommandType); virtual;
-    procedure SetCommandText(const Value: AnsiString); virtual;
+    procedure SetCommandText(const Value: String); virtual;
     function GetRowsAffected: Int64; virtual;
 
     function GetPrepared: Boolean; virtual; abstract;
@@ -195,7 +197,7 @@ type
     property CommandType: TCtxCommandType read FCommandType write SetCommandType;
     {:$ Contains the text of command. Normally, for most providers, this would be }
     {:$ either a table name or SQL statement. }
-    property CommandText: AnsiString read FCommandText write SetCommandText;
+    property CommandText: String read FCommandText write SetCommandText;
     {:$ Contains list of input and output parameters for the command. }
     {:$ Input parameters should be assigned before command execution. }
     {:$ The result of execution of procedures is normally returned in output parameters. }
@@ -213,7 +215,7 @@ type
   {:$ Unregisters a component, previously registered by RegisterCtxDataProvider method. }
   procedure UnRegisterCtxDataProvider(Database: TComponent);
   {:$ Finds data provider by its DatabaseName. }
-  function FindCtxDataProvider(const DatabaseName: AnsiString): TComponent;
+  function FindCtxDataProvider(const DatabaseName: String): TComponent;
   {:$ Returns list of DatabaseName properties of all registered data providers. }
   {:$ Each instance is queried for ICtxDataProvider interface and its DatabaseName property }
   {:$ is added to List parameter.<br> }
@@ -233,6 +235,8 @@ implementation
 
 uses Math;
 
+{$I CtxD2009.inc}
+
 const
   { Databse Object Classes }
   docTable      = 1;
@@ -245,7 +249,7 @@ const
   docTrigger    = 8;
   docUser       = 9;
 
-function FindCtxDataProvider(const DatabaseName: AnsiString): TComponent;
+function FindCtxDataProvider(const DatabaseName: String): TComponent;
 var
   I: Integer;
   DB: ICtxDataProvider;
@@ -325,7 +329,7 @@ begin
     inherited Assign(Source);
 end;
 
-function TCtxParameter.GetSourceName: AnsiString;
+function TCtxParameter.GetSourceName: string;
 begin
   Result := SourceColumn;
   if Result = '' then
@@ -339,7 +343,7 @@ begin
   Result := TCtxParameter(inherited Add);
 end;
 
-function TCtxParameters.AddParameter(const Name: AnsiString; ParamType: TCtxParamType;
+function TCtxParameters.AddParameter(const Name: String; ParamType: TCtxParamType;
   DataType: TCtxDataType = cdtUnknown; DataSize: Integer = 0): TCtxParameter;
 begin
   Result := Add;
@@ -349,7 +353,7 @@ begin
   Result.DataSize := DataSize;
 end;
 
-procedure TCtxParameters.AssignByName(const Name: AnsiString; Value: Variant);
+procedure TCtxParameters.AssignByName(const Name: String; Value: Variant);
 var
   Param: TCtxParameter;
 begin
@@ -394,7 +398,7 @@ begin
     Items[I].Value := NULL;
 end;
 
-function TCtxParameters.Find(const Name: AnsiString): TCtxParameter;
+function TCtxParameters.Find(const Name: String): TCtxParameter;
 var
   I: Integer;
 begin
@@ -407,15 +411,15 @@ begin
   Result := nil;
 end;
 
-function TCtxParameters.Get(const Name: AnsiString): TCtxParameter;
+function TCtxParameters.Get(const Name: String): TCtxParameter;
 begin
   Result := Find(Name);
   if Result = nil then
     raise Exception.CreateFmt(SParameterNotFound, [Name]);
 end;
 
-function TCtxParameters.GetAutoName(const ProposedName: AnsiString;
-  Counter: Integer): AnsiString;
+function TCtxParameters.GetAutoName(const ProposedName: String;
+  Counter: Integer): String;
 begin
   Result := ProposedName;
   if Counter > 0 then
@@ -463,7 +467,7 @@ begin
   end;
 end;
 
-function TCtxParameters.GetParamName(const ProposedName: AnsiString): AnsiString;
+function TCtxParameters.GetParamName(const ProposedName: String): String;
 const
   Alpha = ['A'..'Z', 'a'..'z', '_'];
   AlphaNumeric = Alpha + ['0'..'9'];
@@ -477,10 +481,10 @@ begin
   else
   begin
     // classes, sysutils
-    if not (Result[1] in Alpha) then
+    if not CharInSet(Result[1], Alpha) then
       Result := '_' + Result;
     for I := 1 to Length(Result) do
-      if not (Result[I] in AlphaNumeric) then
+      if not CharInSet(Result[I], AlphaNumeric) then
         Result[I] := '_';
   end;
   Result := Result; // GetAutoName(Result);
@@ -548,7 +552,7 @@ begin
   Result := -1;
 end;
 
-procedure TCtxDataCommand.SetCommandText(const Value: AnsiString);
+procedure TCtxDataCommand.SetCommandText(const Value: String);
 begin
   FCommandText := Value;
 end;
