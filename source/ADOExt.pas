@@ -614,7 +614,9 @@ var
   AdoDataType: DataTypeEnum;
   AdoDataSize: Integer;
 
-  function FindCheck(const AName: string): TTableConstraint;
+  Restrict: OleVariant;
+
+  function FindCheck(const AName: String): TTableConstraint;
   var
     I: integer;
   begin
@@ -627,7 +629,7 @@ var
     Result := nil;    
   end;
 
-  function AdoRuleToAction(const ARule: string): TRelationAction;
+  function AdoRuleToAction(const ARule: String): TRelationAction;
   begin
     Result := raIgnore;
     if AnsiSameText(ARule, 'CASCADE') then
@@ -715,88 +717,120 @@ begin
   try
     DS.Connection := Self;
     DS.CursorLocation := clUseClient;
-    OpenSchema(siTables, EmptyParam, EmptyParam, DS);
+
+    //Restrict := EmptyParam;
+    Restrict := VarArrayOf([NULL, 'DATA']);
+    try
+    OpenSchema(siTables, Restrict, EmptyParam, DS);
     DS.Active := True;
     while not DS.Eof do
     begin
       if not AnsiSameText(DS.FieldByName('TABLE_NAME').AsString, GetSystemTableName) then
         if AnsiSameText(DS.FieldByName('TABLE_TYPE').AsString, 'TABLE') then
+        try
           with Schema.TableDefs.Add do
           begin
             Name := DS.FieldByName('TABLE_NAME').AsString;
             Description := DS.FieldByName('DESCRIPTION').AsString;
           end;
+        except
+        end;
       DS.Next;
+    end;
+    except
+      Application.HandleException(Self);
+      //ShowMessage('Tables Error');
     end;
     DS.Active := False;
 
-    OpenSchema(siColumns, EmptyParam, EmptyParam, DS);
+
+    Restrict := VarArrayOf([NULL, 'DATA']);
+
+    try
+    OpenSchema(siColumns, Restrict, EmptyParam, DS);
     DS.Active := True;
     DS.Sort := 'TABLE_NAME, ORDINAL_POSITION';
     while not DS.Eof do
     begin
       TD := Schema.TableDefs.Find(DS.FieldByName('TABLE_NAME').AsString);
       if TD <> nil then
-      with TD.FieldDefs.Add do
-      begin
-        Name := DS.FieldByName('COLUMN_NAME').AsString;
-        AdoDataType := DS.FieldByName('DATA_TYPE').AsInteger;
-        AdoDataSize := DS.FieldByName('CHARACTER_MAXIMUM_LENGTH').AsInteger;
-        if (AdoDataType in [adBSTR, adWChar, adVarWChar]) and (AdoDataSize = 0) then
-          AdoDataType := adLongVarWChar
-        else if (AdoDataType = adChar) and (AdoDataSize = 0) then
-          AdoDataType := adLongVarChar;
-
-        DataType := ADOTypeToFieldType(AdoDataType);
-        if DS.FieldByName('COLUMN_HASDEFAULT').AsBoolean then
-          DefaultExpression := DS.FieldByName('COLUMN_DEFAULT').AsString;
-        Required := not DS.FieldByName('IS_NULLABLE').AsBoolean;
-        Size := AdoDataSize;
-        Precision := DS.FieldByName('NUMERIC_PRECISION').AsInteger;
-        SetPropValue('Scale', DS.FieldByName('NUMERIC_SCALE').AsString);
-        Description := DS.FieldByName('DESCRIPTION').AsString;
-      end;
-      DS.Next;
-    end;
-    DS.Active := False;
-
-    UpdateAutoIncFields;
-
-    OpenSchema(siIndexes, EmptyParam, EmptyParam, DS);
-    DS.Active := True;
-    DS.Sort := 'TABLE_NAME, INDEX_NAME, ORDINAL_POSITION';
-    while not DS.Eof do
-    begin
-      TD := Schema.TableDefs.Find(DS.FieldByName('TABLE_NAME').AsString);
-      if TD <> nil then
-      begin
-        Temp := DS.FieldByName('INDEX_NAME').AsString;
-        TI := TD.IndexDefs.Find(Temp);
-        if TI = nil then
-        begin
-          TI := TD.IndexDefs.Add;
-          TI.Name := DS.FieldByName('INDEX_NAME').AsString;
-          TI.PrimaryKey := DS.FieldByName('PRIMARY_KEY').AsBoolean;
-          TI.Unique := DS.FieldByName('UNIQUE').AsBoolean;
-          TI.SetPropValue('Clustered', DS.FieldByName('CLUSTERED').AsString);
-        end;
-        with TI.IndexFields.Add do
+      try
+        with TD.FieldDefs.Add do
         begin
           Name := DS.FieldByName('COLUMN_NAME').AsString;
-          Descending := DS.FieldByName('COLLATION').AsInteger = DB_COLLATION_DESC;
+          AdoDataType := DS.FieldByName('DATA_TYPE').AsInteger;
+          AdoDataSize := DS.FieldByName('CHARACTER_MAXIMUM_LENGTH').AsInteger;
+          if (AdoDataType in [adBSTR, adWChar, adVarWChar]) and (AdoDataSize = 0) then
+            AdoDataType := adLongVarWChar
+          else if (AdoDataType = adChar) and (AdoDataSize = 0) then
+            AdoDataType := adLongVarChar;
+
+          DataType := ADOTypeToFieldType(AdoDataType);
+          if DS.FieldByName('COLUMN_HASDEFAULT').AsBoolean then
+            DefaultExpression := DS.FieldByName('COLUMN_DEFAULT').AsString;
+          Required := not DS.FieldByName('IS_NULLABLE').AsBoolean;
+          Size := AdoDataSize;
+          Precision := DS.FieldByName('NUMERIC_PRECISION').AsInteger;
+          SetPropValue('Scale', DS.FieldByName('NUMERIC_SCALE').AsString);
+          Description := DS.FieldByName('DESCRIPTION').AsString;
         end;
+      except
       end;
       DS.Next;
     end;
+    except
+      ShowMessage('Fields Error')
+    end;
     DS.Active := False;
 
-    OpenSchema(siViews, EmptyParam, EmptyParam, DS);
+
+    Restrict := VarArrayOf([NULL, 'DATA']);
+    //UpdateAutoIncFields;
+    try
+      OpenSchema(siIndexes, Restrict, EmptyParam, DS);
+      DS.Active := True;
+      DS.Sort := 'TABLE_NAME, INDEX_NAME, ORDINAL_POSITION';
+
+      while not DS.Eof do
+      begin
+        TD := Schema.TableDefs.Find(DS.FieldByName('TABLE_NAME').AsString);
+        if TD <> nil then
+        begin
+          Temp := DS.FieldByName('INDEX_NAME').AsString;
+          TI := TD.IndexDefs.Find(Temp);
+          if TI = nil then
+          begin
+            TI := TD.IndexDefs.Add;
+            TI.Name := DS.FieldByName('INDEX_NAME').AsString;
+            TI.PrimaryKey := DS.FieldByName('PRIMARY_KEY').AsBoolean;
+            TI.Unique := DS.FieldByName('UNIQUE').AsBoolean;
+            TI.SetPropValue('Clustered', DS.FieldByName('CLUSTERED').AsString);
+          end;
+          try
+            with TI.IndexFields.Add do
+            begin
+              Name := DS.FieldByName('COLUMN_NAME').AsString;
+              Descending := DS.FieldByName('COLLATION').AsInteger = DB_COLLATION_DESC;
+            end;
+          except
+          end;
+        end;
+        DS.Next;
+      end;
+    except
+    end;
+    DS.Active := False;
+
+
+    try
+    OpenSchema(siViews, Restrict, EmptyParam, DS);
     DS.Active := True;
     DS.Sort := '';
     while not DS.Eof do
     begin
       Temp := DS.FieldByName('TABLE_SCHEMA').AsString;
       if not AnsiSameText(Temp, 'INFORMATION_SCHEMA') and not AnsiSameText(Temp, 'sys') then
+      try
         with Schema.ViewDefs.Add do
         begin
           Name := DS.FieldByName('TABLE_NAME').AsString;
@@ -807,9 +841,15 @@ begin
             Definition.Text := 'CREATE VIEW ' + FormatName(Name, 'b') + ' AS ' + Temp;
           Description := DS.FieldByName('DESCRIPTION').AsString;
         end;
+      except
+      end;
       DS.Next;
     end;
+    except
+    end;
     DS.Active := False;
+
+
 
     (* -- skip procedures, nothing but name is returned
     OpenSchema(siProcedures, EmptyParam, EmptyParam, DS);
@@ -836,7 +876,8 @@ begin
     DS.Active := False;
     *)
 
-    OpenSchema(siTableConstraints, EmptyParam, EmptyParam, DS);
+    try
+    OpenSchema(siTableConstraints, Restrict, EmptyParam, DS);
     DS.Active := True;
     DS.Sort := '';
     while not DS.Eof do
@@ -845,53 +886,69 @@ begin
       begin
         TD := Schema.TableDefs.Find(DS.FieldByName('TABLE_NAME').AsString);
         if TD <> nil then
+      try
         with TD.Constraints.Add do
         begin
           Name := DS.FieldByName('CONSTRAINT_NAME').AsString;
           Description := DS.FieldByName('DESCRIPTION').AsString;
         end;
+      except
+      end;
       end;
       DS.Next;
     end;
-    DS.Active := False;
-
-    OpenSchema(siCheckConstraints, EmptyParam, EmptyParam, DS);
-    DS.Active := True;
-    DS.Sort := '';
-    while not DS.Eof do
-    begin
-      TC := FindCheck(DS.FieldByName('CONSTRAINT_NAME').AsString);
-      if TC <> nil then
-        TC.Check := DS.FieldByName('CHECK_CLAUSE').AsString;
-      DS.Next;
+    except
     end;
     DS.Active := False;
 
-    OpenSchema(siForeignKeys, EmptyParam, EmptyParam, DS);
+    try
+      OpenSchema(siCheckConstraints, Restrict, EmptyParam, DS);
+      DS.Active := True;
+      DS.Sort := '';
+      while not DS.Eof do
+      begin
+        TC := FindCheck(DS.FieldByName('CONSTRAINT_NAME').AsString);
+        if TC <> nil then
+          TC.Check := DS.FieldByName('CHECK_CLAUSE').AsString;
+        DS.Next;
+      end;
+    except
+    end;
+    DS.Active := False;
+
+    try
+    OpenSchema(siForeignKeys, Restrict, EmptyParam, DS);
     DS.Active := True;
     DS.Sort := 'FK_NAME, ORDINAL';
     while not DS.Eof do
     begin
       Temp := DS.FieldByName('FK_NAME').AsString;
       TR := Schema.Relationships.Find(Temp);
-      if TR = nil then
-      begin
-        TR := Schema.Relationships.Add;
-        TR.Name := DS.FieldByName('FK_NAME').AsString;
-        TR.DetailRelationName := TR.Name;
-        TR.MasterTableName := DS.FieldByName('PK_TABLE_NAME').AsString;
-        TR.DetailTableName := DS.FieldByName('FK_TABLE_NAME').AsString;
-        TR.MasterKeyFields := DS.FieldByName('PK_COLUMN_NAME').AsString;
-        TR.DetailKeyFields := DS.FieldByName('FK_COLUMN_NAME').AsString;
-        TR.UpdateAction := AdoRuleToAction(DS.FieldByName('UPDATE_RULE').AsString);
-        TR.DeleteAction := AdoRuleToAction(DS.FieldByName('DELETE_RULE').AsString);
-      end else
-      begin
-        TR.MasterKeyFields := TR.MasterKeyFields + ';' + DS.FieldByName('PK_COLUMN_NAME').AsString;
-        TR.DetailKeyFields := TR.DetailKeyFields + ';' + DS.FieldByName('FK_COLUMN_NAME').AsString;
+      try
+        if TR = nil then
+        begin
+          TR := Schema.Relationships.Add;
+          TR.Name := DS.FieldByName('FK_NAME').AsString;
+          TR.DetailRelationName := TR.Name;
+          TR.MasterTableName := DS.FieldByName('PK_TABLE_NAME').AsString;
+          TR.DetailTableName := DS.FieldByName('FK_TABLE_NAME').AsString;
+          TR.MasterKeyFields := DS.FieldByName('PK_COLUMN_NAME').AsString;
+          TR.DetailKeyFields := DS.FieldByName('FK_COLUMN_NAME').AsString;
+          TR.UpdateAction := AdoRuleToAction(DS.FieldByName('UPDATE_RULE').AsString);
+          TR.DeleteAction := AdoRuleToAction(DS.FieldByName('DELETE_RULE').AsString);
+        end else
+        begin
+          TR.MasterKeyFields := TR.MasterKeyFields + ';' + DS.FieldByName('PK_COLUMN_NAME').AsString;
+          TR.DetailKeyFields := TR.DetailKeyFields + ';' + DS.FieldByName('FK_COLUMN_NAME').AsString;
+        end;
+      except
       end;
       DS.Next;
     end;
+    except
+    end;
+    DS.Active := False;
+
 
     Schema.UpdateRelationships;
 

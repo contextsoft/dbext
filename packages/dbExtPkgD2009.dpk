@@ -44,8 +44,7 @@ requires
   dbxcds,
   ibxpress,
   dsnap,
-  adortl,
-  CtxCommonPkgD2009;
+  adortl;
 
 contains
   ADOExt in '..\source\ADOExt.pas',
