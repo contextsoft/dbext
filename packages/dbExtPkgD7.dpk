@@ -81,6 +81,7 @@ contains
   fDBAdapterEditor in '..\source\designtime\fDBAdapterEditor.pas' {frmDBAdapterEditor},
   fSelectCommandTypes in '..\source\designtime\fSelectCommandTypes.pas' {frmSelectCommandTypes},
   fSelFields in '..\source\designtime\fSelFields.pas' {frmSelectFields},
+  CtxDBDesignerAdapter in '..\source\CtxDBDesignerAdapter.pas',
   CtxFieldsUpdater in '..\source\CtxFieldsUpdater.pas',
   CtxDataSetCommandBuilder in '..\source\CtxDataSetCommandBuilder.pas' {frmCtxDataSetCommandBuilder};
 

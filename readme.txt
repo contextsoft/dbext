@@ -1,6 +1,6 @@
 ================================================================
-Context Database Extensions Suite 3 for Delphi & BCB
-Copyright (C) 2003-2007, Michael Baytalsky
+Context Database Extensions Suite 3 for Delphi
+Copyright (C) 2003-2009, Michael Baytalsky
 All Rights Reserved
 ----------------------------------------------------------------
 Version: 3.01
@@ -113,87 +113,7 @@ TxxxTableExt, TxxxQueryExt & TxxxDatabaseExt components.
 II. HISTORY OF RELEASES
 =======================
 
-  06/25/2007  v2.15  Added support for Delphi 2007 for Win32.
-
-  04/25/2007  v2.14  Changed ICtxDatabase interface to better
-                     support parametrized queries.
-                     Fixed problem with domains not being imported 
-                     during reverse engineering.
-  
-  02/12/2007  v2.13  Starting from this version, all extended  
-                     adapters are provided as separate downloads due
-                     to increasing number of supported databases. 
-                     Fixed minor problems in SQLPraser (dbSQLParser.pas unit).                     
-
-  09/27/2006  v2.12  Fixed minor bugs. Added FIBPlus adapter.
-                     
-
-  09/27/2006  v2.11  Added CustomObjects collection to TDatabaseSchema.
-                     Improved Interbase\Firebird adapter.
-
-  08/24/2006  v2.10  Added Sort method to TSchemaItemsCollection. This
-                     allows alphabetical sorting of schema collection items
-                     by name. 
-
-  08/15/2006  v2.09  Added ComputeAs property to TFieldDefinition.
-                     Fixed minor problem in SQL import.
-
-  07/24/2006  v2.08  Added remote port to DBISAM4 DatabaseURL. It can now
-                     take server name in form <server>:<port>.
-
-  06/26/2006  v2.07  Fixed minor problems is sql import.
-
-  06/20/2006  v2.06  Restored StartTransaction method interface for dbisam 4.
-
-
-  05/29/2006  v2.05  Minor improvements and bug fixes in dbSchema.pas unit;
-                     Added select stataments execution;
-                     Added DSDFileName property to TDatabaseSchema (design-time only);
-                     Added LibVersion property to TDatabaseSchema (design-time only);
-
-  04/29/2006  v2.04  Improved connectivity with schema component in IDE;
-                     Published collections made read-only for TDatabaseSchema.
-                     This prevents schema objects from being modified from IDE;
-                     Fixed minor bugs;
-
-  04/04/2006  v2.03  First final release of Database Extensions v.2.
-                     Fixed problem with TDbMemDataSet incorrectly
-                     writing Blob data when saving to binary file.
-                     Added support for Delphi 2006.
-                     Added support for Nexus 2.
-
-  12/19/2005  v2.02  Second beta release of Database Extensions v.2.
-                     Added dbSQLLexer unit, with generic SQL lexer & parser 
-                     implementation. This allows and run complex scripts
-                     SQL scripts against engines, that do not support 
-                     multi-statement batches.
-                     Changed the model of relationships implementation.
-                     All relationships are stored within Relationships 
-                     collection of TDatabaseSchema. Each table also contains
-                     TRelation objects (compatible in interface with same 
-                     TRelation(s) in prior releases of extensions) build 
-                     automatically from TRelationship(s). This helps avoiding 
-                     creation of duplicate and mismatching pairs of relations.
-                     Added TTableConstraints collection, holding table level
-                     check constraints (TTableConstraint).
-                     Added TIndexFields collection for TIndexDefinition class,
-                     holding individual index fields and their extended properties.
-                     
-  10/31/2005  v2.01  First beta release of Database Extensions v.2
-                     Most of the extended client-side functionality,
-                     like replication and serialization has been moved
-                     to TDBManager component and dbExtUtils unit.
-                     Added TDBEngineProfile component that can be used
-                     to generate various SQL scripts based on database
-                     engine profile (see .dbp files included with 
-                     Context Database Designer under 'dbdefs' folder).
-                     TDatabaseSchema component is enhanced to contain
-                     for types of metadata, like domains, views, 
-                     sequences and stored procedures.
-                     Objects contained in schema extended to have custom
-                     (user defined & engine specific) properties.
-                     Added generic adapters for BDE, ADO, DBX, IB
-                     database access.
+  06/25/2009  v3.02  Added support for Delphi 2009
 
 
 II. INSTALLATION INSTRUCTIONS

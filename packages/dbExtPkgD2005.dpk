@@ -80,6 +80,9 @@ contains
   fDataTableWizard in '..\source\designtime\fDataTableWizard.pas' {frmDataTableWizard},
   fDBAdapterEditor in '..\source\designtime\fDBAdapterEditor.pas' {frmDBAdapterEditor},
   fSelectCommandTypes in '..\source\designtime\fSelectCommandTypes.pas' {frmSelectCommandTypes},
+  CtxDataSetCommandBuilder in '..\source\CtxDataSetCommandBuilder.pas',
+  CtxFieldsUpdater in '..\source\CtxFieldsUpdater.pas',
+  CtxDBDesignerAdapter in '..\source\CtxDBDesignerAdapter.pas',
   fSelFields in '..\source\designtime\fSelFields.pas' {frmSelectFields};
 
 end.

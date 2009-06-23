@@ -2249,7 +2249,7 @@ const
     ftADT, ftArray, ftReference, ftDataSet, ftOraBlob, ftOraClob, ftVariant,
     ftInterface, ftIDispatch, ftGuid
     {$IFDEF D6_ORLATER},ftTimeStamp, ftFMTBcd{$ENDIF}
-    {$IFDEF D2005_ORLATER}, ftNChar, ftNClob, ftTimeStamp, ftUnknown{$ENDIF}
+    {$IFDEF D2006_ORLATER}, ftNChar, ftNClob, ftTimeStamp, ftUnknown{$ENDIF}
     {$IFDEF D2009_ORLATER}, ftLargeInt, ftInteger, ftSmallInt, ftFloat, ftUnknown, ftUnknown, ftUnknown{$ENDIF}
   );
 

@@ -36,7 +36,9 @@ unit CtxDBDesigner_TLB;
 {$TYPEDADDRESS OFF} // Unit must be compiled without type-checked pointers. 
 {$WARN SYMBOL_PLATFORM OFF}
 {$WRITEABLECONST ON}
-{$VARPROPSETTER ON}
+
+{.$VARPROPSETTER ON}
+
 {$ALIGN 4}
 interface
 
