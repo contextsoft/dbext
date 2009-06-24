@@ -66,6 +66,7 @@ type
     FOrderBy: String;
 
     FFilterEvaluator: TObject;
+    FIgnoreFilteringForLookup: Boolean;
 
     procedure OnFilterDataRow(ARow: TCtxDataRow; var Accept: boolean);
     procedure OnNotifyDataEvent(Context: TObject; DataEvent: TCtxDataEventType);
@@ -217,6 +218,10 @@ type
     property OrderBy: String read FOrderBy write SetOrderBy;
     {:$ Determines whether the dataset will attempt to automatically fill data table upon opening. }
     property AutoFillDataTable: Boolean read FAutoFillDataTable write FAutoFillDataTable default False;
+    {:$ Determines if filter will be used when searching for lookup value using Lookup method. }
+    {:$ If this property is False (by default) then only values which fall within filtering and ranging criteria will }
+    {:$ be returned by Lookup. Otherwise, Lookup will search the whole table. }
+    property IgnoreFilteringForLookup: Boolean read FIgnoreFilteringForLookup write FIgnoreFilteringForLookup default False;
 
     property FieldDefs;
     property Active;
@@ -395,6 +400,7 @@ begin
   SetLength(FColumns, 0);
   FInsertedRow := nil;
   FFilterEvaluator := nil;
+  FIgnoreFilteringForLookup := False;
 end;
 
 destructor TCtxDataSet.Destroy;
@@ -1298,11 +1304,21 @@ var
   B: TRecordBuffer;
 begin
   Result := null;
-  Obj := LocateObject(KeyFields, KeyValues, []);
+
+  if IgnoreFilteringForLookup then
+    Obj := FCursor.DataTable.Locate(KeyFields, KeyValues, [])
+  else Obj := LocateObject(KeyFields, KeyValues, []);
+
   if Obj <> nil then
   begin
     B := TempBuffer;
-    if not CheckRowBuffer(Obj, B) then exit;
+    // if not CheckRowBuffer(Obj, B) then exit;
+
+    if Obj.Deleted then exit;
+    _FreeRecordPointers(B);
+    PRecInfo(B).Obj := Obj;
+    PRecInfo(B).Idx := FCursor.IndexOfRow(Obj);
+
     SetTempState(dsCalcFields);
     try
       CalculateFields(B);
