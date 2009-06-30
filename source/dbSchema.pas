@@ -2143,6 +2143,8 @@ const
   sqlGetVersion =
     'SELECT VERINFO FROM %s';
 
+  defSysTableName = 'SysTable';
+
 resourcestring
   SUnsupportedDataType = 'Unsupported data type';
   SCapabilityNotSupported = 'Capability not supported';
@@ -2390,6 +2392,9 @@ begin
     STable := Database.GetSchema.SystemTableName;
   if Trim(STable) = '' then
     STable := Database.GetSystemTableName;
+  if Trim(STable) = '' then
+    STable := defSysTableName;
+
   Query := Database.CreateQuery('');
   try
     Database.SetQuerySQL(Query, Format(sqlGetVersion, [STable]));

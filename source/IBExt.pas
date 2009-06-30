@@ -150,9 +150,6 @@ implementation
 
 uses IBCustomDataSet, Math;
 
-const
-  defSysTableName = 'SysTable';
-
 procedure Register;
 begin
   RegisterComponents('Database Extensions', [TIBDatabaseExt]);

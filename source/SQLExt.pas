@@ -155,9 +155,6 @@ implementation
 uses
   SqlConst, IniFiles;
 
-const
-  defSysTableName = 'System';
-
 procedure Register;
 begin
   RegisterComponents('Database Extensions', [TSQLConnectionExt]);

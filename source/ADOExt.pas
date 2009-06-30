@@ -152,9 +152,6 @@ resourcestring
 
 implementation
 
-const
-  defSysTableName = 'SysTable';
-
 { General Helper Rountines }
 
 procedure Register;
