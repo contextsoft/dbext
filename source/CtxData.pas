@@ -4,7 +4,7 @@
 (*
 (*  Classes that implement data container infrastructure.
 (*
-(*  Copyright (c) 2005-2007 Michael Baytalsky
+(*  Copyright (c) 2005-2009, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxData;

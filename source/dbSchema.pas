@@ -20,13 +20,13 @@
 (*                TSequences - collection of TSequence
 (*                TDomains - collection of TDomain
 (*
-(*  Copyright (c) 2004-2007 Michael Baytalsky
+(*  Copyright (c) 2005-2009, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 2.15
-(*  DELPHI\BCB  : Delphi 5,6,7,2005,2006, 2007; C++Builder 6.0, 2006
+(*  VERSION     : 3.02
+(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009
 (*
 (******************************************************************************)
 unit dbSchema;
@@ -45,7 +45,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 301;
+  dbSchemaLibVersion = 302;
 
 {$IFDEF D2009_ORLATER}
 type

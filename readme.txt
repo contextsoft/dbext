@@ -3,7 +3,7 @@ Context Database Extensions Suite 3 for Delphi
 Copyright (C) 2003-2009, Michael Baytalsky
 All Rights Reserved
 ----------------------------------------------------------------
-Version: 3.01
+Version: 3.02
 
 
    WHAT'S IN THIS FILE
@@ -82,9 +82,6 @@ The main features, provided by Context Database Extensions are:
 
     - Provides engine-specific highly customzable SQL generation 
     functionality via TDBEngineProfile component.
-
-    - Provides classes for business logic incapsulation, like
-    TDataSetReference, TDBDocument, TDBDocumentType & TDBJournal.
    
 Extended adapters also provide the following additional functionality:
 

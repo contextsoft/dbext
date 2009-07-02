@@ -5,7 +5,7 @@
 (*  TCtxFieldsUpdater - a simple design-time component which helps updating
 (*              field names (capitalization) and displya labels from schema.
 (*
-(*  Copyright (c) 2007 Michael Baytalsky
+(*  Copyright (c) 2009, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxFieldsUpdater;

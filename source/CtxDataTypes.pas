@@ -6,7 +6,7 @@
 (*  TCtxDataCommand - abstract ancestor for all provider specific command objects
 (*  TCtxParameters - generic collection of named parameters or values
 (*
-(*  Copyright (c) 2005-2007 Michael Baytalsky
+(*  Copyright (c) 2005-2009, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxDataTypes;

@@ -5,12 +5,12 @@ interface
 uses
   Windows, Messages, SysUtils, {$IFnDEF VER130}Variants,{$ENDIF} Classes, 
   Graphics, Controls, Forms, Dialogs, ExtCtrls, DBCtrls, ToolWin, ComCtrls, 
-  Menus, StdActns, ActnList, ImgList, Grids, DBGrids, DB, dbMemDS, 
-  StdCtrls, Mask, ExtDlgs;
+  Menus, StdActns, ActnList, ImgList, Grids, DBGrids, DB,  
+  StdCtrls, Mask, ExtDlgs, CtxDataSet;
 
 type
   TfmMainForm = class(TForm)
-    DbMemDataSet: TDbMemDataSet;
+    DbMemDataSet: TCtxDataSet;
     DataSource1: TDataSource;
     DBGrid1: TDBGrid;
     MainMenu: TMainMenu;
