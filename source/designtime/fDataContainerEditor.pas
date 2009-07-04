@@ -1,3 +1,12 @@
+(******************************************************************************)
+(*
+(*  Context Database Extensions Suite
+(*
+(*  Data container editor form (design-time)
+(*
+(*  Copyright (c) 2005-2009, Context Software LLC
+(*
+(******************************************************************************)
 unit fDataContainerEditor;
 
 interface

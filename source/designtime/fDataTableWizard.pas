@@ -1,3 +1,12 @@
+(******************************************************************************)
+(*
+(*  Context Database Extensions Suite
+(*
+(*  Data Container Table wizard form
+(*
+(*  Copyright (c) 2005-2009, Context Software LLC
+(*
+(******************************************************************************)
 unit fDataTableWizard;
 
 interface

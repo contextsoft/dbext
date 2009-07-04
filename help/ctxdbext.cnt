@@ -23,6 +23,7 @@
 2 TCompareSchemaItem=IDH_TCompareSchemaItem
 2 TContextClass=IDH_TContextClass
 2 TCtxBlobStream=IDH_TCtxBlobStream
+2 TCtxColumnMapInfo=IDH_TCtxColumnMapInfo
 2 TCtxDataAdapter=IDH_TCtxDataAdapter
 2 TCtxDataCollection=IDH_TCtxDataCollection
 2 TCtxDataCollectionItem=IDH_TCtxDataCollectionItem
@@ -124,6 +125,7 @@
 3 BDEExt
 3 TDatabaseExt=IDH_TDatabaseExt
 3 CtxData
+3 TCtxColumnMapInfo=IDH_TCtxColumnMapInfo
 3 TCtxDataAdapter=IDH_TCtxDataAdapter
 3 TCtxDataCollection=IDH_TCtxDataCollection
 3 TCtxDataCollectionItem=IDH_TCtxDataCollectionItem
@@ -544,11 +546,13 @@
 2 TChangeStatus=IDH_TChangeStatus_100806
 2 TChangeType=IDH_TChangeType_100790
 2 TChangeTypes=IDH_TChangeTypes_100791
+2 TCtxCalcFieldsEvent=IDH_TCtxCalcFieldsEvent_100923
 2 TCtxColumnArray=IDH_TCtxColumnArray_100818
 2 TCtxColumnMap=IDH_TCtxColumnMap_100758
 2 TCtxCommandType=IDH_TCtxCommandType_100751
 2 TCtxCompareOption=IDH_TCtxCompareOption_100819
 2 TCtxCompareOptions=IDH_TCtxCompareOptions_100820
+2 TCtxCompareOptionsArray=IDH_TCtxCompareOptionsArray_100922
 2 TCtxDataColumnAttribute=IDH_TCtxDataColumnAttribute_100830
 2 TCtxDataColumnAttributes=IDH_TCtxDataColumnAttributes_100831
 2 TCtxDataEvent=IDH_TCtxDataEvent_100824
@@ -613,9 +617,11 @@
 2 TUpdateOptions=IDH_TUpdateOptions_100808
 2 Alphabetical Data Type Listing, By Unit
 3 CtxData
+3 TCtxCalcFieldsEvent=IDH_TCtxCalcFieldsEvent_100923
 3 TCtxColumnArray=IDH_TCtxColumnArray_100818
 3 TCtxCompareOption=IDH_TCtxCompareOption_100819
 3 TCtxCompareOptions=IDH_TCtxCompareOptions_100820
+3 TCtxCompareOptionsArray=IDH_TCtxCompareOptionsArray_100922
 3 TCtxDataColumnAttribute=IDH_TCtxDataColumnAttribute_100830
 3 TCtxDataColumnAttributes=IDH_TCtxDataColumnAttributes_100831
 3 TCtxDataEvent=IDH_TCtxDataEvent_100824
