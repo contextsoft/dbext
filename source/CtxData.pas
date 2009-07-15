@@ -3678,8 +3678,6 @@ function TCtxDataRow.GetOriginalValue(Column: TCtxDataColumn): Variant;
 begin
   if FOriginalRow <> nil then
     Result := FOriginalRow.Value[Column]
-  else if Inserted or not Stored then
-    Result := Null
   else
     Result := GetValue(Column);
 end;

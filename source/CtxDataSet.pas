@@ -781,9 +781,10 @@ begin
   begin
     Obj := PRecInfo(B)^.Obj;
     I := Field.Index;
-    if (Obj <> nil) and (FColumns[I] <> nil)  then
-      Result := Obj.OriginalValue[FColumns[I]] else
-      Result := NULL;
+    if (Obj <> nil) and (FColumns[I] <> nil) and (not Obj.Inserted) then
+      Result := Obj.OriginalValue[FColumns[I]]
+    else
+      Result := Null;
   end else
     Result := inherited GetStateFieldValue(State, Field);
 end;
