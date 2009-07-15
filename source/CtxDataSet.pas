@@ -139,6 +139,8 @@ type
     function GetDataSource: TDataSource; override;
     procedure InternalUpdateFilter;
     procedure UpdateOrderBy;
+    //OldValue Support
+    function GetStateFieldValue(State: TDataSetState; Field: TField): Variant; override;
   public
     {:$ Creates an instance of TCtxDataSet component. }
     constructor Create(AOwner: TComponent); override;
@@ -188,6 +190,11 @@ type
     {:$ Updates display label for peristent fields from meta-data associated with TCtxDataTable object }
     {:$ referenced by DataTable (or DataTableName) property.}
     procedure UpdateDisplayLabels;
+
+    {:$ Returns True if records has been inserted deleted or updated after the last AcceptChanges.}
+    function IsDataModified: Boolean;
+    {:$ Returns True if current record has been inserted or updated after the last AcceptChanges.}
+    function IsRecordModified: Boolean;
 
     {:$ Contains reference to TCtxDataTable object, which stores data. }
     property DataTable: TCtxDataTable read GetDataTable;
@@ -764,6 +771,23 @@ begin
   DataEvent(deFieldChange, Longint(Field));
 end;
 
+function TCtxDataSet.GetStateFieldValue(State: TDataSetState; Field: TField): Variant;
+var
+  B: TRecordBuffer;
+  Obj: TCtxDataRow;
+  I: integer;
+begin
+  if (State = dsOldValue) and GetActiveRecBuf(B) then
+  begin
+    Obj := PRecInfo(B)^.Obj;
+    I := Field.Index;
+    if (Obj <> nil) and (FColumns[I] <> nil)  then
+      Result := Obj.OriginalValue[FColumns[I]] else
+      Result := NULL;
+  end else
+    Result := inherited GetStateFieldValue(State, Field);
+end;
+
 procedure TCtxDataSet.ClearCalcFields(Buffer: TRecordBuffer);
 begin
   // ?
@@ -806,6 +830,7 @@ end;
 
 function TCtxDataSet.GetActiveRecBuf(var RecBuf: TRecordBuffer): boolean;
 begin
+  RecBuf := nil;
   case State of
     dsBlockRead, dsBrowse:
       if IsEmpty then RecBuf := nil else RecBuf := ActiveBuffer;
@@ -817,8 +842,8 @@ begin
       RecBuf := TempBuffer;
     dsNewValue:
       RecBuf := ActiveBuffer;
-    dsOldValue:{ RecBuf := GetOldRecord};
-//    dsSetKey: RecBuf := PChar(FKeyBuffer) + SizeOf(TKeyBuffer);
+    dsOldValue:;
+    dsSetKey:;
   else
     RecBuf := nil;
   end;
@@ -1512,6 +1537,39 @@ begin
   if GetActiveRecBuf(B) then
     Result := PRecInfo(B).Obj
   else Result := nil;
+end;
+
+function TCtxDataSet.IsDataModified: Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  if not Active then exit;
+
+  Result := (DataTable.PhysicalRowCount > DataTable.RowCount) or IsRecordModified;
+
+  if not Result then
+  for I := 0 to DataTable.RowCount - 1 do
+    with DataTable.Rows[I] do
+    if Inserted or Updated then
+    begin
+      Result := True;
+      exit;
+    end;
+end;
+
+function TCtxDataSet.IsRecordModified: Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+  if Active and not EOF and not BOF then
+  begin
+    for I := 0 to FieldCount - 1 do
+      if (Fields[I].FieldKind = fkData) and (Fields[I].OldValue <> Fields[I].Value) then
+        exit;
+  end;
+  Result := False;
 end;
 
 { TCtxBlobStream }

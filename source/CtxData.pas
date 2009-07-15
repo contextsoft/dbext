@@ -3678,7 +3678,10 @@ function TCtxDataRow.GetOriginalValue(Column: TCtxDataColumn): Variant;
 begin
   if FOriginalRow <> nil then
     Result := FOriginalRow.Value[Column]
-  else Result := GetValue(Column);
+  else if Inserted or not Stored then
+    Result := Null
+  else
+    Result := GetValue(Column);
 end;
 
 { Editing state methods }
@@ -3839,7 +3842,6 @@ function TCtxDataRow.GetDataContainer: TCtxDataContainer;
 begin
   Result := FDataTable.DataContainer;
 end;
-
 
 { TCtxDataContainer }
 
