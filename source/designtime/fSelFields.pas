@@ -4,7 +4,7 @@
 (*
 (*  Fields Selection Dialog (TfrmSelectFields)
 (*
-(*  Copyright (c) 2004-2007 Michael Baytalsky
+(*  Copyright (c) 2005-2009, Context Software LLC
 (*
 (******************************************************************************)
 unit fSelFields;

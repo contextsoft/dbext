@@ -1,6 +1,6 @@
 object fmMainForm: TfmMainForm
-  Left = 288
-  Top = 195
+  Left = 420
+  Top = 235
   Width = 627
   Height = 413
   Caption = 'MemDataSet Demo'
@@ -99,8 +99,7 @@ object fmMainForm: TfmMainForm
       OnDblClick = DBImage1DblClick
     end
   end
-  object DbMemDataSet: TDbMemDataSet
-    Options = [voPersistentData]
+  object DbMemDataSet: TCtxDataSet
     FieldDefs = <
       item
         Name = 'Name'
@@ -117,7 +116,6 @@ object fmMainForm: TfmMainForm
       end>
     Left = 48
     Top = 88
-    Data = {}
   end
   object DataSource1: TDataSource
     DataSet = DbMemDataSet

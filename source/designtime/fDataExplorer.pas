@@ -1,3 +1,12 @@
+(******************************************************************************)
+(*
+(*  Context Database Extensions Suite
+(*
+(*  Explorer for Data Container
+(*
+(*  Copyright (c) 2005-2009, Context Software LLC
+(*
+(******************************************************************************)
 unit fDataExplorer;
 
 interface

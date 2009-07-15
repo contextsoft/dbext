@@ -1,3 +1,12 @@
+(******************************************************************************)
+(*
+(*  Context Database Extensions Suite
+(*
+(*  Data provider selection dialog
+(*
+(*  Copyright (c) 2005-2009, Context Software LLC
+(*
+(******************************************************************************)
 unit fSelectDataProvider;
 
 interface

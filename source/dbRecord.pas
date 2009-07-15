@@ -12,8 +12,8 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbRecord.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.01
-(*  DELPHI\BCB  : Delphi 5,6,7,2005,2006,2007,2009; C++Builder 6.0, 2006,2009
+(*  VERSION     : 3.02
+(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009
 (*
 (******************************************************************************)
 unit dbRecord;

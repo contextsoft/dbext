@@ -572,6 +572,8 @@ findnext
 findnext_method
 findrow
 findrow_method
+findrowpos
+findrowpos_method
 foreachitem
 foreachitem_method
 foreigncondition
@@ -774,6 +776,8 @@ haskeys
 haskeys_method
 hasownertable
 hasownertable_method
+haspkcolumns
+haspkcolumns_method
 historyversion
 historyversion_property
 ictxdatabase
@@ -922,6 +926,8 @@ isdatatemporary
 isdatatemporary_method
 isfilling
 isfilling_method
+isfiltered
+isfiltered_method
 isforeignkey
 isforeignkey_property
 isfunction
@@ -938,6 +944,8 @@ isreferenced
 isreferenced_method
 issequenced
 issequenced_method
+issorted
+issorted_method
 istoplevelobject
 istoplevelobject_method
 isunique
@@ -1140,6 +1148,10 @@ optype
 optype_property
 orderby
 orderby_property
+orderbycolumncount
+orderbycolumncount_property
+orderbycolumns
+orderbycolumns_property
 originalrow
 originalrow_property
 originalvalue
@@ -1595,6 +1607,10 @@ tctxblobstream_create
 tctxblobstream_destroy
 tctxblobstream_object
 tctxblobstream_write
+tctxcolumnmapinfo
+tctxcolumnmapinfo_column
+tctxcolumnmapinfo_datatype
+tctxcolumnmapinfo_object
 tctxdataadapter
 tctxdataadapter_beginupdate
 tctxdataadapter_description
@@ -1615,6 +1631,7 @@ tctxdatacollection_find
 tctxdatacollection_get
 tctxdatacollection_getautoname
 tctxdatacollection_getnames
+tctxdatacollection_indexof
 tctxdatacollection_isunique
 tctxdatacollection_object
 tctxdatacollectionitem
@@ -1702,6 +1719,7 @@ tctxdatacontainer_loadfromstream
 tctxdatacontainer_object
 tctxdatacontainer_onafterupdate
 tctxdatacontainer_onbeforeupdate
+tctxdatacontainer_oncalcfields
 tctxdatacontainer_onupdatefailed
 tctxdatacontainer_param
 tctxdatacontainer_params
@@ -1895,6 +1913,7 @@ tctxdatatable_endupdate
 tctxdatatable_fill
 tctxdatatable_findrow
 tctxdatatable_hasownertable
+tctxdatatable_haspkcolumns
 tctxdatatable_initdefaultvalues
 tctxdatatable_insert
 tctxdatatable_insertkey
@@ -1918,6 +1937,7 @@ tctxdatatable_rowclass
 tctxdatatable_rowcount
 tctxdatatable_rows
 tctxdatatable_update
+tctxdatatable_validationsrequired
 tctxdatatable_writedata
 tctxdatatables
 tctxdatatables_add
@@ -2028,13 +2048,18 @@ tctxrowset_datatable
 tctxrowset_destroy
 tctxrowset_filtered
 tctxrowset_findnext
+tctxrowset_findrowpos
 tctxrowset_getorderbycolumns
 tctxrowset_indexofrow
+tctxrowset_isfiltered
+tctxrowset_issorted
 tctxrowset_locate
 tctxrowset_masterrow
 tctxrowset_object
 tctxrowset_onfilterdatarow
 tctxrowset_onnotifydataevent
+tctxrowset_orderbycolumncount
+tctxrowset_orderbycolumns
 tctxrowset_refresh
 tctxrowset_relation
 tctxrowset_rowcount
@@ -3142,6 +3167,8 @@ upperedident
 upperedident_property
 username
 username_property
+validationsrequired
+validationsrequired_property
 value
 value_property
 values
