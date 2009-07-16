@@ -37,6 +37,8 @@ type
   {:$ access rows from TCtxDataTable object residing in TCtxDataContainer }
   {:$ component. }
   TCtxDataSet = class(TDataSet)
+  private
+    FInDelete: boolean;
   protected
     { FieldMap }
     FRecBufSize: integer;
@@ -78,6 +80,7 @@ type
     // procedure DataBufferToObject(ABuf: PChar; AObj: TCtxDataRow);
     // function ObjectToDataBuffer(AObj: TCtxDataRow; ABuf: PChar): boolean;
     function CheckRowBuffer(ARow: TCtxDataRow; ABuf: TRecordBuffer): Boolean;
+    function ValidRow(ARow: TCtxDataRow): Boolean;
 
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     { Data buffer access }
@@ -423,6 +426,8 @@ begin
 end;
 
 procedure TCtxDataSet.OnNotifyDataEvent(Context: TObject; DataEvent: TCtxDataEventType);
+var
+  T: Integer;
 begin
   if Context = nil then
     Exit;
@@ -438,10 +443,18 @@ begin
           Cancel;
         Refresh;
       end;
-
     cdeCursorClosed:
       if Context = FCursor then
         Active := False;
+    cdeRowDeleted:
+    if not FInDelete then
+    begin
+      if State in dsEditModes then
+        Cancel;
+      T := FCursor.IndexOfRow(DataRow);
+      FCurRec := T;
+      Resync([]);
+    end;
   end;
 end;
 
@@ -598,6 +611,11 @@ begin
 end;
 *)
 
+function TCtxDataSet.ValidRow(ARow: TCtxDataRow): Boolean;
+begin
+  Result := FCursor.IndexOfRow(ARow) >= 0;
+end;
+
 function TCtxDataSet.CheckRowBuffer(ARow: TCtxDataRow; ABuf: TRecordBuffer): Boolean;
 var
   RowIdx: Integer;
@@ -606,8 +624,8 @@ begin
   // this function returns true if Row is valid and the buffer is
   // initialized successfully.
   Result := False;
-  if ARow.Deleted then exit;
   RowIdx := FCursor.IndexOfRow(ARow);
+  if (RowIdx < 0) or ARow.Deleted then exit;
   if (ABuf <> TempBuffer) and (RowIdx < 0) then exit;
   _FreeRecordPointers(ABuf);
   // Initialize record info for buffer, so that we have access to fields
@@ -1078,8 +1096,13 @@ var
   I: TRecInfo;
 begin
   // Delete Object
-  I := PRecInfo(ActiveBuffer)^;
-  FDataTable.Delete(I.Obj);
+  FInDelete := True;
+  try
+    I := PRecInfo(ActiveBuffer)^;
+    FDataTable.Delete(I.Obj);
+  finally
+    FInDelete := False;
+  end;
 end;
 
 procedure TCtxDataSet.InternalPost;
@@ -1127,11 +1150,8 @@ begin
   I := PRecInfo(ActiveBuffer);
   if not (State in dsEditModes) then
     DatabaseError(SNotEditing);
-  if I.Obj.Editing then
+  if ValidRow(I.Obj) and I.Obj.Editing then
     I.Obj.CancelEdit;
-  // I.Obj := nil;
-  // Not inserted
-  // FreeAndNil(FInsertedRow);
 end;
 
 procedure TCtxDataSet.InternalRefresh;

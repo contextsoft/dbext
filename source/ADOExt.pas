@@ -715,8 +715,9 @@ begin
     DS.Connection := Self;
     DS.CursorLocation := clUseClient;
 
-    //Restrict := EmptyParam;
-    Restrict := VarArrayOf([NULL, 'DATA']);
+    Restrict := EmptyParam;
+    //Restrict := VarArrayOf([NULL, 'DATA']);
+    //Restrict := VarArrayOf([NULL]);
     try
     OpenSchema(siTables, Restrict, EmptyParam, DS);
     DS.Active := True;
@@ -735,13 +736,13 @@ begin
       DS.Next;
     end;
     except
-      Application.HandleException(Self);
+      //Application.HandleException(Self);
       //ShowMessage('Tables Error');
     end;
     DS.Active := False;
 
 
-    Restrict := VarArrayOf([NULL, 'DATA']);
+    //Restrict := VarArrayOf([NULL]);
 
     try
     OpenSchema(siColumns, Restrict, EmptyParam, DS);
@@ -776,12 +777,14 @@ begin
       DS.Next;
     end;
     except
-      ShowMessage('Fields Error')
+      //Application.HandleException(Self);
+      //ShowMessage('Fields Error')
     end;
     DS.Active := False;
 
 
-    Restrict := VarArrayOf([NULL, 'DATA']);
+
+    //Restrict := VarArrayOf([NULL]);
     //UpdateAutoIncFields;
     try
       OpenSchema(siIndexes, Restrict, EmptyParam, DS);
