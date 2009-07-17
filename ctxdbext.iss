@@ -35,6 +35,7 @@ Name: "help"; Description: "Help"; Types: Default
 [Files]
 Source: "source\*.*"; DestDir: "{app}\source"; Flags: recursesubdirs ignoreversion; Components: sources
 Source: "packages\*.*"; DestDir: "{app}\packages"; Flags: recursesubdirs ignoreversion; Components: sources
+Source: "..\Common\source\*.*"; Includes: "CtxNode.*, CtxPropView.*, CtxCustomProps.*, CtxGridView.*, CtxProfiles.*"; DestDir: "{app}\source\designtime\common"; Flags: ignoreversion; Components: sources
 
 Source: "lib\d7\*.*"; Excludes: "CtxGridView.*,CtxProfiles.*,CtxPropView.*"; DestDir: "{app}\libd7"; Flags: ignoreversion; Components: libd7
 Source: "source\*.*"; Excludes: "*.pas"; DestDir: "{app}\libd7"; Flags: recursesubdirs ignoreversion; Components: libd7

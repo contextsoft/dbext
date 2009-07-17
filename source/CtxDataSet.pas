@@ -447,14 +447,17 @@ begin
       if Context = FCursor then
         Active := False;
     cdeRowDeleted:
-    if not FInDelete then
-    begin
-      if State in dsEditModes then
-        Cancel;
-      T := FCursor.IndexOfRow(DataRow);
-      FCurRec := T;
-      Resync([]);
-    end;
+      if not FInDelete then
+      begin
+        if State in dsEditModes then
+          Cancel;
+
+        T := FCursor.IndexOfRow(DataRow);
+        if T >= 0 then
+          FCurRec := T;
+
+        Resync([]);
+      end;
   end;
 end;
 

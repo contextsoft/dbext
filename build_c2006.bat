@@ -9,8 +9,8 @@ SET dpath=E:\programs\Borland
 set include=e:\projects\Context\Common\source;
 
 set buildto=..\lib\c2006
-"%dpath%\BDS\4.0\Bin\dcc32.exe" -JPHNE -NO%buildto% -I%include% -U%include% -LE%buildto% -LN%buildto% -N%buildto% -B %package%C2006.dpk
-"%dpath%\BDS\4.0\Bin\dcc32.exe" -JL -NO%buildto% -I%include% -U%include% -LE%buildto% -LN%buildto% -N%buildto% -B %package%C2006.dpk
+"%dpath%\BDS\4.0\Bin\dcc32.exe" -JPHNE -NO%buildto% -I%include% -U%include% -LE%buildto% -LN%buildto% -N%buildto% -B %package%D2006.dpk
+"%dpath%\BDS\4.0\Bin\dcc32.exe" -JL -NO%buildto% -I%include% -U%include% -LE%buildto% -LN%buildto% -N%buildto% -B %package%D2006.dpk
 
 move ..\source\*.hpp %buildto%
 move ..\source\*.obj %buildto%

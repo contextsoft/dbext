@@ -41,16 +41,13 @@ requires
   rtl,
   dbrtl,
   bdertl,
-  dbxcds,
   ibxpress,
-  dsnap,
   adortl;
 
 contains
   ADOExt in '..\source\ADOExt.pas',
   BDEExt in '..\source\BDEExt.pas',
   IBExt in '..\source\IBExt.pas',
-  SQLExt in '..\source\SQLExt.pas',
   CtxDataTypes in '..\source\CtxDataTypes.pas',
   CtxDBIntf in '..\source\CtxDBIntf.pas',
   CtxData in '..\source\CtxData.pas',
