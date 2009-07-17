@@ -732,12 +732,16 @@ begin
             Description := DS.FieldByName('DESCRIPTION').AsString;
           end;
         except
+          on E: Exception do Application.HandleException(E);
         end;
       DS.Next;
     end;
     except
-      //Application.HandleException(Self);
-      //ShowMessage('Tables Error');
+      on E: Exception do
+      begin
+        E.Message := 'Tables import error: '+ E.Message;
+        Application.HandleException(E);
+      end;
     end;
     DS.Active := False;
 
@@ -773,12 +777,16 @@ begin
           Description := DS.FieldByName('DESCRIPTION').AsString;
         end;
       except
+        on E: Exception do Application.HandleException(E);      
       end;
       DS.Next;
     end;
     except
-      //Application.HandleException(Self);
-      //ShowMessage('Fields Error')
+      on E: Exception do
+      begin
+        E.Message := 'Fields import error: '+ E.Message;
+        Application.HandleException(E);
+      end;
     end;
     DS.Active := False;
 
@@ -813,11 +821,17 @@ begin
               Descending := DS.FieldByName('COLLATION').AsInteger = DB_COLLATION_DESC;
             end;
           except
+            on E: Exception do Application.HandleException(E);
           end;
         end;
         DS.Next;
       end;
     except
+      on E: Exception do
+      begin
+        E.Message := 'Indices import error: '+ E.Message;
+        Application.HandleException(E);
+      end;
     end;
     DS.Active := False;
 
@@ -842,10 +856,16 @@ begin
           Description := DS.FieldByName('DESCRIPTION').AsString;
         end;
       except
+        on E: Exception do Application.HandleException(E);
       end;
       DS.Next;
     end;
     except
+      on E: Exception do
+      begin
+        E.Message := 'Views import error: '+ E.Message;
+        Application.HandleException(E);
+      end;
     end;
     DS.Active := False;
 
@@ -893,11 +913,17 @@ begin
           Description := DS.FieldByName('DESCRIPTION').AsString;
         end;
       except
+        on E: Exception do Application.HandleException(E);
       end;
       end;
       DS.Next;
     end;
     except
+      on E: Exception do
+      begin
+        E.Message := 'Table constraints import error: '+ E.Message;
+        Application.HandleException(E);
+      end;
     end;
     DS.Active := False;
 
@@ -913,6 +939,11 @@ begin
         DS.Next;
       end;
     except
+      on E: Exception do
+      begin
+        E.Message := 'Check constraints import error: '+ E.Message;
+        Application.HandleException(E);
+      end;
     end;
     DS.Active := False;
 
@@ -942,10 +973,16 @@ begin
           TR.DetailKeyFields := TR.DetailKeyFields + ';' + DS.FieldByName('FK_COLUMN_NAME').AsString;
         end;
       except
+        on E: Exception do Application.HandleException(E);
       end;
       DS.Next;
     end;
     except
+      on E: Exception do
+      begin
+        E.Message := 'Foreign keys import error: '+ E.Message;
+        Application.HandleException(E);
+      end;
     end;
     DS.Active := False;
 
