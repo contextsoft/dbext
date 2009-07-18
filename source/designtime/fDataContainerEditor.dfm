@@ -103,7 +103,7 @@ object frmDataContainerEditor: TfrmDataContainerEditor
             Alignment = taLeftJustify
             Align = alClient
             Borders = bsSingle
-            ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soAlwaysShowEditor, soTextAutoSelect, soAutoWidth, soRowMoved]
+            ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soAlwaysShowEditor, soTextAutoSelect, soAutoWidth, soRowMoved, soColSizing]
             TabOrder = 0
             AutoAddRow = arNone
             ReadOnly = False
@@ -319,7 +319,7 @@ object frmDataContainerEditor: TfrmDataContainerEditor
           Alignment = taLeftJustify
           Align = alClient
           Borders = bsSingle
-          ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soRowSelect, soAlwaysShowEditor, soAutoWidth, soRowMoved]
+          ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soRowSelect, soAlwaysShowEditor, soAutoWidth, soRowMoved, soColSizing]
           TabOrder = 0
           AutoAddRow = arNone
           ReadOnly = True

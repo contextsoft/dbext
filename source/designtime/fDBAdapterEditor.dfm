@@ -257,7 +257,7 @@ object frmDBAdapterEditor: TfrmDBAdapterEditor
             Alignment = taLeftJustify
             Align = alClient
             Borders = bsSingle
-            ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soAlwaysShowEditor, soTextAutoSelect, soAutoWidth, soRowMoved]
+            ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soAlwaysShowEditor, soTextAutoSelect, soAutoWidth, soRowMoved, soColSizing]
             TabOrder = 1
             TabStop = True
             Ctl3D = True

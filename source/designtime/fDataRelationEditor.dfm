@@ -122,7 +122,7 @@ object frmDataRelationEditor: TfrmDataRelationEditor
     Height = 121
     Alignment = taLeftJustify
     Borders = bsSingle
-    ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soAlwaysShowEditor, soAutoWidth, soRowMoved]
+    ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soAlwaysShowEditor, soAutoWidth, soRowMoved, soColSizing]
     TabOrder = 3
     AutoAddRow = False
     ReadOnly = False
