@@ -275,7 +275,7 @@ resourcestring
 
 implementation
 
-uses {$IFnDEF VER130}dbSQLParser,{$ENDIF} TypInfo, Masks;
+uses Forms,{$IFnDEF VER130}dbSQLParser,{$ENDIF} TypInfo, Masks;
 
 {$I CtxD2009.inc}
 
@@ -2154,7 +2154,15 @@ begin
           V := V2;
       end;
       V := NormalizeCRLF(V);
-      Obj.SetPropValue(FldName, V);
+      try
+        Obj.SetPropValue(FldName, V);
+      except
+        on E: Exception do
+        begin
+          E.Message := Format('"%s" is invalid value for property "%s" of object %s', [V, FldName, Obj.GetSchemaClassName]);
+          Application.HandleException(E);
+        end;
+      end;
     end;
   end;
 end;
