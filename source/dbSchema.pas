@@ -8631,6 +8631,7 @@ begin
     FEnumerations.Clear;
     FUpdates.Clear;
     FDomains.Clear;
+    FSequences.Clear;
     FViewDefs.Clear;
     FStoredProcs.Clear;
     FModules.Clear;

@@ -124,12 +124,17 @@ type
     smcIdentifierIsTooLong,
     smcFieldInvalidEnum,
 
+    smcInvalidPropValue, //Add DB 21/07/2009
+    smcCustomMessage, //Add DB 21/07/2009
+
     smcUnknown);
 
   TDBSchemaMessageCodes = set of TDBSchemaMessageCode;
 
   TOnStatusMessage = procedure (Sender: TObject; const StatusMessage: String) of object;
   TOnResultMessage = procedure (Sender: TObject; ResultMessage: TDBSchemaMessage) of object;
+  TOnItemValidate = procedure (ASender: TDBSchemaTester; AItem: TSchemaCollectionItem;
+    const MessageObject: TDBSchemaMessageObject) of object;
 
   TDBSchemaMessage = class (TCollectionItem)
   private
@@ -200,6 +205,8 @@ type
     FDBEngineProfile: TDBEngineProfile;
     FOnResultMessage: TOnResultMessage;
     FOnStatusMessage: TOnStatusMessage;
+    FOnItemValidate: TOnItemValidate;
+
     FErrorCount: integer;
 
     procedure SetDisabledMessages(const Value: String);
@@ -234,6 +241,7 @@ type
       Severity: TDBSchemaMessageSeverity = smsError;
       ContextObject: TObject = nil; ContextInfo: String = ''): TDBSchemaMessage;
     procedure DoStatus(const StatusMessage: String);
+    procedure DoValidate(AItem: TSchemaCollectionItem; const ObjectType: TDBSchemaMessageObject);
     property DisabledMessages: String read GetDisabledMessages write SetDisabledMessages;
     property DBEngineProfile: TDBEngineProfile read FDBEngineProfile;
     property ErrorCount: integer read FErrorCount;
@@ -245,6 +253,7 @@ type
     { Events }
     property OnStatusMessage: TOnStatusMessage read FOnStatusMessage write FOnStatusMessage;
     property OnResultMessage: TOnResultMessage read FOnResultMessage write FOnResultMessage;
+    property OnItemValidate: TOnItemValidate read FOnItemValidate write FOnItemValidate;
   end;
 
 resourcestring
@@ -275,6 +284,7 @@ resourcestring
 
   { Result messages }
   SUnknown = 'Unknown';
+
   SInvalidSchemaName = 'Schema name is missing';
 
   SEnumInvalidName = 'Invalid enumeration name';
@@ -459,7 +469,8 @@ const
 
     SIdentifierIsTooLong,
     SFieldInvalidEnum,
-
+    '', //smcInvalidPropValue
+    '', //smcCustomMessage
     SUnknown);
 
   DBSchemaMessageSeverityDisplayText: array [TDBSchemaMessageSeverity] of String =
@@ -473,7 +484,7 @@ uses TypInfo, Math;
 
 resourcestring
   SSchemaIsNotAssigned = 'Schema is not assigned';
-                                                                       
+
 function GetSchemaMessageObject(Obj: TObject): TDBSchemaMessageObject;
 begin
   Result := smoUnknown;
@@ -544,7 +555,9 @@ function TDBSchemaMessage.GetDefaultMessage: String;
 begin
   Result := ParseFields(DBSchemaMessageCodeMessages[Code], '<%', '%>', GetField, nil);
   if ContextInfo <> '' then
-    Result := Result + ' (''' + ContextInfo + ''')';
+    if Code <> smcInvalidPropValue then
+      Result := Result + ' (''' + ContextInfo + ''')' else
+      Result := Result + ' ' + ContextInfo;
 end;
 
 function TDBSchemaMessage.GetNames(Index: TDBSchemaMessageObject): String;
@@ -646,7 +659,7 @@ function TDBSchemaTester.AddResult(Code: TDBSchemaMessageCode;
   ObjectType: TDBSchemaMessageObject; Severity: TDBSchemaMessageSeverity;
   ContextObject: TObject; ContextInfo: String): TDBSchemaMessage;
 begin
-  if Severity = smsError then
+  if (Severity = smsError) and not IsCodeDisabled(Code) then
     inc(FErrorCount);
   Result := nil;
   if ((Severity = smsError)
@@ -693,6 +706,13 @@ procedure TDBSchemaTester.DoStatus(const StatusMessage: String);
 begin
   if Assigned(FOnStatusMessage) then
     FOnStatusMessage(Self, StatusMessage);
+end;
+
+procedure TDBSchemaTester.DoValidate(AItem: TSchemaCollectionItem;
+  const ObjectType: TDBSchemaMessageObject);
+begin
+  if Assigned(FOnItemValidate) then
+    FOnItemValidate(Self, AItem, ObjectType);
 end;
 
 procedure TDBSchemaTester.SetDisabledMessages(const Value: String);
@@ -787,6 +807,8 @@ var
   IntValue: Integer;
 begin
   DoStatus(STestingEnum + Enumeration.Name);
+  // Callback external validation
+  DoValidate(Enumeration, smoEnum);
   // Test enumeration
   if not IsValidIdentifier(Enumeration, Enumeration.Name) then
     AddResult(smcEnumInvalidName, smoEnum, smsError, Enumeration);
@@ -835,6 +857,9 @@ procedure TDBSchemaTester.TestTable(TableDef: TTableDefinition);
 var
   I: Integer;
 begin
+  // Callback external validation
+  DoValidate(TableDef, smoTable);
+
   with TableDef do
   begin
     DoStatus(STestingTable + TableName);
@@ -886,6 +911,9 @@ var
   En: TEnumeration;
   EngFldType: String;
 begin
+  // Callback external validation
+  DoValidate(FieldDef, smoField);
+
   // Testing field definition
   with FieldDef do
   begin
@@ -951,6 +979,9 @@ var
   I: Integer;
   FieldDef: TFieldDefinition;
 begin
+  // Callback external validation
+  DoValidate(IndexDef, smoIndex);
+
   // Testing index definition
   with IndexDef do
   begin
@@ -990,6 +1021,8 @@ end;
 
 procedure TDBSchemaTester.TestRelation(Relation: TRelation);
 begin
+  // Callback external validation
+  DoValidate(Relation, smoRelation);
   // Testing relation definition
   with Relation do
   begin
@@ -1004,6 +1037,8 @@ end;
 
 procedure TDBSchemaTester.TestTrigger(TriggerDef: TTriggerDefinition);
 begin
+  // Callback external validation
+  DoValidate(TriggerDef, smoTrigger);
   // Testing trigger definition
   with TriggerDef do
   begin
@@ -1029,6 +1064,8 @@ end;
 
 procedure TDBSchemaTester.TestView(ViewDef: TViewDefinition);
 begin
+  // Callback external validation
+  DoValidate(ViewDef, smoView);
   // Testing view definition
   with ViewDef do
   begin
@@ -1050,6 +1087,8 @@ procedure TDBSchemaTester.TestDomain(Domain: TDomain);
 var
   EngFldType: String;
 begin
+  // Callback external validation
+  DoValidate(Domain, smoDomain);
   // Testing Domain definition
   with Domain do
   begin
@@ -1093,6 +1132,9 @@ var
   DetailFieldsRequired: Boolean;
   DetailFieldsUnique: Boolean;
 begin
+  // Callback external validation
+  DoValidate(Relationship, smoRelationship);
+
   MasterList := TStringList.Create;
   DetailList := TStringList.Create;
   try
@@ -1248,6 +1290,8 @@ var
 
 procedure TDBSchemaTester.TestSequence(Sequence: TSequence);
 begin
+  // Callback external validation
+  DoValidate(Sequence, smoSequence);
   // Testing Sequence definition
   with Sequence do
   begin
@@ -1268,6 +1312,8 @@ end;
 
 procedure TDBSchemaTester.TestStoredProc(StoredProc: TStoredProcDefinition);
 begin
+  // Callback external validation
+  DoValidate(StoredProc, smoStoredProc);
   // Testing StoredProc definition
   with StoredProc do
   begin
@@ -1286,6 +1332,8 @@ end;
 
 procedure TDBSchemaTester.TestTableConstraint(TableConstraint: TTableConstraint);
 begin
+  // Callback external validation
+  DoValidate(TableConstraint, smoTableConstraint);
   // Testing TableConstraint definition
   with TableConstraint do
   begin
@@ -1306,6 +1354,8 @@ end;
 
 procedure TDBSchemaTester.TestCustomObject(CustomObject: TCustomObject);
 begin
+  // Callback external validation
+  DoValidate(CustomObject, smoCustomObject);
   with CustomObject do
   begin
     DoStatus(STestingCustomObject + Name);
