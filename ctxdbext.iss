@@ -36,6 +36,7 @@ Source: "packages\*.*"; DestDir: "{app}\packages"; Flags: recursesubdirs ignorev
 ; Copy common sources to designtime folder, just in case
 Source: "..\Common\source\CtxPropView.*"; DestDir: "{app}\source\designtime\common"; Flags: ignoreversion; Components: sources
 Source: "..\Common\source\CtxGridView.*"; DestDir: "{app}\source\designtime\common"; Flags: ignoreversion; Components: sources
+Source: "..\Common\source\CtxProfiles.*"; DestDir: "{app}\source\designtime\common"; Flags: ignoreversion; Components: sources
 
 Source: "lib\d7\*.*"; Excludes: "CtxGridView.*,CtxProfiles.*,CtxPropView.*"; DestDir: "{app}\libd7"; Flags: ignoreversion; Components: libd7
 Source: "source\*.*"; Excludes: "*.pas"; DestDir: "{app}\libd7"; Flags: recursesubdirs ignoreversion; Components: libd7
