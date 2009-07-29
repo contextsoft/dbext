@@ -3,7 +3,7 @@ Context Database Extensions Suite 3 for Delphi
 Copyright (C) 2003-2009, Michael Baytalsky
 All Rights Reserved
 ----------------------------------------------------------------
-Version: 3.02
+Version: 3.03
 
 
    WHAT'S IN THIS FILE

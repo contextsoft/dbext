@@ -80,6 +80,7 @@ type
     // procedure DataBufferToObject(ABuf: PChar; AObj: TCtxDataRow);
     // function ObjectToDataBuffer(AObj: TCtxDataRow; ABuf: PChar): boolean;
     function CheckRowBuffer(ARow: TCtxDataRow; ABuf: TRecordBuffer): Boolean;
+    function CheckTableRowBuffer(ARow: TCtxDataRow; ABuf: TRecordBuffer): Boolean;
     function ValidRow(ARow: TCtxDataRow): Boolean;
 
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
@@ -637,6 +638,25 @@ begin
   Result := True;
 end;
 
+function TCtxDataSet.CheckTableRowBuffer(ARow: TCtxDataRow; ABuf: TRecordBuffer): Boolean;
+var
+  RowIdx: Integer;
+begin
+  // MB: 11/16/2007
+  // this function returns true if Row is valid and the buffer is
+  // initialized successfully.
+  Result := False;
+  RowIdx := ARow.Index;
+  if (RowIdx < 0) or ARow.Deleted then exit;
+  if (ABuf <> TempBuffer) and (RowIdx < 0) then exit;
+  _FreeRecordPointers(ABuf);
+  // Initialize record info for buffer, so that we have access to fields
+  PRecInfo(ABuf).Obj := ARow;
+  PRecInfo(ABuf).Idx := RowIdx;
+  Result := True;
+end;
+
+
 function TCtxDataSet.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
 begin
   Result := TCtxBlobStream.Create(Field as TBlobField, Mode);
@@ -889,7 +909,7 @@ begin
         Idx := 0;
         Obj := ARow;
       end;
-      if CheckRowBuffer(ARow, B) then
+      if CheckTableRowBuffer(ARow, B) then
       begin
         GetCalcFields(B);
         try

@@ -5169,31 +5169,28 @@ begin
      (not (DataEvent in [cdeRowInserted, cdeRowModified, cdeRowDeleted])) then
     Exit;
 
-  if DataEvent <> cdeRowInserted then
-    RIdx := IndexOfRow(ARow)
-  else RIdx := -1; // +++ MB: was not initialized
-
+  RIdx := -1; // +++ MB: was not initialized
   FStartIndex := 0;
   FRowCount := FRows.Count;
   try
+    if DataEvent <> cdeRowInserted then
+      RIdx := IndexOfRow(ARow);
+
     if (DataEvent = cdeRowDeleted) or (not DoFilterRow(ARow)) then
     begin
       if RIdx >= 0 then
         FRows.Delete(RIdx);
-      Exit;
-    end;
-    if DataEvent = cdeRowInserted then
+    end else if DataEvent = cdeRowInserted then
     begin
       if IsSorted then
         NewRIdx := FindNewPos(0, RowCount - 1)
       else NewRIdx := RowCount;
       FRows.Insert(NewRIdx, ARow);
-    end else
-    if IsSorted and ARow.IsModified(FSortCols) and (RowCount > 1) then
+    end else if IsSorted and ARow.IsModified(FSortCols) and (RowCount > 1) and (RIdx >= 0) then
     begin
-      FRows.Move(RIdx, RowCount-1);
-      NewRIdx := FindNewPos(0, RowCount-2);
-      FRows.Move(RowCount-1, NewRIdx);
+      FRows.Move(RIdx, FRowCount - 1);
+      NewRIdx := FindNewPos(0, FRowCount - 2);
+      FRows.Move(RowCount - 1, NewRIdx);
     end;
   finally
     UpdateRange;
