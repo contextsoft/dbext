@@ -302,6 +302,7 @@ type
     procedure SetVersionLabel(const Value: String);
     function  GetDisplayLabel: String; override;
   public
+    function  GetSchemaClassName: String; override;
     {:$ Creates an instance of TDatabaseUpdate object. }
     {:: This method should never be used directly. }
     {:: Use Add method of TDatabaseUpdates collection instead. }
@@ -344,6 +345,54 @@ type
     {:$ Provides access to the TDatabaseUpdate items in the collection by index. }
     property Items[Index: Integer]: TDatabaseUpdate read GetItem write SetItem; default;
   end;
+
+
+  TSchemaEvent = (seBeforeUpdate, seAfterUpdate, seBeforeUpdates, seAfterUpdates);
+  TSchemaEvents = set of TSchemaEvent;
+
+  TSQLScript = class (TSchemaCollectionItem)
+  protected
+    FEvent: TSchemaEvents;
+    FSQLScript: String;
+    FIgnoreSQLError: Boolean;
+    function  GetEvent(Idx: TSchemaEvent): boolean;
+    procedure SetEvent(Idx: TSchemaEvent; ASet: boolean);
+    procedure SetScript(const Value: string);
+  public
+    function  GetSchemaClassName: String; override;
+    {:$ Creates an instance of TSQLScript object. }
+    {:: This method should never be used directly. }
+    {:: Use Add method of TDatabaseScripts collection instead. }
+    constructor Create(Collection: TCollection); override;
+    {:$ Copies the contents of another TDatabaseScript object. }
+    procedure Assign(Source: TPersistent); override;
+    {:$ Specifies the name of the item as it appears in Object Inspector. }
+    function GetDisplayName: String; override;
+    function Check(AEvent: TSchemaEvent): boolean;
+  published
+    {:$ Conatins SQL script}
+    property Definition: String read FSQLScript write FSQLScript;
+    {:: Set IgnoreSQLError to True to ignore any exception raised by SQLScript.<br> }
+    {:: The default value is False.}
+    property IgnoreSQLError: Boolean read FIgnoreSQLError write FIgnoreSQLError default False;
+    property BeforeUpdate: boolean index seBeforeUpdate read GetEvent write SetEvent;
+    property AfterUpdate: boolean index seAfterUpdate read GetEvent write SetEvent;
+    property BeforeUpdates: boolean index seBeforeUpdates read GetEvent write SetEvent;
+    property AfterUpdates: boolean index seAfterUpdates read GetEvent write SetEvent;
+  end;
+
+  {:$ TSQLScripts collection contains a list of TSQLScript items.}
+  TSQLScripts = class (TSchemaItemsCollection)
+  protected
+    function GetItem(Index: Integer): TSQLScript;
+    procedure SetItem(Index: Integer; Value: TSQLScript);
+  public
+    {:$ Creates and adds a new TSQLScript item to the TSQLScripts collection. }
+    function Add: TSQLScript;
+    {:$ Provides access to the TSQLScript items in the collection by index. }
+    property Items[Index: Integer]: TSQLScript read GetItem write SetItem; default;
+  end;
+
 
   {:$ TDomain is a collection item representing a table field definition. }
   TDomain = class (TSchemaCollectionItem)
@@ -1560,6 +1609,8 @@ type
     FRelationships: TRelationships;
     FEnumerations: TEnumerations;
     FCustomObjects: TCustomObjects;
+
+    FScripts: TSQLScripts;    
     FVersion: TSchemaVersion;
     FSchemaName: String;
     FDescription: String;
@@ -1568,6 +1619,7 @@ type
     FOnReadError: TReaderError;
     FCustomProps: TStringList;
     FDefaultValues: TStringList;
+    FNameTemplates: string;
     FNextItemID: Integer;
     FSchemaID: String;
     FTargetDB: String;
@@ -1597,6 +1649,7 @@ type
     function StoreRelationships: Boolean;
     function StoreModules: Boolean;
     function StoreCustomObjects: Boolean;
+    function StoreScripts: Boolean;
 
     procedure SetRelationships(const Value: TRelationships);
     procedure SetStoredProcs(const Value: TStoredProcDefinitions);
@@ -1608,6 +1661,7 @@ type
     procedure SetSequences(const Value: TSequences);
     procedure SetModules(const Value: TModuleDefinitions);
     procedure SetCustomObjects(const Value: TCustomObjects);
+    procedure SetScripts(const Value: TSQLScripts);
 
     function  GetCustomProps: TStrings;
     procedure SetCustomProps(const Value: TStrings);
@@ -1750,6 +1804,8 @@ type
     property TableDefs: TTableDefinitions read FTableDefs write SetTableDefs stored StoreTableDefs;
     {:$ Contains the list of enumerations for the database schema. }
     property Enumerations: TEnumerations read FEnumerations write SetEnumerations stored StoreEnumerations;
+    {:$ Contains the list of scripts for the database schema. }
+    property Scripts: TSQLScripts read FScripts write SetScripts stored StoreScripts;
     {:$ Returns the name of the schema. }
     property SchemaName: String read FSchemaName write FSchemaName;
     {:$ Returns the version as text. }
@@ -1774,6 +1830,8 @@ type
     property EncloseIdentifiersInQuotes: Boolean read FEncloseIdentifiersInQuotes write FEncloseIdentifiersInQuotes default True;
     {:$ List of possible custom properties, that field definitions may have. }
     property DefaultValues: TStrings read GetDefaultValues write SetDefaultValues;
+    {:$ Name templates used to autogenerate names in Database Designer.}
+    property NameTemplates: string read FNameTemplates write FNameTemplates;
     property SystemTableName: String read FSysTable write FSysTable;
   end;
 
@@ -4678,6 +4736,11 @@ end;
 function TDatabaseUpdate.GetDisplayLabel: String;
 begin
   Result := 'Version update #'+ VersionLabel;
+end;
+
+function TDatabaseUpdate.GetSchemaClassName: String;
+begin
+  Result := 'Version update';
 end;
 
 { TDatabaseUpdates = class (TCollection) }
@@ -8296,8 +8359,10 @@ type
     FTableDefs: TTableDefinitions;
     FEnumerations: TEnumerations;
     FUpdates: TDatabaseUpdates;
+    FScripts: TSQLScripts;
     FCustomFieldProps: TStrings;
     FDefaultValues: TStrings;
+    FNameTemplates: string;
 
     FTargetDB: String;
     FSchemaName: String;
@@ -8322,6 +8387,7 @@ type
     procedure SetUpdates(const Value: TDatabaseUpdates);
     procedure SetCustomFieldProps(const Value: TStrings);
     procedure SetModules(const Value: TModuleDefinitions);
+    procedure SetScripts(const Value: TSQLScripts);
   public
     constructor Create(AOwner: TComponent); override;
   published
@@ -8337,8 +8403,10 @@ type
     property TableDefs: TTableDefinitions read FTableDefs write SetTableDefs;
     property Enumerations: TEnumerations read FEnumerations write SetEnumerations;
     property Updates: TDatabaseUpdates read FUpdates write SetUpdates;
+    property Scripts: TSQLScripts read FScripts write SetScripts;
     property CustomFieldProps: TStrings read FCustomFieldProps write SetCustomFieldProps;
     property DefaultValues: TStrings read FDefaultValues write SetDefaultValues;
+    property NameTemplates: string read FNameTemplates write FNameTemplates;
 
     property SchemaName: String read FSchemaName write FSchemaName;
     property Description: String read FDescription write FDescription;
@@ -8400,6 +8468,7 @@ begin
   FRelationships := nil;
   FModules := nil;
   FCustomObjects := nil;
+  FScripts := nil;
   FEncloseIdentifiersInQuotes := True;
   FDefaultValues := nil;
 end;
@@ -8438,8 +8507,7 @@ begin
   FTableDefs.Assign(Value);
 end;
 
-procedure TPersistentDatabaseSchema.SetUpdates(
-  const Value: TDatabaseUpdates);
+procedure TPersistentDatabaseSchema.SetUpdates(const Value: TDatabaseUpdates);
 begin
   FUpdates.Assign(Value);
 end;
@@ -8472,6 +8540,11 @@ begin
   FDefaultValues.Assign(Value);
 end;
 
+procedure TPersistentDatabaseSchema.SetScripts(const Value: TSQLScripts);
+begin
+  FScripts.Assign(Value);
+end;
+
 { TDatabaseSchema }
 
 constructor TDatabaseSchema.Create(AOwner: TComponent);
@@ -8489,6 +8562,7 @@ begin
   FRelationships := TRelationships.Create(Self, TRelationship);
   FTableDefs := TTableDefinitions.Create(Self, TTableDefinition);
   FEnumerations := TEnumerations.Create(Self, TEnumeration);
+  FScripts := TSQLScripts.Create(Self, TSQLScript);
   FCustomProps := TStringList.Create;
   FDefaultValues := TStringList.Create;
   FCustomProps.Sorted := True;
@@ -8516,6 +8590,7 @@ begin
   FModules.Free;
   FCustomObjects.Free;
   FEnumerations.Free;
+  FScripts.Free;
   FCustomProps.Free;
   FDefaultValues.Free;
   inherited Destroy;
@@ -8565,6 +8640,11 @@ end;
 procedure TDatabaseSchema.SetCustomObjects(const Value: TCustomObjects);
 begin
   FCustomObjects.Assign(Value);
+end;
+
+procedure TDatabaseSchema.SetScripts(const Value: TSQLScripts);
+begin
+  FScripts.Assign(Value);
 end;
 
 function TDatabaseSchema.StoreDomains: Boolean;
@@ -8617,6 +8697,11 @@ begin
   Result := FCustomObjects.Count > 0;
 end;
 
+function TDatabaseSchema.StoreScripts: Boolean;
+begin
+  Result := FScripts.Count > 0;
+end;
+
 procedure TDatabaseSchema.LoadFromStream(Stream: TStream);
 var
   P: TPersistentDatabaseSchema;
@@ -8636,6 +8721,7 @@ begin
     FStoredProcs.Clear;
     FModules.Clear;
     FCustomObjects.Clear;
+    FScripts.Clear;
 
     P.FRelationships := FRelationships;
     P.FTableDefs := FTableDefs;
@@ -8648,6 +8734,7 @@ begin
     P.FModules := FModules;
     P.FCustomObjects := FCustomObjects;
     P.FDefaultValues := FDefaultValues;
+    P.FScripts := FScripts;
     FNextItemID := 0;
 
     P.FCustomFieldProps := FCustomProps;
@@ -8674,6 +8761,7 @@ begin
     FLegalCopyright := P.LegalCopyright;
     FEncloseIdentifiersInQuotes := P.EncloseIdentifiersInQuotes;
     FSysTable := P.FSysTable;
+    FNameTemplates := P.FNameTemplates;    
   finally
     P.FRelationships := nil;
     P.FTableDefs := nil;
@@ -8686,6 +8774,7 @@ begin
     P.FModules := nil;
     P.FCustomObjects := nil;
     P.FCustomFieldProps := nil;
+    P.FScripts := nil;
     P.Free;
     EndUpdate;
   end;
@@ -8707,8 +8796,10 @@ begin
     P.FStoredProcs := FStoredProcs;
     P.FModules := FModules;
     P.FCustomObjects := FCustomObjects;
+    P.FScripts := FScripts;
     P.FCustomFieldProps := FCustomProps;
     P.FDefaultValues := FDefaultValues;
+    P.FNameTemplates := FNameTemplates;
     P.SchemaName := FSchemaName;
     P.Description := FDescription;
     P.Author := FAuthor;
@@ -8733,6 +8824,7 @@ begin
     P.FCustomFieldProps := nil;
     P.FDefaultValues := nil;
     P.FUpdates := nil;
+    P.FScripts := nil;
   finally
     P.Free;
   end;
@@ -8980,6 +9072,8 @@ begin
   FCustomObjects.Clear;
   FModules.Clear;
   FDefaultValues.Clear;
+  FScripts.Clear;
+  FNameTemplates := '';
   FNextItemID := 0;
   FSchemaName := 'Database';
   FSchemaID := '';
@@ -9417,6 +9511,7 @@ begin
   if ProcessCollection(Modules) then exit;
   if ProcessCollection(CustomObjects) then exit;
   if ProcessCollection(Updates) then exit;
+  if ProcessCollection(Scripts) then exit;
 end;
 
 procedure TDatabaseSchema.UpdateItemName(Schema: TDatabaseSchema;
@@ -10056,6 +10151,77 @@ begin
   State.ChangeStatus := ChangeStatus;
 end;
 
+
+{ TSQLScripts }
+
+function TSQLScripts.Add: TSQLScript;
+begin
+  Result := TSQLScript(inherited Add);
+end;
+
+function TSQLScripts.GetItem(Index: Integer): TSQLScript;
+begin
+  Result := TSQLScript(inherited GetItem(Index));
+end;
+
+procedure TSQLScripts.SetItem(Index: Integer; Value: TSQLScript);
+begin
+  inherited SetItem(Index, Value);
+end;
+
+{ TSQLScript }
+
+constructor TSQLScript.Create(Collection: TCollection);
+begin
+  inherited Create(Collection);
+  FEvent := [];
+  FSQLScript := '';
+  FIgnoreSQLError := False;
+  FDescription := '';
+end;
+
+function TSQLScript.GetSchemaClassName: String;
+begin
+  Result := 'SQLScript';
+end;
+
+procedure TSQLScript.Assign(Source: TPersistent);
+begin
+  if Source.InheritsFrom(TSQLScript) then
+  begin
+    FSQLScript := TSQLScript(Source).FSQLScript;
+    FIgnoreSQLError := TSQLScript(Source).FIgnoreSQLError;
+    FEvent := TSQLScript(Source).FEvent;
+  end;
+  inherited Assign(Source);
+end;
+
+function TSQLScript.GetDisplayName: String;
+begin
+  Result := FName;
+end;
+
+procedure TSQLScript.SetScript(const Value: string);
+begin
+  FSQLScript := Trim(Value);
+end;
+
+function TSQLScript.GetEvent(Idx: TSchemaEvent): boolean;
+begin
+  Result := Idx in FEvent;
+end;
+
+procedure TSQLScript.SetEvent(Idx: TSchemaEvent; ASet: boolean);
+begin
+  if ASet then
+    Include(FEvent, Idx) else
+    Exclude(FEvent, Idx);
+end;
+
+function TSQLScript.Check(AEvent: TSchemaEvent): boolean;
+begin
+  Result := GetEvent(AEvent) and (FSQLScript <> '');
+end;
 
 end.
 

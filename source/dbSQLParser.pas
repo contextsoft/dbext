@@ -271,7 +271,12 @@ var
   begin
     while (PropName <> '') and CharInSet(PropName[1], ['~', '!', '?', '/', '^']) do
       Delete(PropName, 1, 1);
-    if PropName <> '' then
+
+    if (PropName <> '') and (PropName[1] = '+') then
+    begin
+      Delete(PropName, 1, 1);
+      Item.SetPropValue(PropName, Item.GetPropValue(PropName) + PropValue);
+    end else if PropName <> '' then
       Item.SetPropValue(PropName, PropValue);
   end;
 
@@ -1034,7 +1039,7 @@ var
 
               Temp := Value;
 
-              while (Length(Temp) > 0) and CharInSet(Temp[1], ['^', '?', '!', '~', '/']) do
+              while (Length(Temp) > 0) and CharInSet(Temp[1], ['^', '?', '!', '~', '/', '+']) do
                 Delete(Temp, 1, 1);
 
               if ExpressionFields.IndexOf(Temp) >= 0 then

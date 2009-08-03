@@ -100,6 +100,8 @@ type
     procedure AssignObject(Obj: TSchemaCollectionItem; ResultSet: TDataSet; const ObjPath: String);
     function FormatIBDataType(const FieldType, SubType, Scale, Precision,
       Size, SegLen, CharSet: String): String;
+
+    function GetHRName(const AToken: string): string;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -974,6 +976,7 @@ begin
     PropName := FieldText;
     PropValue := '';
   end;
+
   // ?~{!|$|&|*|}/^
   Generate := PropName[1] <> '?';
   if not Generate then
@@ -999,6 +1002,9 @@ begin
   QuoteFieldValue := PropName[1] = '/';
   if QuoteFieldValue then
     Delete(PropName, 1, 1);
+
+  if (PropName = '') or (PropName[1] = '+') then
+    exit;
 
   if PropName = '!' then
     Item.PropsEqual := False
@@ -1855,6 +1861,50 @@ begin
   FInfoSchemaValueMap.Assign(Value);
 end;
 
+function TDBEngineProfile.GetHRName(const AToken: string): string;
+var
+  S: string;
+  P: integer;
+begin
+  P := 1;
+  Result := '';
+  while True do
+  begin
+    S := NextToken(AToken, '.', P);
+    if S <> '' then
+      Result := S else
+      break;
+  end;
+  if Result = '' then
+    Exit;
+  Result := LowerCase(Result);
+  if Result = 'domains' then
+    Result := 'Domains' else
+  if Result = 'sequences' then
+    Result := 'Sequences' else
+  if Result = 'tabledefs' then
+    Result := 'Tables' else
+  if Result = 'fielddefs' then
+    Result := 'Fields' else
+  if Result = 'indexdefs' then
+    Result := 'Indices' else
+  if Result = 'indexfields' then
+    Result := 'Indices' else
+  if Result = 'constraints' then
+    Result := 'Constraints' else
+  if Result = 'triggers' then
+    Result := 'Triggers' else
+  if Result = 'relationships' then
+    Result := 'Relations' else
+  if Result = 'viewdefs' then
+    Result := 'Views' else
+  if Result = 'storedprocs' then
+    Result := 'Stored procedures' else
+  if Result = 'customobjects' then
+    Result := 'Custom Objects' else
+    Result := AToken;
+end;
+
 procedure TDBEngineProfile.ReverseEngineer(Schema: TDatabaseSchema; ExecSQLProc: TExecSQLProc);
 var
   I,ImpCnt: Integer;
@@ -1921,7 +1971,7 @@ begin
       // Execute SQL
       ResultSet := nil;
       if Assigned(OnReverse) then
-        OnReverse(1, 'Importing '+FInfoSchemaSQL.Names[I] + '...');
+        OnReverse(1, 'Importing '+GetHRName(FInfoSchemaSQL.Names[I]) + '...');
       try
         ExecSQLProc(SQL, @ResultSet);
       except
@@ -1931,7 +1981,7 @@ begin
           FreeAndNil(ResultSet);
           if Assigned(OnReverse) then
           begin
-            OnReverse(-1, 'Importing '+FInfoSchemaSQL.Names[I] + ' hase error:');
+            OnReverse(-1, 'Importing '+GetHRName(FInfoSchemaSQL.Names[I]) + ' hase error:');
             OnReverse(-1, E.Message);
           end;
         end;
@@ -1957,7 +2007,7 @@ begin
           ResultSet.Next;
         end;
       if Assigned(OnReverse) then
-        OnReverse(2, Format('Importing %s done. %d object(s) imported.', [FInfoSchemaSQL.Names[I], ImpCnt]));
+        OnReverse(2, Format('Importing %s complete. %d object(s) imported.', [GetHRName(FInfoSchemaSQL.Names[I]), ImpCnt]));
       finally
         FreeAndNil(ResultSet);
       end;
