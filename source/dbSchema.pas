@@ -10223,6 +10223,8 @@ begin
   Result := GetEvent(AEvent) and (FSQLScript <> '');
 end;
 
+initialization
+finalization
 end.
 
 
