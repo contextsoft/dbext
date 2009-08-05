@@ -5424,7 +5424,7 @@ begin
       end;
     for I := 0 to Relations.Count - 1 do
       if Relations[I].RequireOneRecord then { RelationType = rtManyToOne }
-        if AnsiPos(','+Self.Name+',', ','+Relations[I].KeyFields+',') > 0 then
+        if AnsiPos(';'+Self.Name+';', ';'+Relations[I].KeyFields+';') >= 0 then
         begin
           Include(Result, fdForeighnKey);
           break;

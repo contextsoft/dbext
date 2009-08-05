@@ -3,15 +3,12 @@ Context Database Extensions Suite 3 for Delphi
 Copyright (C) 2003-2009, Michael Baytalsky
 All Rights Reserved
 ----------------------------------------------------------------
-Version: 3.03
-
 
    WHAT'S IN THIS FILE
    ===================
    I. ABOUT DATABASE EXTENSIONS SUITE 3
-   II. HISTORY OF RELEASES
-   III. INSTALLATION INSTRUCTIONS
-   IV. REGISTRATION
+   II. INSTALLATION INSTRUCTIONS
+   III. REGISTRATION
 
 ------------------------------------------
 I. ABOUT DATABASE EXTENSIONS SUITE 3
@@ -107,12 +104,6 @@ TxxxTable, TxxxQuery & TxxxDatabase, components with
 TxxxTableExt, TxxxQueryExt & TxxxDatabaseExt components.
 
 
-II. HISTORY OF RELEASES
-=======================
-
-  06/25/2009  v3.02  Added support for Delphi 2009
-
-
 II. INSTALLATION INSTRUCTIONS
 =============================
                             
@@ -174,8 +165,8 @@ and close the OpenHelp utility.
 The included help file will be available immediately within Delphi/BCB IDE.
 
 
-IV. REGISTRATION
-================
+III. REGISTRATION
+=================
 
 You may NOT DISTRIBUTE the source code conatined in this package.
 You also may not sell, lease or rent these components "as is" or
