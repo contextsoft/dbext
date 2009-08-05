@@ -19,6 +19,7 @@
 (*                TStoredProcDefinitions - collection of TStoredProcDefinition
 (*                TSequences - collection of TSequence
 (*                TDomains - collection of TDomain
+(*                TSQLScripts - collection of TSQLScript
 (*
 (*  Copyright (c) 2005-2009, Context Software LLC
 (*
@@ -45,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 303;
+  dbSchemaLibVersion = 304;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -347,7 +348,8 @@ type
   end;
 
 
-  TSchemaEvent = (seBeforeUpdate, seAfterUpdate, seBeforeUpdates, seAfterUpdates);
+  TSchemaEvent = (seBeforeUpdate, seAfterUpdate, seBeforeUpdates, seAfterUpdates,
+    seBeforeCreate, seAfterCreate, seBeforeDrop, seAfterDrop);
   TSchemaEvents = set of TSchemaEvent;
 
   TSQLScript = class (TSchemaCollectionItem)
@@ -379,6 +381,10 @@ type
     property AfterUpdate: boolean index seAfterUpdate read GetEvent write SetEvent;
     property BeforeUpdates: boolean index seBeforeUpdates read GetEvent write SetEvent;
     property AfterUpdates: boolean index seAfterUpdates read GetEvent write SetEvent;
+    property BeforeCreate: boolean index seBeforeCreate read GetEvent write SetEvent;
+    property AfterCreate: boolean index seAfterCreate read GetEvent write SetEvent;
+    property BeforeDrop: boolean index seBeforeDrop read GetEvent write SetEvent;
+    property AfterDrop: boolean index seAfterDrop read GetEvent write SetEvent;
   end;
 
   {:$ TSQLScripts collection contains a list of TSQLScript items.}
@@ -10223,8 +10229,6 @@ begin
   Result := GetEvent(AEvent) and (FSQLScript <> '');
 end;
 
-initialization
-finalization
 end.
 
 
