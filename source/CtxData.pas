@@ -407,7 +407,6 @@ type
     procedure ProcessFKDeleteConstraints(ARow: TCtxDataRow);
     function ValidateRow(ARow: TCtxDataRow; Operation: TCtxDataRowState): Integer; virtual;
     procedure InternalMoveRow(OldIndex, NewIndex: Integer);
-    function RowIndex(ARow: TCtxDataRow): Integer;
 
     procedure NotifyEvent(Context: TObject; DataEvent: TCtxDataEventType);
 
@@ -530,6 +529,9 @@ type
     function FindRow(ARow: TCtxDataRow): TCtxDataRow; overload;
     {:$ Locate row in the data table with values in KeyFields columns equal to KeyValues.}
     function Locate(const KeyFields: String; const KeyValues: Variant; Options: TCtxCompareOptions): TCtxDataRow;
+
+    {:$ Returns index of ARow in this table. }
+    function IndexOfRow(ARow: TCtxDataRow): Integer;
 
     { Streaming }
     {:$ Read table's data from TReader object. }
@@ -1207,7 +1209,7 @@ resourcestring
   SColumnRequired = 'Column %s is required and must be assigned a value';
 
   SRowNotInEditingState = 'Row is not in editing state';
-  SRowInEditingState = 'Row is already begin edited';
+  SRowInEditingState = 'Row is already being edited';
 
   SUnableToPerformOnActiveDataTable = 'Unable to perform this operation on an active data table';
   SUnableToPerformOnInActiveDataTable = 'Unable to perform this operation on inactive data table';
@@ -2200,7 +2202,7 @@ begin
   Result := PhysicalRowCount - FDeletedCount;
 end;
 
-function TCtxDataTable.RowIndex(ARow: TCtxDataRow): Integer;
+function TCtxDataTable.IndexOfRow(ARow: TCtxDataRow): Integer;
 begin
   Result := FRows.IndexOf(ARow);
 end;
@@ -3014,7 +3016,7 @@ end;
 function TCtxDataRow.GetIndex: Integer;
 begin
   if Stored then
-    Result := FDataTable.RowIndex(Self)
+    Result := FDataTable.IndexOfRow(Self)
   else Result := -1;
 end;
 
@@ -4863,7 +4865,7 @@ begin
   if ARow = nil then
     Result := -1
   else if NativeAccess then
-    Result := ARow.Index
+    Result := FDataTable.IndexOfRow(ARow) // MB: 101309 was ARow.Index, but that causes A/V if Row is deleted already
   else Result := FRows.IndexOf(ARow) - FStartIndex;
 end;
 

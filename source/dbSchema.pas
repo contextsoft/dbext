@@ -2040,6 +2040,10 @@ type
     property Schema: TDatabaseSchema read GetSchema write SetSchema;
   end;
 
+  {:$ The TOnExecuteUpdateErrorEvent type is used as callback function passed to ExecuteUpdate helper routine. }
+  TOnExecuteUpdateErrorEvent = procedure (Database: ISchemaDatabase; const Statement: String;
+     Version: TSchemaVersion; Error: Exception; var AbortScript: Boolean) of object;
+
   {:$ Creates schema version record from major and minor parts. }
   function SchemaVersion(MajorVersion, MinorVersion: Integer): TSchemaVersion;
   {:$ Compares two version records. }
@@ -2184,7 +2188,10 @@ type
   function RelationshipsEqual(Src, Dest: TRelationship): Boolean;
   function CheckVersion(Database: ISchemaDatabase): Boolean;
 
-  function UpdateDatabase(Database: ISchemaDatabase; OnProgress: TDatabaseProgress = nil): Boolean;
+  function UpdateDatabase(Database: ISchemaDatabase;
+    OnProgress: TDatabaseProgress = nil; ErrorHandler: TOnExecuteUpdateErrorEvent = nil): Boolean;
+  procedure ExecuteUpdate(Database: ISchemaDatabase; const SQLScript: String;
+    Version: TSchemaVersion; ErrorHandler: TOnExecuteUpdateErrorEvent = nil);
   function FormatName(const Name, Fmt: String): String;
 
   function ValidObj(Obj: TSchemaCollectionItem): Boolean;
@@ -3846,10 +3853,12 @@ begin
   Result := CompareVersions(Database.GetVersion, Database.Schema.Version) >= 0;
 end;
 
-procedure ExecuteUpdate(Database: ISchemaDatabase; const SQLScript: String; Version: TSchemaVersion);
+procedure ExecuteUpdate(Database: ISchemaDatabase; const SQLScript: String;
+  Version: TSchemaVersion; ErrorHandler: TOnExecuteUpdateErrorEvent = nil);
 var
   Stmt: String;
   Query: TDataSet;
+  AbortScript: Boolean;
 begin
   Query := Database.CreateQuery('');
   try
@@ -3857,10 +3866,20 @@ begin
     try
       while NextStatement(Stmt) do
         if Stmt <> '' then
-        begin
+        try
           Database.SetQuerySQL(Query, Stmt);
           Database.ExecSQL(Query);
           Query.Active := False;
+        except
+          on E: Exception do
+            if Assigned(ErrorHandler) then
+            begin
+              AbortScript := False;
+              ErrorHandler(Database, Stmt, Version, E, AbortScript);
+              if AbortScript then
+                Abort;
+            end else
+              raise;
         end;
     finally
       Free;
@@ -3871,7 +3890,8 @@ begin
   Database.SetVersion(Version);
 end;
 
-function UpdateDatabase(Database: ISchemaDatabase; OnProgress: TDatabaseProgress = nil): Boolean;
+function UpdateDatabase(Database: ISchemaDatabase;
+  OnProgress: TDatabaseProgress = nil; ErrorHandler: TOnExecuteUpdateErrorEvent = nil): Boolean;
 var
   Abort: Boolean;
   MinUpdate, I: Integer;
@@ -3905,7 +3925,7 @@ begin
       if CompareVersions(Version, Ver) > 0 then
       begin
         DoProgress(Description, MulDiv(I - MinUpdate, 100, Database.Schema.Updates.Count));
-        ExecuteUpdate(Database, SQLScript, Version);
+        ExecuteUpdate(Database, SQLScript, Version, ErrorHandler);
         Ver := Version;
         Result := True;
       end;

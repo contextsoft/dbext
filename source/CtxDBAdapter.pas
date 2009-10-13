@@ -1111,21 +1111,30 @@ procedure TCtxDBCommandItem.ParseCommandParams;
 var
   I: Integer;
   P: TCtxParameter;
+  TempParams: TCtxParameters;
 begin
   if CommandText <> '' then
   begin
+    TempParams := TCtxParameters.Create(Self, TCtxParameter);
     try
+      TempParams.Assign(Params);
+      Params.Clear;
+      Command.Prepared := False;
       Command.Prepared := True;
     except
       // Ignore errors
     end;
+    Params.Assign(TempParams);
+    FreeAndNil(TempParams);
+
     // Iterate parameters and if not found in own collection
     // assign them from command parameters
-    for I := 0 to Command.Params.Count - 1 do
+    with FCommand do
+    for I := 0 to Params.Count - 1 do
     begin
-      P := Self.Params.Find(Command.Params[I].Name);
+      P := Self.Params.Find(Params[I].Name);
       if P = nil then
-        Self.Params.Add.Assign(Command.Params[I]);
+        Self.Params.Add.Assign(Params[I]);
     end;
   end;
 end;
