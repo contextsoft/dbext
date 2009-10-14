@@ -122,6 +122,13 @@ type
       1: (IntVer: Integer);
   end;
 
+  TCompareOptions = record
+    CaseSensitive: boolean;
+    WholeWords: boolean;
+  end;
+
+  TOnCompare = function (SrcObj, DestObj: TObject; var Options: TCompareOptions): boolean of object;
+
   TCompareItem = class
   protected
     function GetItemOperation: TItemOperation;
@@ -148,6 +155,7 @@ type
 
   TCompareSchema = class (TCompareItem)
   public
+    constructor Create(ASrcSchema, ADestSchema: TDatabaseSchema; OnCompare: TOnCompare = nil);
     procedure CompareObjects; override;
     function SrcSchema: TDatabaseSchema;
     function DestSchema: TDatabaseSchema;
@@ -1603,6 +1611,7 @@ type
   TDatabaseSchema = class(TComponent)
   private
     FTempRelationships: TRelationships;
+    FCompareOptions: TCompareOptions;
   protected
     { Protected declarations }
     FUpdates: TDatabaseUpdates;
@@ -1616,13 +1625,14 @@ type
     FEnumerations: TEnumerations;
     FCustomObjects: TCustomObjects;
 
-    FScripts: TSQLScripts;    
+    FScripts: TSQLScripts;
     FVersion: TSchemaVersion;
     FSchemaName: String;
     FDescription: String;
     FPrepared: Boolean;
     FDesigner: TDatabaseSchemaDesigner;
     FOnReadError: TReaderError;
+    FOnCompare: TOnCompare;
     FCustomProps: TStringList;
     FDefaultValues: TStringList;
     FNameTemplates: string;
@@ -1729,7 +1739,7 @@ type
     procedure UpdateRelationships;
 
     {:$ Compares two database schemes and returns items that don't match. }
-    procedure Compare(Dest: TDatabaseSchema; List: TList);
+    procedure Compare(Dest: TDatabaseSchema; List: TList; OnCompare: TOnCompare = nil);
 
     {:$ Locates table defintion by either by TableName or by the properties of }
     {:$ TDataSet component passed as the Table parameter. }
@@ -2317,6 +2327,7 @@ const
     {$IFDEF D6_ORLATER},ftTimeStamp, ftFMTBcd{$ENDIF}
     {$IFDEF D2006_ORLATER}, ftNChar, ftNClob, ftTimeStamp, ftUnknown{$ENDIF}
     {$IFDEF D2009_ORLATER}, ftLargeInt, ftInteger, ftSmallInt, ftFloat, ftUnknown, ftUnknown, ftUnknown{$ENDIF}
+    {$IFDEF D2010_ORLATER}, ftUnknown, ftUnknown, ftUnknown{$ENDIF}
   );
 
   FieldDataTypeToVCL: array [TFieldDataType] of TFieldType = (
@@ -4042,7 +4053,7 @@ begin
   if Result = nil then Result := SrcObj;
 end;
 
-function CompareProperties(SrcItem, DestItem: TSchemaCollectionItem): Boolean;
+function CompareProperties(SrcItem, DestItem: TSchemaCollectionItem; Options: TCompareOptions): Boolean;
 var
   List: TStringList;
   I: Integer;
@@ -4061,6 +4072,22 @@ begin
 end;
 
 { TCompareSchema }
+
+constructor TCompareSchema.Create(ASrcSchema, ADestSchema: TDatabaseSchema; OnCompare: TOnCompare = nil);
+begin
+  if ASrcSchema <> nil then
+    ASrcSchema.FOnCompare := OnCompare;
+  if ADestSchema <> nil then
+    ADestSchema.FOnCompare := OnCompare;
+  try
+    inherited Create(ASrcSchema, ADestSchema);
+  finally
+    if ASrcSchema <> nil then
+      ASrcSchema.FOnCompare := nil;
+    if ADestSchema <> nil then
+      ADestSchema.FOnCompare := nil;
+  end;
+end;
 
 procedure TCompareSchema.CompareObjects;
 begin
@@ -4300,7 +4327,7 @@ end;
 
 function TSchemaCollectionItem.Compare(Dest: TCompareSchemaItem): Boolean;
 begin
-  Result := CompareProperties(Dest.SrcItem, Dest.DestItem) and
+  Result := CompareProperties(Dest.SrcItem, Dest.DestItem, Schema.FCompareOptions) and
     FProps.Equals(Dest.DestItem.Props);
   if Result and (Dest.DestItem <> nil) then
     Result := AnsiSameText(Category, Dest.DestItem.Category);
@@ -4459,8 +4486,11 @@ procedure TSchemaItemsCollection.Compare(Dest: TSchemaItemsCollection;
 var
   Item: TCompareSchemaItem;
   I: Integer;
+  Opt: TCompareOptions;
 begin
   { Search in source collection to find mismatching items }
+  if Assigned(GetSchema.FOnCompare) and not GetSchema.FOnCompare(Self, Dest, Opt) then
+    Exit;
   if Dest = nil then
   begin
     for I := 0 to Count - 1 do
@@ -9191,7 +9221,7 @@ begin
     and UniqueInCollection(StoredProcs);
 end;
 
-procedure TDatabaseSchema.Compare(Dest: TDatabaseSchema; List: TList);
+procedure TDatabaseSchema.Compare(Dest: TDatabaseSchema; List: TList; OnCompare: TOnCompare = nil);
 var
   ByName: Boolean;
 begin
@@ -9207,6 +9237,7 @@ begin
     StoredProcs.Compare(Dest.StoredProcs, List, ByName);
     Modules.Compare(Dest.Modules, List, ByName);
     CustomObjects.Compare(Dest.CustomObjects, List, ByName);
+    // Scripts ?
   end else begin
     Enumerations.Compare(nil, List);
     Domains.Compare(nil, List);

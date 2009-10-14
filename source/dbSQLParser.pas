@@ -1045,7 +1045,7 @@ var
               if ExpressionFields.IndexOf(Temp) >= 0 then
                 NotEmptyToken := ExtractExpression
               else if StatementFields.IndexOf(Temp) >= 0 then
-                NotEmptyToken := ExtractStatement(Item, ItemClassIdx in [csStoredProc, csModule]);
+                NotEmptyToken := ExtractStatement(Item, ItemClassIdx in [csStoredProc, csModule, csTrigger]);
 
               if NotEmptyToken and KeyToken then
               begin

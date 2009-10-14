@@ -1,9 +1,9 @@
 object frmDataContainerEditor: TfrmDataContainerEditor
   Left = 337
   Top = 272
-  Width = 723
-  Height = 483
   Caption = 'Configure Data Container'
+  ClientHeight = 449
+  ClientWidth = 715
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -22,7 +22,7 @@ object frmDataContainerEditor: TfrmDataContainerEditor
     Left = 0
     Top = 24
     Width = 715
-    Height = 405
+    Height = 425
     ActivePage = tsTables
     Align = alClient
     Images = Images
@@ -31,35 +31,42 @@ object frmDataContainerEditor: TfrmDataContainerEditor
     object tsTables: TTabSheet
       Caption = 'Tables'
       ImageIndex = 14
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object Panel3: TPanel
         Left = 0
         Top = 0
         Width = 707
-        Height = 376
+        Height = 396
         Align = alClient
         BevelOuter = bvNone
         FullRepaint = False
         TabOrder = 0
+        ExplicitHeight = 376
         object Splitter: TSplitter
           Left = 153
           Top = 0
           Width = 5
-          Height = 376
+          Height = 396
+          ExplicitHeight = 376
         end
         object pnlTreeView: TPanel
           Left = 0
           Top = 0
           Width = 153
-          Height = 376
+          Height = 396
           Align = alLeft
           BevelOuter = bvNone
           FullRepaint = False
           TabOrder = 0
+          ExplicitHeight = 376
           object lvTables: TListView
             Left = 0
             Top = 0
             Width = 153
-            Height = 376
+            Height = 396
             Align = alClient
             Columns = <
               item
@@ -69,10 +76,12 @@ object frmDataContainerEditor: TfrmDataContainerEditor
             ColumnClick = False
             DragMode = dmAutomatic
             HideSelection = False
-            Items.Data = {
-              5E0000000300000006000000FFFFFFFFFFFFFFFF000000000000000009437573
-              746F6D65727306000000FFFFFFFFFFFFFFFF0000000000000000064F72646572
-              7306000000FFFFFFFFFFFFFFFF00000000000000000850726F6475637473}
+            Items.ItemData = {
+              037C0000000300000006000000FFFFFFFFFFFFFFFF00000000FFFFFFFF000000
+              000943007500730074006F006D0065007200730006000000FFFFFFFFFFFFFFFF
+              00000000FFFFFFFF00000000064F007200640065007200730006000000FFFFFF
+              FFFFFFFFFF00000000FFFFFFFF0000000008500072006F006400750063007400
+              7300}
             LargeImages = Images
             RowSelect = True
             PopupMenu = popTables
@@ -83,174 +92,20 @@ object frmDataContainerEditor: TfrmDataContainerEditor
             OnDragDrop = lvTablesDragDrop
             OnDragOver = lvTablesDragOver
             OnSelectItem = lvTablesSelectItem
+            ExplicitHeight = 376
           end
         end
         object Panel1: TPanel
           Left = 158
           Top = 0
           Width = 549
-          Height = 376
+          Height = 396
           Align = alClient
           BevelOuter = bvNone
           FullRepaint = False
           PopupMenu = popTables
           TabOrder = 1
-          object grdColumns: TCtxCollectionView
-            Left = 0
-            Top = 28
-            Width = 549
-            Height = 348
-            Alignment = taLeftJustify
-            Align = alClient
-            Borders = bsSingle
-            ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soAlwaysShowEditor, soTextAutoSelect, soAutoWidth, soRowMoved, soColSizing]
-            TabOrder = 0
-            AutoAddRow = arNone
-            ReadOnly = False
-            Columns.Sorted = False
-            Columns = <
-              item
-                Custom = False
-                Alignment = taLeftJustify
-                TextAlignment = taLeftJustify
-                DefaultColors = False
-                Caption = 'Name'
-                Color = clWindow
-                EditType = etValue
-                Name = 'Name'
-                ReadOnly = False
-                Empty = False
-                Disabled = False
-                TextColor = clWindowText
-                Visible = True
-                ValueListSorted = False
-                SortOption = isoNone
-                Width = 80
-                Nullable = False
-              end
-              item
-                Custom = False
-                Alignment = taLeftJustify
-                TextAlignment = taLeftJustify
-                DefaultColors = False
-                Caption = 'Type'
-                Color = clWindow
-                EditType = etValueList
-                Name = 'DataTypeName'
-                ReadOnly = False
-                Empty = False
-                Disabled = False
-                TextColor = clWindowText
-                Visible = True
-                ValueListSorted = False
-                SortOption = isoNone
-                Width = 80
-                Nullable = False
-              end
-              item
-                Custom = False
-                Alignment = taLeftJustify
-                TextAlignment = taRightJustify
-                DefaultColors = False
-                Caption = 'Length'
-                Color = clWindow
-                EditType = etValue
-                Name = 'DataLength'
-                ReadOnly = False
-                Empty = False
-                Disabled = False
-                TextColor = clWindowText
-                Visible = True
-                ValueListSorted = False
-                SortOption = isoNone
-                Width = 50
-                Nullable = False
-              end
-              item
-                Custom = False
-                Alignment = taLeftJustify
-                TextAlignment = taLeftJustify
-                DefaultColors = False
-                Caption = 'Required'
-                Color = clWindow
-                EditType = etCheck
-                Name = 'Required'
-                ReadOnly = False
-                Empty = False
-                Disabled = False
-                TextColor = clWindowText
-                Visible = True
-                ValueListSorted = False
-                SortOption = isoNone
-                Width = 50
-                Nullable = False
-              end
-              item
-                Custom = False
-                Alignment = taLeftJustify
-                TextAlignment = taLeftJustify
-                DefaultColors = False
-                Caption = 'R\O'
-                Color = clWindow
-                EditType = etCheck
-                Name = 'ReadOnly'
-                ReadOnly = False
-                Empty = False
-                Disabled = False
-                TextColor = clWindowText
-                Visible = True
-                ValueListSorted = False
-                SortOption = isoNone
-                Width = 40
-                Nullable = False
-              end
-              item
-                Custom = False
-                Alignment = taLeftJustify
-                TextAlignment = taLeftJustify
-                DefaultColors = False
-                Caption = 'Calc.'
-                Color = clWindow
-                EditType = etCheck
-                Name = 'Calculated'
-                ReadOnly = False
-                Empty = False
-                Disabled = False
-                TextColor = clWindowText
-                Visible = True
-                ValueListSorted = False
-                SortOption = isoNone
-                Width = 40
-                Nullable = False
-              end
-              item
-                Custom = False
-                Alignment = taLeftJustify
-                TextAlignment = taLeftJustify
-                DefaultColors = False
-                Caption = 'Display Label'
-                Color = clWindow
-                EditType = etValue
-                Name = 'DisplayLabel'
-                ReadOnly = False
-                Empty = False
-                Disabled = False
-                TextColor = clWindowText
-                Visible = True
-                ValueListSorted = False
-                SizingOption = csoAutoWidth
-                SortOption = isoNone
-                Width = 189
-                Nullable = False
-              end>
-            MarkerWidth = 16
-            ScrollBars = ssVertical
-            PopupMenu = popColumns
-            DragCursor = crHandPoint
-            OnCellProps = grdColumnsCellProps
-            OnCellState = grdColumnsCellState
-            OnDrawMarker = grdColumnsDrawMarker
-          end
+          ExplicitHeight = 376
           object pnlTableHeader: TPanel
             Left = 0
             Top = 0
@@ -269,7 +124,7 @@ object frmDataContainerEditor: TfrmDataContainerEditor
             Font.Name = 'MS Sans Serif'
             Font.Style = [fsBold]
             ParentFont = False
-            TabOrder = 1
+            TabOrder = 0
             object ToolBarColumns: TToolBar
               Left = 500
               Top = 3
@@ -279,8 +134,6 @@ object frmDataContainerEditor: TfrmDataContainerEditor
               AutoSize = True
               Caption = 'ToolBar'
               Color = clBtnFace
-              EdgeBorders = []
-              Flat = True
               Images = Images
               ParentColor = False
               TabOrder = 0
@@ -303,6 +156,10 @@ object frmDataContainerEditor: TfrmDataContainerEditor
     object tsRelations: TTabSheet
       Caption = 'Relations'
       ImageIndex = 9
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object Panel2: TPanel
         Left = 0
         Top = 0
@@ -311,182 +168,6 @@ object frmDataContainerEditor: TfrmDataContainerEditor
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 0
-        object grdRelations: TCtxCollectionView
-          Left = 0
-          Top = 0
-          Width = 707
-          Height = 376
-          Alignment = taLeftJustify
-          Align = alClient
-          Borders = bsSingle
-          ShowOptions = [soVerticalGrid, soHorizontalGrid, soHeader, soMarker, soRowSelect, soAlwaysShowEditor, soAutoWidth, soRowMoved, soColSizing]
-          TabOrder = 0
-          AutoAddRow = arNone
-          ReadOnly = True
-          Columns.Sorted = False
-          Columns = <
-            item
-              Custom = False
-              Alignment = taLeftJustify
-              TextAlignment = taLeftJustify
-              DefaultColors = False
-              Caption = 'Name'
-              Color = clWindow
-              EditType = etNone
-              Name = 'Name'
-              ReadOnly = False
-              Empty = False
-              Disabled = False
-              TextColor = clWindowText
-              Visible = True
-              ValueListSorted = False
-              SortOption = isoNone
-              Width = 70
-              Nullable = False
-            end
-            item
-              Custom = False
-              Alignment = taLeftJustify
-              TextAlignment = taLeftJustify
-              DefaultColors = False
-              Caption = 'Child Table'
-              Color = clWindow
-              EditType = etNone
-              Name = 'ChildTableName'
-              ReadOnly = False
-              Empty = False
-              Disabled = False
-              TextColor = clWindowText
-              Visible = True
-              ValueListSorted = False
-              SizingOption = csoAutoWidth
-              SortOption = isoNone
-              Width = 104
-              Nullable = False
-            end
-            item
-              Custom = False
-              Alignment = taLeftJustify
-              TextAlignment = taLeftJustify
-              DefaultColors = False
-              Caption = 'Child Columns'
-              Color = clWindow
-              EditType = etNone
-              Name = 'ChildColumnNames'
-              ReadOnly = False
-              Empty = False
-              Disabled = False
-              TextColor = clWindowText
-              Visible = True
-              ValueListSorted = False
-              SizingOption = csoAutoWidth
-              SortOption = isoNone
-              Width = 101
-              Nullable = False
-            end
-            item
-              Custom = False
-              Alignment = taLeftJustify
-              TextAlignment = taLeftJustify
-              DefaultColors = False
-              Caption = 'Parent Table'
-              Color = clWindow
-              EditType = etNone
-              Name = 'ParentTableName'
-              ReadOnly = False
-              Empty = False
-              Disabled = False
-              TextColor = clWindowText
-              Visible = True
-              ValueListSorted = False
-              SizingOption = csoAutoWidth
-              SortOption = isoNone
-              Width = 101
-              Nullable = False
-            end
-            item
-              Custom = False
-              Alignment = taLeftJustify
-              TextAlignment = taLeftJustify
-              DefaultColors = False
-              Caption = 'Parent Columns'
-              Color = clWindow
-              EditType = etNone
-              Name = 'ParentColumnNames'
-              ReadOnly = False
-              Empty = False
-              Disabled = False
-              TextColor = clWindowText
-              Visible = True
-              ValueListSorted = False
-              SizingOption = csoAutoWidth
-              SortOption = isoNone
-              Width = 101
-              Nullable = False
-            end
-            item
-              Custom = False
-              Alignment = taLeftJustify
-              TextAlignment = taLeftJustify
-              DefaultColors = False
-              Caption = 'Own Details'
-              Color = clWindow
-              EditType = etCheck
-              Name = 'OwnRows'
-              ReadOnly = True
-              Empty = False
-              Disabled = False
-              TextColor = clWindowText
-              Visible = True
-              ValueListSorted = False
-              SortOption = isoNone
-              Width = 70
-              Nullable = False
-            end
-            item
-              Custom = False
-              Alignment = taLeftJustify
-              TextAlignment = taLeftJustify
-              DefaultColors = False
-              Caption = 'On Delete'
-              Color = clWindow
-              EditType = etNone
-              Name = 'DeleteAction'
-              ReadOnly = False
-              Empty = False
-              Disabled = False
-              TextColor = clWindowText
-              Visible = True
-              ValueListSorted = False
-              SortOption = isoNone
-              Width = 70
-              Nullable = False
-            end
-            item
-              Custom = False
-              Alignment = taLeftJustify
-              TextAlignment = taLeftJustify
-              DefaultColors = False
-              Caption = 'On Update'
-              Color = clWindow
-              EditType = etNone
-              Name = 'UpdateAction'
-              ReadOnly = False
-              Empty = False
-              Disabled = False
-              TextColor = clWindowText
-              Visible = True
-              ValueListSorted = False
-              SortOption = isoNone
-              Width = 70
-              Nullable = False
-            end>
-          MarkerWidth = 16
-          ScrollBars = ssVertical
-          PopupMenu = popRelations
-          OnDrawMarker = grdRelationsDrawMarker
-          OnDblClick = grdRelationsDblClick
-        end
       end
     end
   end
@@ -498,7 +179,6 @@ object frmDataContainerEditor: TfrmDataContainerEditor
     AutoSize = True
     Caption = 'ToolBar'
     EdgeBorders = [ebBottom]
-    Flat = True
     Images = Images
     TabOrder = 1
     object ToolButton2: TToolButton
@@ -548,135 +228,7 @@ object frmDataContainerEditor: TfrmDataContainerEditor
     Top = 200
     Bitmap = {
       494C01010F001300040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
-      0000000000003600000028000000400000005000000001002000000000000050
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000AD5A5A00AD52
@@ -1190,12 +742,8 @@ object frmDataContainerEditor: TfrmDataContainerEditor
       00000000000000000000000000000000000000000000000000000000FF000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000000000000000000000424D3E000000000000003E000000
-      2800000040000000500000000100010000000000800200000000000000000000
-      000000000000000000000000FFFFFF0000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000FFFFC001FF0000008FFF8000FF000000
+      2800000040000000400000000100010000000000000200000000000000000000
+      000000000000000000000000FFFFFF00FFFFC001FF0000008FFF8000FF000000
       807F8000FF000000800F8000E000000080078000E000000080078000E0000000
       80038000E007000080038000E007000080018000E007000080018000E0070000
       80018000E0070000800F8000E0070000800F8000FFFF0000C3FF8000FFFF0000
@@ -1427,18 +975,5 @@ object frmDataContainerEditor: TfrmDataContainerEditor
     Options = [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing]
     Left = 298
     Top = 233
-  end
-  object CtxFormSettings: TCtxFormSettings
-    ProfileName = 'Container'
-    BorderStyle = bsSizeable
-    Left = 314
-    Top = 121
-  end
-  object AppProfile: TCtxAppProfile
-    RegIniPath = 'Software\Context Software\DBExt2\Data Container Editor'
-    ProfileName = 'Container'
-    MainSectionName = 'Options'
-    Left = 234
-    Top = 121
   end
 end
