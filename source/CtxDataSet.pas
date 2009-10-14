@@ -17,7 +17,7 @@ unit CtxDataSet;
 
 interface
 
-uses SysUtils, Classes, DB, CtxDataTypes, CtxData;
+uses SysUtils, Classes, DB, DBTables, CtxDataTypes, CtxData;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -646,7 +646,7 @@ begin
   // this function returns true if Row is valid and the buffer is
   // initialized successfully.
   Result := False;
-  RowIdx := ARow.Index;
+  RowIdx := FDataTable.IndexOfRow(ARow); // MB: 101309 was ARow.Index; which may cause A/V if row is invalid
   if (RowIdx < 0) or ARow.Deleted then exit;
   if (ABuf <> TempBuffer) and (RowIdx < 0) then exit;
   _FreeRecordPointers(ABuf);
@@ -895,12 +895,14 @@ end;
 procedure TCtxDataSet.OnFilterDataRow(ARow: TCtxDataRow; var Accept: boolean);
 var
   SaveState: TDataSetState;
+  SaveModified: Boolean;
   B: TRecordBuffer;
 begin
   Accept := True;
   if Assigned(OnFilterRecord) or (FFilterEvaluator <> nil) then
   begin
     SaveState := SetTempState(dsFilter);
+    SaveModified := Modified;
     try
       B := TempBuffer;
       with PRecInfo(B)^ do
@@ -927,6 +929,7 @@ begin
       end;
     finally
       RestoreState(SaveState);
+      SetModified(SaveModified);
     end;
   end;
 end;
@@ -1371,6 +1374,8 @@ function TCtxDataSet.Lookup(const KeyFields: string; const KeyValues: Variant; c
 var
   Obj: TCtxDataRow;
   B: TRecordBuffer;
+  SaveState: TDataSetState;
+  SaveModified: Boolean;
 begin
   Result := null;
 
@@ -1388,12 +1393,14 @@ begin
     PRecInfo(B).Obj := Obj;
     PRecInfo(B).Idx := FCursor.IndexOfRow(Obj);
 
-    SetTempState(dsCalcFields);
+    SaveModified := Modified;
+    SaveState := SetTempState(dsCalcFields);
     try
       CalculateFields(B);
       Result := FieldValues[ResultFields];
     finally
-      RestoreState(dsBrowse);
+      RestoreState(SaveState); // dsBrowse);
+      SetModified(SaveModified);
     end;
   end;
 end;
@@ -1624,8 +1631,9 @@ begin
   FField := Field;
   FMode := Mode;
   FDataSet := FField.DataSet as TCtxDataSet;
-  if Mode <> bmWrite then
-    LoadBlobData;
+  if Mode = bmWrite then
+    FModified := True
+  else LoadBlobData;
 end;
 
 destructor TCtxBlobStream.Destroy;
