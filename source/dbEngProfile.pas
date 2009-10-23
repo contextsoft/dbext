@@ -1925,6 +1925,7 @@ begin
     LastCol := nil;
     LastObj := nil;
 {$IFnDEF VER130}
+    Tables := TStringList.Create;
     SQL := Trim(FInfoSchemaSQL.Values['*showtables']);
     if SQL <> '' then
     begin
@@ -1932,7 +1933,6 @@ begin
       ExecSQLProc(SQL, @ResultSet);
       if ResultSet <> nil then
       try
-        Tables := TStringList.Create;
         ResultSet.First;
         while not ResultSet.EOF do
         begin
@@ -1948,15 +1948,35 @@ begin
     end;
 
     SQL := Trim(FInfoSchemaSQL.Values['*showcreatetable']);
-    if (Tables <> nil) and (SQL <> '') then
-    for I := 0 to Tables.Count - 1 do
+    if SQL <> '' then
+    begin
+      for I := 0 to Tables.Count - 1 do
+      begin
+        ResultSet := nil;
+        ExecSQLProc(Format(SQL, [Tables[I]]), @ResultSet);
+        if ResultSet <> nil then
+        try
+          ResultSet.First;
+          dbSQLParser.ParseSQL(ResultSet.Fields[1].AsString, Schema, Self);
+        finally
+          FreeAndNil(ResultSet);
+        end;
+      end;
+    end;
+
+    SQL := Trim(FInfoSchemaSQL.Values['*showcreate']);
+    if SQL <> '' then
     begin
       ResultSet := nil;
-      ExecSQLProc(Format(SQL, [Tables[I]]), @ResultSet);
+      ExecSQLProc(SQL, @ResultSet);
       if ResultSet <> nil then
       try
         ResultSet.First;
-        dbSQLParser.ParseSQL(ResultSet.Fields[1].AsString, Schema, Self);
+        while not ResultSet.EOF do
+        begin
+          dbSQLParser.ParseSQL(ResultSet.Fields[0].AsString, Schema, Self);
+          ResultSet.Next;
+        end;
       finally
         FreeAndNil(ResultSet);
       end;
