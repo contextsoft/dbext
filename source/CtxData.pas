@@ -1923,19 +1923,26 @@ begin
 end;
 
 function TCtxDataTable.InsertKey(const KeyValue: Variant): TCtxDataRow;
+var
+  OldRow: TCtxDataRow;
 begin
   Result := NewRow;
   try
     if not PKExists then
       raise Exception.CreateFmt(SPrimaryKeyNotDefined, [Name]);
 
+    // Return old row instead if it already exist  
     Result.Values[FPKColumns] := KeyValue;
-    if FindRow(Result, FPKColumns, []) = nil then
+    OldRow := FindRow(Result, FPKColumns, []);
+    if OldRow = nil then
     begin
       Result.NeedRefresh := True;
       Insert(Result);
     end else
+    begin
       FreeAndNil(Result);
+      Result := OldRow;
+    end;
   except
     FreeAndNil(Result);
     raise;

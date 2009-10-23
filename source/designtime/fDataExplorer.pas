@@ -68,6 +68,8 @@ type
     procedure actClearExecute(Sender: TObject);
     procedure actSaveChangesExecute(Sender: TObject);
     procedure actDiscardChangesExecute(Sender: TObject);
+    procedure DataSourceDataChange(Sender: TObject; Field: TField);
+    procedure grdDataDblClick(Sender: TObject);
   private
     { Private declarations }
     FDataContainer: TCtxDataContainer;
@@ -243,6 +245,29 @@ end;
 procedure TfrmDataExplorer.actDiscardChangesExecute(Sender: TObject);
 begin
   DataContainer.RejectChanges;
+end;
+
+procedure TfrmDataExplorer.DataSourceDataChange(Sender: TObject;
+  Field: TField);
+var
+  StatusText: String;
+begin
+  StatusText := '';
+  if tDataSet.DataRow <> nil then
+  begin
+    if tDataSet.DataRow.Deleted then
+      StatusText := StatusText + 'Deleted ';
+    if tDataSet.DataRow.Inserted then
+      StatusText := StatusText + 'Inserted ';
+    if tDataSet.DataRow.Updated then
+      StatusText := StatusText + 'Updated ';
+  end;
+  StatusBar.Panels[2].Text := StatusText;
+end;
+
+procedure TfrmDataExplorer.grdDataDblClick(Sender: TObject);
+begin
+  DataSourceDataChange(nil, nil);
 end;
 
 end.

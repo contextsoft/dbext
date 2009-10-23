@@ -1575,12 +1575,15 @@ begin
   // 1. Do we have update/delete/insert commands
   UpdateCommands := GetCommands(DataTable.Name, [citInsert, citUpdate, citDelete]);
   if UpdateCommands = nil then exit;
+  with DataTable do
   try
-    with DataTable do
-    for R := 0 to PhysicalRowCount - 1 do
+    // First we execute deletes
+    for R := RowCount to PhysicalRowCount - 1 do
       InternalUpdateRow(Rows[R], UpdateCommands);
-
-    DataTable.AcceptChanges;
+    // Then we execute updates and inserts - this is to avoid key violations on duplicate rows
+    for R := 0 to RowCount - 1 do
+      InternalUpdateRow(Rows[R], UpdateCommands);
+    AcceptChanges;
   finally
     UpdateCommands.Free;
   end;

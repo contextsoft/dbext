@@ -135,6 +135,7 @@ object frmDataExplorer: TfrmDataExplorer
       TitleFont.Height = -11
       TitleFont.Name = 'MS Sans Serif'
       TitleFont.Style = []
+      OnDblClick = grdDataDblClick
     end
   end
   object StatusBar: TStatusBar
@@ -149,7 +150,10 @@ object frmDataExplorer: TfrmDataExplorer
       end
       item
         Text = '20 rows'
-        Width = 80
+        Width = 200
+      end
+      item
+        Width = 50
       end>
   end
   object MainMenu: TMainMenu
@@ -900,6 +904,7 @@ object frmDataExplorer: TfrmDataExplorer
   end
   object DataSource: TDataSource
     DataSet = tDataSet
+    OnDataChange = DataSourceDataChange
     Left = 238
     Top = 168
   end
