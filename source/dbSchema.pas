@@ -127,7 +127,7 @@ type
     WholeWords: boolean;
   end;
 
-  TOnCompare = function (SrcObj, DestObj: TObject; var Options: TCompareOptions): boolean of object;
+  TOnCompare = function (SrcObj, DestObj: TObject): boolean of object;
 
   TCompareItem = class
   protected
@@ -155,7 +155,8 @@ type
 
   TCompareSchema = class (TCompareItem)
   public
-    constructor Create(ASrcSchema, ADestSchema: TDatabaseSchema; OnCompare: TOnCompare = nil);
+    constructor Create(ASrcSchema, ADestSchema: TDatabaseSchema);
+    constructor CreateOptions(ASrcSchema, ADestSchema: TDatabaseSchema; Options: TCompareOptions; OnCompare: TOnCompare = nil);
     procedure CompareObjects; override;
     function SrcSchema: TDatabaseSchema;
     function DestSchema: TDatabaseSchema;
@@ -1701,6 +1702,9 @@ type
     procedure UpdateViews; virtual;
 
     procedure DoSQLFieldTypeChanged(Item: TSchemaCollectionItem; const Value: String);
+
+    procedure SetupCompare(AOnCompare: TOnCompare; Options: TCompareOptions);
+    function DoOnCompare(ASrc, ADest: TObject): boolean;
   public
     { Public declarations }
     {:$ Creates an instance of the TDatabaseSchema component. }
@@ -2356,6 +2360,31 @@ const
     {$ENDIF}
     DB.ftInteger
   );
+
+
+  scnField = 'Field';
+  scnVersionUpdate = 'Version update';
+  scnDomain = 'Domain';
+  scnSequence = 'Sequence';
+  scnColumn = 'Column';
+  scnView = 'View';
+  scnTable = 'Table';
+  scnStoredProc = 'StoredProc';
+  scnComputedField = 'ComputedField';
+  scnIndexField = 'IndexField';
+  scnPrimaryKey = 'PrimaryKey';
+  scnIndex = 'Index';
+  scnRelationship = 'Relationship';
+  scnReference = 'Reference';
+  scnForeignKey = 'ForeignKey';
+  scnMasterRelation = 'MasterRelation';
+  scnDetailRelation = 'DetailRelation';
+  scnConstraint = 'Constraint';
+  scnTrigger = 'Trigger';
+  scnModule = 'Module';
+  scnCustomObject = 'Custom Object';
+  scnSQLScript = 'SQLScript';
+
 
 const
   OppositeSide: array [TRelationSide] of TRelationSide = (sideMaster, sideDetail);
@@ -4093,19 +4122,28 @@ end;
 
 { TCompareSchema }
 
-constructor TCompareSchema.Create(ASrcSchema, ADestSchema: TDatabaseSchema; OnCompare: TOnCompare = nil);
+constructor TCompareSchema.Create(ASrcSchema, ADestSchema: TDatabaseSchema);
+var
+  CmpOpt: TCompareOptions;
+begin
+  CmpOpt.CaseSensitive := True;
+  CmpOpt.WholeWords := True;
+  CreateOptions(ASrcSchema, ADestSchema, CmpOpt);
+end;
+
+constructor TCompareSchema.CreateOptions(ASrcSchema, ADestSchema: TDatabaseSchema; Options: TCompareOptions; OnCompare: TOnCompare = nil);
 begin
   if ASrcSchema <> nil then
-    ASrcSchema.FOnCompare := OnCompare;
+    ASrcSchema.SetupCompare(OnCompare, Options);
   if ADestSchema <> nil then
-    ADestSchema.FOnCompare := OnCompare;
+    ADestSchema.SetupCompare(OnCompare, Options);
   try
     inherited Create(ASrcSchema, ADestSchema);
   finally
     if ASrcSchema <> nil then
-      ASrcSchema.FOnCompare := nil;
+      ASrcSchema.SetupCompare(nil, Options);
     if ADestSchema <> nil then
-      ADestSchema.FOnCompare := nil;
+      ADestSchema.SetupCompare(nil, Options);
   end;
 end;
 
@@ -4506,15 +4544,15 @@ procedure TSchemaItemsCollection.Compare(Dest: TSchemaItemsCollection;
 var
   Item: TCompareSchemaItem;
   I: Integer;
-  Opt: TCompareOptions;
 begin
   { Search in source collection to find mismatching items }
-  if Assigned(GetSchema.FOnCompare) and not GetSchema.FOnCompare(Self, Dest, Opt) then
-    Exit;
   if Dest = nil then
   begin
     for I := 0 to Count - 1 do
-      List.Add(TCompareSchemaItem.Create(Items[I], nil));
+    begin
+      if GetSchema.DoOnCompare(Items[I], nil) then
+        List.Add(TCompareSchemaItem.Create(Items[I], nil));
+    end;
     exit;
   end;
   Item := nil;
@@ -4527,7 +4565,8 @@ begin
       begin
         SrcObj := Items[I];
         DestObj := Dest.LocateItem(SrcItem, ByName);
-        if not SrcItem.Compare(Item) then
+        if GetSchema.DoOnCompare(SrcObj, DestObj)
+          and not SrcItem.Compare(Item) then
         begin
           List.Add(Item);
           Item := nil;
@@ -4549,7 +4588,9 @@ begin
           // Must swap items before comparing
           SrcObj := DestItem;
           DestObj := nil;
-          SrcItem.Compare(Item);
+          if GetSchema.DoOnCompare(SrcObj, DestObj) then
+            SrcItem.Compare(Item) else
+            Continue;
           Item.SwapSrcDest;
           List.Add(Item);
           Item := nil;
@@ -4796,7 +4837,7 @@ end;
 
 function TDatabaseUpdate.GetSchemaClassName: String;
 begin
-  Result := 'Version update';
+  Result := scnVersionUpdate;
 end;
 
 { TDatabaseUpdates = class (TCollection) }
@@ -4873,7 +4914,7 @@ end;
 
 function TDomain.GetSchemaClassName: String;
 begin
-  Result := 'Domain';
+  Result := scnDomain;
 end;
 
 procedure TDomain.ObjectRenamed(const OldName: String);
@@ -4952,7 +4993,7 @@ end;
 
 function TSequence.GetSchemaClassName: String;
 begin
-  Result := 'Sequence';
+  Result := scnSequence;
 end;
 
 { TSequences }
@@ -5048,7 +5089,7 @@ end;
 
 function TColumnDef.GetSchemaClassName: String;
 begin
-  Result := 'Column';
+  Result := scnColumn;
 end;
 
 { TColumnDefs }
@@ -5103,7 +5144,7 @@ end;
 
 function TViewDefinition.GetSchemaClassName: String;
 begin
-  Result := 'View';
+  Result := scnView;
 end;
 
 procedure TViewDefinition.SetDefinition(const Value: TStrings);
@@ -5187,7 +5228,7 @@ end;
 
 function TStoredProcDefinition.GetSchemaClassName: String;
 begin
-  Result := 'StoredProc';
+  Result := scnStoredProc;
 end;
 
 procedure TStoredProcDefinition.SetDefinition(const Value: TStrings);
@@ -5609,8 +5650,8 @@ end;
 function TFieldDefinition.GetSchemaClassName: String;
 begin
   if IsComputed then
-    Result := 'ComputedField' else
-    Result := 'Field';
+    Result := scnComputedField else
+    Result := scnField;
 end;
 
 function TFieldDefinition.IsInheritedProp(const PropName: String): Boolean;
@@ -5854,7 +5895,7 @@ end;
 
 function TIndexField.GetSchemaClassName: String;
 begin
-  Result := 'IndexField';
+  Result := scnIndexField;
 end;
 
 procedure TIndexField.SetItemID(const Value: Integer);
@@ -6211,8 +6252,8 @@ end;
 function TIndexDefinition.GetSchemaClassName: String;
 begin
   if ixPrimary in Options then
-    Result := 'PrimaryKey'
-  else Result := 'Index';
+    Result := scnPrimaryKey else
+    Result := scnIndex;
 end;
 
 function TIndexDefinition.GetNoCase: Boolean;
@@ -6731,7 +6772,7 @@ end;
 
 function TRelationship.GetSchemaClassName: String;
 begin
-  Result := 'Relationship';
+  Result := scnRelationship;
 end;
 
 function TRelationship.GetTableDef(
@@ -7073,12 +7114,12 @@ begin
   if EnforceForeignKey then
   begin
     if Side(Self) = sideMaster then
-      Result := 'Reference'
-    else Result := 'ForeignKey';
+      Result := scnReference
+    else Result := scnForeignKey;
   end else begin
     if Side(Self) = sideMaster then
-      Result := 'MasterRelation'
-    else Result := 'DetailRelation';
+      Result := scnMasterRelation
+    else Result := scnDetailRelation;
   end;
   (*
   if Side(Self) = sideMaster then
@@ -7511,7 +7552,7 @@ end;
 
 function TTableConstraint.GetSchemaClassName: String;
 begin
-  Result := 'Constraint';
+  Result := scnConstraint;
 end;
 
 { TTableConstraints }
@@ -7949,8 +7990,8 @@ end;
 function TTableDefinition.GetSchemaClassName: String;
 begin
   if IsView then
-    Result := 'View' else
-    Result := 'Table';
+    Result := scnView else
+    Result := scnTable;
 end;
 
 function TTableDefinition.StoreFieldDefs: Boolean;
@@ -8254,7 +8295,7 @@ end;
 
 function TTriggerDefinition.GetSchemaClassName: String;
 begin
-  Result := 'Trigger';
+  Result := scnTrigger;
 end;
 
 procedure TTriggerDefinition.SetPropValue(const PropName, Value: String);
@@ -8336,7 +8377,7 @@ end;
 
 function TModuleDefinition.GetSchemaClassName: String;
 begin
-  Result := 'Module';
+  Result := scnModule;
 end;
 
 { TCustomObject }
@@ -8366,7 +8407,7 @@ function TCustomObject.GetSchemaClassName: String;
 begin
   Result := FSchemaClassName;
   if Result = '' then
-    Result := 'Custom Object';
+    Result := scnCustomObject;
 end;
 
 procedure TCustomObject.SetSchemaClassName(const Value: String);
@@ -9641,6 +9682,19 @@ begin
     (CustomObjects.Count = 0);
 end;
 
+procedure TDatabaseSchema.SetupCompare(AOnCompare: TOnCompare; Options: TCompareOptions);
+begin
+  FOnCompare := AOnCompare;
+  FCompareOptions := Options;
+end;
+
+function TDatabaseSchema.DoOnCompare(ASrc, ADest: TObject): boolean;
+begin
+  if Assigned(FOnCompare) then
+    Result := FOnCompare(ASrc, ADest) else
+    Result := True;
+end;
+
 { TDBSchemaVersion }
 
 function CompareIndexes(Item1, Item2: Pointer): Integer;
@@ -10239,7 +10293,7 @@ end;
 
 function TSQLScript.GetSchemaClassName: String;
 begin
-  Result := 'SQLScript';
+  Result := scnSQLScript;
 end;
 
 procedure TSQLScript.Assign(Source: TPersistent);

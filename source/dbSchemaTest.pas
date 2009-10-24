@@ -874,7 +874,8 @@ begin
     if not FDBEngineProfile.IsValidNamePattern(Name) then
       AddResult(smcTableNameInvalidPattern, smoTable, smsWarning, TableDef);
 
-    FIdentifiers.Add(TypePrefix + TableName);
+    if FIdentifiers.IndexOf(TypePrefix + TableName) < 0 then // +++ DB 22102009
+      FIdentifiers.Add(TypePrefix + TableName);
 
     if (not IsView{ or FDBEngineProfile.ViewSupport(FieldDefs.ClassType)}) and
       (FieldDefs.Count = 0) then
