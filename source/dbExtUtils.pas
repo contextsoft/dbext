@@ -8,8 +8,8 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbExtUtils.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.04
-(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009
+(*  VERSION     : 3.05
+(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
 unit dbExtUtils;
