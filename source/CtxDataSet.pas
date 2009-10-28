@@ -17,7 +17,7 @@ unit CtxDataSet;
 
 interface
 
-uses SysUtils, Classes, DB, DBTables, CtxDataTypes, CtxData;
+uses SysUtils, Classes, DB, CtxDataTypes, CtxData;
 
 {$IFDEF D2009_ORLATER}
 type

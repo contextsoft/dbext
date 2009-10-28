@@ -105,10 +105,6 @@ HostApplication=
 Launcher=
 UseLauncher=0
 DebugCWD=
-[Language]
-ActiveLang=
-ProjectLang=
-RootDir=
 [Version Info]
 IncludeVerInfo=1
 AutoIncBuild=0
@@ -135,10 +131,32 @@ ProductName=
 ProductVersion=1.0.0.0
 Comments=
 [Excluded Packages]
-c:\program files\borland\delphi7\Projects\Bpl\CtxReportingD7.bpl=Context Reporting
-C:\DBEngines\dbisam4\d7\code\dbisam426d7d.bpl=DBISAM Design-Time Package
-c:\program files\borland\delphi7\Projects\Bpl\DclDBISAM_D7.bpl=InstantObjects DBISAM Design-Time Support (Delphi 7)
+C:\DBEngines\ABS\Lib\Delphi 7\dclAbsDbd7.bpl=Absolute Database - Design package
+C:\Program Files\Borland\Delphi7\Projects\Bpl\NexusDB108dv70.bpl=NexusDB 1.08 - designtime - VCL70
 c:\program files\borland\delphi7\Projects\Bpl\DBISAMExtPkgD7.bpl=Context Database Extensions (DBISAM 3)
+c:\program files\borland\delphi7\Projects\Bpl\EDBExtPkgD7.bpl=Context Database Extensions (Elevate DB)
+[HistoryLists\hlConditionals]
+Count=2
+Item0=CTX_PROPS;CTX_NODE
+Item1=CTX_PROPS;CTX_NODE;
 [HistoryLists\hlUnitAliases]
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
+[HistoryLists\hlSearchPath]
+Count=4
+Item0=$(DELPHI)\Lib\Debug
+Item1=E:\projects\sdk\RX275\Units
+Item2=E:\projects\sdk\RX275\Units\;e:\projects\shared\d5\dcu
+Item3=E:\projects\sdk\RX275\Units\
+[HistoryLists\hlUnitOutputDirectory]
+Count=2
+Item0=e:\projects\shared\d5\dcu
+Item1=e:\projects\shared\dcu
+[HistoryLists\hlBPLOutput]
+Count=2
+Item0=e:\projects\shared\d5\
+Item1=e:\projects\shared\
+[HistoryLists\hlDCPOutput]
+Count=2
+Item0=e:\projects\shared\d5\dcu
+Item1=e:\projects\shared\dcp

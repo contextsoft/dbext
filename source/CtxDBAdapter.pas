@@ -1129,7 +1129,7 @@ begin
 
     // Iterate parameters and if not found in own collection
     // assign them from command parameters
-    with FCommand do
+    with Command do
     for I := 0 to Params.Count - 1 do
     begin
       P := Self.Params.Find(Params[I].Name);
