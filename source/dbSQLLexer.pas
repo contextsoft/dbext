@@ -314,7 +314,11 @@ end;
 
 constructor TSQLLexer.Create(const SQLString: String);
 begin
+  {$IFDEF D2009_ORLATER}
+  Create(TStringStream.Create(SQLString, TEncoding.Unicode));
+  {$ELSE}
   Create(TStringStream.Create(SQLString));
+  {$ENDIF}
   FOwnStream := True;
 end;
 
@@ -360,13 +364,13 @@ end;
 
 procedure TSQLLexer.ReadBuffer;
 begin
-  FBufLen := FStream.Read(FBuffer[1], FBufSize);
+  FBufLen := FStream.Read(FBuffer[1], FBufSize*SizeOf(Char)) div SizeOf(Char);
   FBufPos := 1;
 end;
 
 function TSQLLexer.GetPosition: Integer;
 begin
-  Result := FStream.Position - FBufLen + FBufPos - 1;
+  Result := (FStream.Position div SizeOf(Char))-FBufLen+FBufPos - 1;
 end;
 
 procedure TSQLLexer.GetNextChar;
@@ -393,10 +397,10 @@ var
 begin
   SavePos := Stream.Position;
   try
-    Stream.Position := StartPos;
+    Stream.Position := StartPos*SizeOf(Char);
     SetLength(Buffer, EndPos - StartPos);
     if Length(Buffer) > 0 then
-      Stream.Read(Buffer[1], EndPos - StartPos);
+      Stream.Read(Buffer[1], (EndPos-StartPos)*SizeOf(Char));
   finally
     Stream.Position := SavePos;
   end;
