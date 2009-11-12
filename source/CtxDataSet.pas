@@ -1361,6 +1361,8 @@ var
   Obj: TCtxDataRow;
   I: integer;
 begin
+  CheckBrowseMode; // 2009-10-29 MB: Must check borowse mode before doing locate
+                   // otherwise edit and then locate sequence will result in not being able to post record
   Obj := LocateObject(KeyFields, KeyValues, Options);
   Result := Obj <> nil;
   if Result then
