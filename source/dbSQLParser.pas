@@ -52,9 +52,9 @@ type
     StatusType: TParseStatusType; const Msg: String; Value: Integer) of object;
 
   procedure ParseSQL(const SQL: String; Schema: TDatabaseSchema;
-    Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil); overload;
+    Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil; DefTerm: string = ''); overload;
   procedure ParseSQL(AStream: TStream; Schema: TDatabaseSchema;
-    Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil); overload;
+    Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil; DefTerm: string = ''); overload;
   procedure ParseSQLFile(const FileName: String; Schema: TDatabaseSchema;
     Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil);
 
@@ -158,7 +158,7 @@ begin
   end;
 end;
 
-procedure ParseSQL(AStream: TStream; Schema: TDatabaseSchema; Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil);
+procedure ParseSQL(AStream: TStream; Schema: TDatabaseSchema; Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil; DefTerm: string = '');
 var
   EqPos, I, TokenPos: Integer;
   Lexer: TSQLLexer;
@@ -1181,7 +1181,9 @@ begin
     Lexer.Comments := Profile.CommentChars;
     Lexer.LiteralPrefixes := Profile.EngineProps.Values[ENTRY_LITERALPREFIXES];
     //Term := Profile.DefaultTerm;
-    Lexer.Term := Profile.DefaultTerm;
+    if DefTerm = '' then
+      Lexer.Term := Profile.DefaultTerm else
+      Lexer.Term := DefTerm;
     NextTerm := '';
     LastTableDef := nil;
     LastIndexDef := nil;
@@ -1263,13 +1265,13 @@ begin
 end;
 
 procedure ParseSQL(const SQL: String; Schema: TDatabaseSchema;
-  Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil);
+  Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil; DefTerm: string = '');
 var
   Stream: TStringStream;
 begin
   Stream := TStringStream.Create(SQL);
   try
-    ParseSQL(Stream, Schema, Profile, StatusEvent);
+    ParseSQL(Stream, Schema, Profile, StatusEvent, DefTerm);
   finally
     Stream.Free;
   end;

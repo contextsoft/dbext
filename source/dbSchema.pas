@@ -3964,7 +3964,7 @@ begin
     with Database.Schema.Updates[I] do
       if CompareVersions(Version, Ver) > 0 then
       begin
-        DoProgress(Description, MulDiv(I - MinUpdate, 100, Database.Schema.Updates.Count));
+        DoProgress(Description, MulDiv(I - MinUpdate, 100, Database.Schema.Updates.Count-MinUpdate)); // MR 11.02.2009 
         ExecuteUpdate(Database, SQLScript, Version, ErrorHandler);
         Ver := Version;
         Result := True;

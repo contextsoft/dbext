@@ -108,7 +108,7 @@ const
   tokenTerm = 7;
 
   setDelimiters = [#1..#32] - [#13];
-  setSpecialChars = ['''','"','`',';',',','+','[',']','(',')','=']; // ,'.'
+  setSpecialChars = ['''','"','`',';',',','[',']','(',')','=']; // ,'.','-','+'
   setTokenChars = [#33..#255] - setSpecialChars;
   setAlphaNum = ['A'..'Z', 'a'..'z', '_', '0'..'9'];
 
@@ -539,7 +539,9 @@ begin
             Result := tokenTerm
           else Result := Ord(FNextChar);
           GetNextChar;
-        end else
+        end;
+
+        if (Result = tokenUnknown) or (Result = tokenIdentifier) or (Result = tokenToken) then
         begin
           IsTerm := FNextChar = FTermChar;
           while CharInSet(FNextChar, setTokenChars - FCommentChars) and (IsTerm or (FNextChar <> FTermChar)) do
