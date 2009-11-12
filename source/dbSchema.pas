@@ -26,7 +26,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.05
+(*  VERSION     : 3.06
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 304;
+  dbSchemaLibVersion = 306;
 
 {$IFDEF D2009_ORLATER}
 type
