@@ -299,7 +299,12 @@ var
         Dequote := True;
       Delete(PropName, 1, 1);
     end;
+
+    if (Length(PropName) > 0) and (PropName[Length(PropName)] = '/') then
+      Delete(PropName, Length(PropName), 1);
+
     if PropName = '' then exit;
+    if PropName = '__ignore' then exit;
 
     if (Item <> nil) and (ItemClassIdx <> csUndefined)
       and not Item.InheritsFrom(ItemClasses[ItemClassIdx])
@@ -546,6 +551,23 @@ var
       else
         ParseErrorFmt(SUnexpectedToken, [Lexer.LineNo, Lexer.LinePos]);
     end;
+  end;
+
+  function ExtractLine: Boolean;
+  var
+    StartPos: Integer;
+  begin
+    Result := True;
+    StartPos := TokenPos;
+    TokenPos := Lexer.TokenBeginPos;
+    while (Lexer.TokenID <> tokenEOF) and (Lexer.TokenID <> tokenEOLN) do
+    begin
+      Lexer.GetNextToken;
+      TokenPos := Lexer.TokenBeginPos;
+    end;
+    Lexer.ExtractBlock(StartPos, TokenPos, Token);
+    Token := StringReplace(Token, #13#10, ' ', [rfReplaceAll]);
+    KeyToken := False;
   end;
 
   function ExtractExpression: Boolean;
@@ -1042,7 +1064,9 @@ var
               while (Length(Temp) > 0) and CharInSet(Temp[1], ['^', '?', '!', '~', '/', '+']) do
                 Delete(Temp, 1, 1);
 
-              if ExpressionFields.IndexOf(Temp) >= 0 then
+              if (Length(Temp) > 0) and (Temp[Length(Temp)] = '/') then
+                NotEmptyToken := ExtractLine
+              else if ExpressionFields.IndexOf(Temp) >= 0 then
                 NotEmptyToken := ExtractExpression
               else if StatementFields.IndexOf(Temp) >= 0 then
                 NotEmptyToken := ExtractStatement(Item, ItemClassIdx in [csStoredProc, csModule, csTrigger]);
