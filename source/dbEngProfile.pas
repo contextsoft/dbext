@@ -819,7 +819,7 @@ begin
   Prop := APropName;
 
   // in create changed means not equal to DefaultValue
-  // in alter changed means not equal to save of SrcObject
+  // in alter changed means not equal to same of SrcObject
   if Assigned(SrcObj) then
     SrcValue := Item.GetPropValue(SrcObj, Prop)
   else SrcValue := Item.GetDefaultPropValue(DestObj, Prop);
@@ -1190,6 +1190,18 @@ begin
   end else if AnsiSameText(PropName, 'tab') then
   begin
     TempRes := #32#32;
+  end else if AnsiSameText(PropName, '__create') then
+  begin
+    if Item.Operation = ioCreate then
+      Item.PropsEqual := False;
+  end else if AnsiSameText(PropName, '__alter') then
+  begin
+    if Item.Operation = ioAlter then
+      Item.PropsEqual := False;
+  end else if AnsiSameText(PropName, '__drop') then
+  begin
+    if Item.Operation = ioDrop then
+      Item.PropsEqual := False;
   end else with Item do
   begin
     if UseOldValue then
