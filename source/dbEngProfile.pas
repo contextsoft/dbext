@@ -90,6 +90,7 @@ type
     function InternalGenerateSQL(const Statement: String; Item: TCompareItem): String;
 
     function RecreateTable(Item: TCompareSchemaItem): String;
+    function RecreateObject(Item: TCompareSchemaItem): String;
     procedure AddHeader(HeaderExpr: TFmtExpression; var Res: String; Item: TCompareItem);
 
     function InsertIdentitySwitch(TableDef: TTableDefinition; Value: Boolean): String;
@@ -1084,7 +1085,10 @@ begin
   begin
     if (FLastAlterOperations <> nil) and (FLastAlterOperations.Count > 0) then
     begin
-      TempRes := RecreateTable(Item as TCompareSchemaItem);
+      if (Item as TCompareSchemaItem).GetItem.GetSchemaClassName = 'table' then
+        TempRes := RecreateTable(Item as TCompareSchemaItem)
+      else
+        TempRes := RecreateObject(Item as TCompareSchemaItem);
       FLastAlterOperations.Clear;
       Item.PropsEqual := False;
     end;
@@ -1101,33 +1105,6 @@ begin
   begin
     if (FLastAlterOperations <> nil) and (FLastAlterOperations.Count > 0) then
       Item.PropsEqual := True;
-  (*
-  end else if AnsiSameText(PropName, 'sqldatatypechanged') then
-  begin
-    if Item.DestObj.InheritsFrom(TFieldDefinition) and FSupportsDomains
-     and (TFieldDefinition(Item.DestObj).Domain <> '')
-    then
-      TempRes := OnItemField(Item, 'domain')
-    else begin
-      TempRes := OnItemField(Item, 'sqlfieldtype');
-      if Item.PropsEqual then
-      begin
-        // test all properties for this field type
-        EngineFldType := EffectiveEngineFieldType(TempRes, TSchemaCollectionItem(Item.GetObj));
-        if EngineFldType <> '' then
-        begin
-          // By incrementing this lock counter we eliminate all =, != old values, etc. instructions
-          Inc(FTestChangeCount);
-          try
-            TempRes := InternalGenerateSQL('datatype.'+EngineFldType, Item);
-          finally
-            Dec(FTestChangeCount);
-          end;
-        end;
-      end;
-    end;
-    TempRes := '';
-  *)
   end else if AnsiSameText(PropName, 'sqldatatype') then
   begin
     OldPropsEqual := Item.PropsEqual;
@@ -1271,6 +1248,11 @@ begin
       TempItem.Free;
     end;
   end;
+end;
+
+function TDBEngineProfile.RecreateObject(Item: TCompareSchemaItem): String;
+begin
+  Result := DropObjectSQL(Item.SrcItem) + #13#10 + CreateObjectSQL(Item.DestItem);
 end;
 
 function TDBEngineProfile.RecreateTable(Item: TCompareSchemaItem): String;
