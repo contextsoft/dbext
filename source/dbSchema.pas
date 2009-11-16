@@ -838,6 +838,7 @@ type
   protected
     FOptions: TIndexOptions;
     FIndexFields: TIndexFields;
+    FUniqueConstraint: boolean;
 
     function GetDummyBool: Boolean;
     function GetDummyStr: String;
@@ -853,6 +854,8 @@ type
     function GetUnique: Boolean;
     function GetDisplayProps: String;
     function GetPrimaryKey: Boolean;
+    function GetUniqueConstraint: boolean;
+    procedure SetUniqueConstraint(Value: boolean);
 
     function GetFieldProps: String;
     procedure SetFieldProps(const Value: String);
@@ -864,6 +867,7 @@ type
     procedure SetFields(const Value: String);
     procedure SetOptions(const Value: TIndexOptions);
     procedure SetDisplayFields(const Value: String);
+
 
     procedure ValidateRename(const NewName: String); override;
   public
@@ -891,6 +895,7 @@ type
     property PrimaryKey: Boolean read GetPrimaryKey write SetPrimaryKey stored False default False;
     property Descending: Boolean read GetDescending write SetDescending stored False default False;
     property NoCase: Boolean read GetNoCase write SetNoCase stored False default False;
+    property UniqueConstraint: boolean read GetUniqueConstraint write SetUniqueConstraint default False;
 
     property AddIndexField: String read GetDummyStr write DoAddIndexField stored False;
     property AddDescField: Boolean read GetDummyBool write DoAddDescField stored False;
@@ -2374,6 +2379,7 @@ const
   scnIndexField = 'IndexField';
   scnPrimaryKey = 'PrimaryKey';
   scnIndex = 'Index';
+  scnUnique = 'Unique';
   scnRelationship = 'Relationship';
   scnReference = 'Reference';
   scnForeignKey = 'ForeignKey';
@@ -6009,6 +6015,7 @@ begin
       S := TIndexDefinition(Source);
       Options := S.Options;
       IndexFields := S.IndexFields;
+      UniqueConstraint := S.UniqueConstraint;
     finally
       if Collection <> nil then
         Collection.EndUpdate;
@@ -6047,6 +6054,9 @@ begin
       PropInfo := GetPropInfo(N, 'Options');
       if PropInfo <> nil then
         Options := TIndexOptions(Byte(GetOrdProp(N, PropInfo)));
+      PropInfo := GetPropInfo(N, 'UniqueConstraint');
+      if PropInfo <> nil then
+        UniqueConstraint := Boolean(byte(GetOrdProp(N, PropInfo)));
     finally
       if Collection <> nil then
         Collection.EndUpdate;
@@ -6094,6 +6104,9 @@ begin
       PropInfo := GetPropInfo(N, 'CaseInsFields');
       if PropInfo <> nil then
         SetStrProp(N, PropInfo, CaseInsFields);
+      PropInfo := GetPropInfo(N, 'UniqueConstraint');
+      if PropInfo <> nil then
+        SetOrdProp(N, PropInfo, byte(UniqueConstraint));
     finally
       if N.Collection <> nil then
         N.Collection.EndUpdate;
@@ -6253,7 +6266,9 @@ function TIndexDefinition.GetSchemaClassName: String;
 begin
   if ixPrimary in Options then
     Result := scnPrimaryKey else
-    Result := scnIndex;
+    if UniqueConstraint then
+      Result := scnUnique else
+      Result := scnIndex;
 end;
 
 function TIndexDefinition.GetNoCase: Boolean;
@@ -6356,6 +6371,22 @@ begin
     else Options := Options - [ixPrimary];
   end;
 end;
+
+function TIndexDefinition.GetUniqueConstraint: boolean;
+begin
+  Result := Unique and FUniqueConstraint;
+end;
+
+procedure TIndexDefinition.SetUniqueConstraint(Value: boolean);
+begin
+  if Value <> UniqueConstraint then
+  begin
+    FUniqueConstraint := Value;
+    if Value and not Unique then
+      Unique := True;
+  end;
+end;
+
 {
 function TIndexDefinition.GetAutoName(const Prefix: String): String;
 begin

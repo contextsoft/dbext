@@ -877,10 +877,17 @@ var
 
     if (FmtExpr = nil) and (ObjStmt = gsAlter) then
     begin
+      { DB 06112009 Changed in alter order. First step - drop, second step - add}
+      FmtExprDrop := GetExpression(PropName+'.'+StatementNames[gsDrop]);
+      FmtExpr := GetExpression(PropName+'.'+StatementNames[gsAdd]);
+      HeaderExprDrop := GetExpression(PropName+'.'+StatementNames[gsDrop]+'.header');
+      HeaderExpr := GetExpression(PropName+'.'+StatementNames[gsAdd]+'.header');
+      {
       FmtExpr := GetExpression(PropName+'.'+StatementNames[gsAdd]);
       FmtExprDrop := GetExpression(PropName+'.'+StatementNames[gsDrop]);
       HeaderExpr := GetExpression(PropName+'.'+StatementNames[gsAdd]+'.header');
       HeaderExprDrop := GetExpression(PropName+'.'+StatementNames[gsDrop]+'.header');
+      }
       UseRecreate := True;
     end else
     begin
@@ -958,10 +965,13 @@ var
   end;
 
   procedure ForEach2(Op: TItemOperation; ObjStmt: TGenerateStatement);
+  var
+    _P: integer;
   begin
+    _P := 1;
     while True do
     begin
-      PropName := NextToken(ObjClasses, ';', P);
+      PropName := NextToken(ObjClasses, ';', _P);
       if PropName = '' then break;
       ObjClass := ChangeFileExt(PropName, '');
       ForEach(Op, ObjStmt);
@@ -1046,7 +1056,6 @@ begin
     if (Delimiter = '') or (Item.GetObj is TTableDefinition) then
       LineBreak := #13#10
     else LineBreak := '';
-    P := 1;
     OldPropsEqual := Item.PropsEqual;
 
     case Item.Operation of
