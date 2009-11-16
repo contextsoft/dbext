@@ -957,6 +957,18 @@ var
     end;
   end;
 
+  procedure ForEach2(Op: TItemOperation; ObjStmt: TGenerateStatement);
+  begin
+    while True do
+    begin
+      PropName := NextToken(ObjClasses, ';', P);
+      if PropName = '' then break;
+      ObjClass := ChangeFileExt(PropName, '');
+      ForEach(Op, ObjStmt);
+    end;
+  end;
+
+
 begin
   TempRes := '';
   Result := '';
@@ -1036,41 +1048,35 @@ begin
     else LineBreak := '';
     P := 1;
     OldPropsEqual := Item.PropsEqual;
-    while True do
-    begin
-      PropName := NextToken(ObjClasses, ';', P);
-      if PropName = '' then break;
-      ObjClass := ChangeFileExt(PropName, '');
 
-      case Item.Operation of
-        ioCreate: begin
-          if Item.SrcObj <> nil then
-          begin
-            Item.SrcObj := nil;
-            if Item.SubItems <> nil then
-              Item.SubItems.Clear;
-            Item.SwapSrcDest;
-            Item.CompareObjects;
-            Item.SwapSrcDest;
-          end;
-          ForEach(ioCreate, gsCreate);
+    case Item.Operation of
+      ioCreate: begin
+        if Item.SrcObj <> nil then
+        begin
+          Item.SrcObj := nil;
+          if Item.SubItems <> nil then
+            Item.SubItems.Clear;
+          Item.SwapSrcDest;
+          Item.CompareObjects;
+          Item.SwapSrcDest;
         end;
-        ioAlter: begin
-          ForEach(ioDrop, gsDrop);
-          ForEach(ioCreate, gsAdd);
-          ForEach(ioAlter, gsAlter);
-        end;
-        ioDrop: begin
-          if Item.DestObj <> nil then
-          begin
-            Item.DestObj := nil;
-            if Item.SubItems <> nil then
-              Item.SubItems.Clear;
-            Item.CompareObjects;
-          end;
-          ForEach(ioDrop, gsDrop);
-        end;
+        ForEach2(ioCreate, gsCreate);
       end;
+      ioAlter: begin
+        ForEach2(ioDrop, gsDrop);
+        ForEach2(ioCreate, gsAdd);
+        ForEach2(ioAlter, gsAlter);
+      end;
+      ioDrop: begin
+        if Item.DestObj <> nil then
+        begin
+          Item.DestObj := nil;
+          if Item.SubItems <> nil then
+            Item.SubItems.Clear;
+          Item.CompareObjects;
+        end;
+        ForEach2(ioDrop, gsDrop);
+      end;     
     end;
     if OldPropsEqual and FIgnoreSubExpressionsChanged then
       Item.PropsEqual := True;
