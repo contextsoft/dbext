@@ -30,6 +30,18 @@ type
     - SetTermCommand
     - Term
   *)
+  TSQLLexerState = record
+    Position: Integer;
+    TokenBeginPos: Integer;
+    Term: String;
+    SetTermCommand: String;
+    LineNo: Integer;
+    LinePos: Integer;
+    NextChar: Char;
+    Token: String;
+    TokenID: Integer;
+  end;
+
   TSQLLexer = class
   protected
     FStream: TStream;
@@ -54,6 +66,7 @@ type
     FOwnStream: Boolean;
     FTerm: String;
     FSetTermCommand: String;
+    FSizeOfChar: Integer;
 
     procedure SetTerm(const Value: String);
     function GetComments: String;
@@ -66,12 +79,15 @@ type
     function ParseComments: Integer;
     procedure AddTokenChar(const C: Char);
   public
-    constructor Create(AStream: TStream; BufSize: Integer = 1024); overload;
+    constructor Create(AStream: TStream; BufSize: Integer = 1024; ASizeOfChar: Integer = 1); overload;
     constructor Create(const SQLString: String); overload;
     destructor Destroy; override;
 
     procedure GetNextChar;
     function GetNextToken: Integer;
+
+    function GetLexerState: TSQLLexerState;
+    procedure SetLexerState(const AState: TSQLLexerState);
 
     // Reads next statement and returns false if end of script is reached
     function NextStatement(var Statement: String): Boolean;
@@ -93,6 +109,7 @@ type
     property NextChar: Char read FNextChar;
     property Token: String read FToken;
     property TokenID: Integer read FTokenID;
+    property SizeOfChar: Integer read FSizeOfChar;
   end;
 
 const
@@ -287,7 +304,7 @@ end;
 
 { TSQLLexer }
 
-constructor TSQLLexer.Create(AStream: TStream; BufSize: Integer = 1024);
+constructor TSQLLexer.Create(AStream: TStream; BufSize: Integer = 1024; ASizeOfChar: Integer = 1);
 begin
   inherited Create;
   FBufSize := BufSize;
@@ -308,6 +325,7 @@ begin
   FLineNo := 1;
   FBufPos := 1;
   FTokenID := tokenUnknown;
+  FSizeOfChar := ASizeOfChar;
   ReadBuffer;
   GetNextChar;
 end;
@@ -315,7 +333,7 @@ end;
 constructor TSQLLexer.Create(const SQLString: String);
 begin
   {$IFDEF D2009_ORLATER}
-  Create(TStringStream.Create(SQLString, TEncoding.Unicode));
+  Create(TStringStream.Create(SQLString, TEncoding.Unicode), 1024, 2);
   {$ELSE}
   Create(TStringStream.Create(SQLString));
   {$ENDIF}
@@ -364,13 +382,13 @@ end;
 
 procedure TSQLLexer.ReadBuffer;
 begin
-  FBufLen := FStream.Read(FBuffer[1], FBufSize*SizeOf(Char)) div SizeOf(Char);
+  FBufLen := FStream.Read(FBuffer[1], FBufSize * FSizeOfChar) div FSizeOfChar;
   FBufPos := 1;
 end;
 
 function TSQLLexer.GetPosition: Integer;
 begin
-  Result := (FStream.Position div SizeOf(Char))-FBufLen+FBufPos - 1;
+  Result := (FStream.Position div FSizeOfChar)-FBufLen+FBufPos - 1;
 end;
 
 procedure TSQLLexer.GetNextChar;
@@ -397,10 +415,10 @@ var
 begin
   SavePos := Stream.Position;
   try
-    Stream.Position := StartPos*SizeOf(Char);
+    Stream.Position := StartPos * FSizeOfChar;
     SetLength(Buffer, EndPos - StartPos);
     if Length(Buffer) > 0 then
-      Stream.Read(Buffer[1], (EndPos-StartPos)*SizeOf(Char));
+      Stream.Read(Buffer[1], (EndPos-StartPos) * FSizeOfChar);
   finally
     Stream.Position := SavePos;
   end;
@@ -699,6 +717,33 @@ begin
   if Result then
     ExtractBlock(StartPos, EndPos, Statement);
   Statement := Trim(Statement);
+end;
+
+function TSQLLexer.GetLexerState: TSQLLexerState;
+begin
+  Result.Position := Position;
+  Result.TokenBeginPos := TokenBeginPos;
+  Result.Term := Term;
+  Result.SetTermCommand := SetTermCommand;
+  Result.LineNo := LineNo;
+  Result.LinePos := LinePos;
+  Result.NextChar := NextChar;
+  Result.Token := Token;
+  Result.TokenID := TokenID;
+end;
+
+procedure TSQLLexer.SetLexerState(const AState: TSQLLexerState);
+begin
+  FTokenBeginPos := AState.TokenBeginPos;
+  FTerm := AState.Term;
+  FSetTermCommand := AState.SetTermCommand;
+  FLineNo := AState.LineNo;
+  FLinePos := AState.LinePos;
+  FNextChar := AState.NextChar;
+  FToken := AState.Token;
+  FTokenID := AState.TokenID;
+  FStream.Position := AState.Position;
+  ReadBuffer;
 end;
 
 end.

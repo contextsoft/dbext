@@ -158,6 +158,14 @@ begin
   end;
 end;
 
+type
+  TSQLParserState = record
+    TokenPos: Integer;
+    KeyToken: Boolean;
+    Token: String;
+    LexerState: TSQLLexerState;
+  end;
+
 procedure ParseSQL(AStream: TStream; Schema: TDatabaseSchema; Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil; DefTerm: string = '');
 var
   EqPos, I, TokenPos: Integer;
@@ -850,10 +858,10 @@ var
     OptionalExpr, NotEmptyToken: Boolean;
     TempExpr, DataTypeExpression: TFmtExpression;
     TempItem: TSchemaCollectionItem;
+    TempParserState: TSQLParserState;
   begin
     ExprStack.Add(AExpression);
     try
-
     I := StartIdx;
     Result := False;
     if (AExpression = nil) or (AExpression.Count = 0) then exit;
@@ -1107,15 +1115,37 @@ var
               List.Add(TFmtOperand(Expression[J]).Expression);
 
             // process until result found
-            if ProcessExpressions(List, Item, ItemClassIdx, ItemOperation) then
-            begin
-              Result := True;
-              Inc(MatchCount, 2);
-            end else
-            begin
-              HandleSyntaxAmbiguity(AExpression, Expressions,
-                ItemClassIdx, ItemOperation, Item, MatchCount, Result);
-              exit;
+            try
+              // save parser stack
+              TempParserState.TokenPos := TokenPos;
+              TempParserState.Token := Token;
+              TempParserState.KeyToken := KeyToken;
+              TempParserState.LexerState := Lexer.GetLexerState;
+
+              if ProcessExpressions(List, Item, ItemClassIdx, ItemOperation) then
+              begin
+                Result := True;
+                Inc(MatchCount, 2);
+              end else
+              begin
+                HandleSyntaxAmbiguity(AExpression, Expressions,
+                  ItemClassIdx, ItemOperation, Item, MatchCount, Result);
+                exit;
+              end;
+
+            except
+              List.Clear;
+              List.Add(TFmtOperand(Expression[Expression.Count - 1]).Expression);
+              // Restore parser stack before second attempt
+              TokenPos := TempParserState.TokenPos;
+              Token := TempParserState.Token;
+              KeyToken := TempParserState.KeyToken;
+              Lexer.SetLexerState(TempParserState.LexerState);
+              if ProcessExpressions(List, Item, ItemClassIdx, ItemOperation) then
+              begin
+                Result := True;
+                Inc(MatchCount, 2);
+              end;
             end;
           finally
             List.Free;
@@ -1129,7 +1159,7 @@ var
       UpdateNextTerm;
 
     finally
-      ExprStack.Delete(ExprStack.Count - 1);
+    ExprStack.Delete(ExprStack.Count - 1);
     end;
   end;
 
@@ -1238,6 +1268,7 @@ begin
       begin
         try
           // StatementStartPos := TokenPos; +++
+          ExprStack.Clear;
           DummyItem := nil;
           LastTableDef := nil;
           LastIndexDef := nil;

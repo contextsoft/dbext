@@ -819,6 +819,7 @@ type
   published
     property Descending: Boolean read FDescending write FDescending;
     property CaseInsensitive: Boolean read FCaseInsensitive write FCaseInsensitive;
+    property Expression: String read FName write Rename stored False;
   end;
 
   TIndexFields = class (TTableDefItemsCollection)
@@ -838,8 +839,13 @@ type
   protected
     FOptions: TIndexOptions;
     FIndexFields: TIndexFields;
+    FIndexExpression: String;
     FUniqueConstraint: boolean;
 
+    function GetDisplayFields: String;
+    function GetIsExpression: Boolean;
+    procedure SetIndexExpression(const Value: String);
+    procedure SetIsExpression(const Value: Boolean);
     function GetDummyBool: Boolean;
     function GetDummyStr: String;
     function GetCaseInsFields: String;
@@ -895,6 +901,7 @@ type
     property PrimaryKey: Boolean read GetPrimaryKey write SetPrimaryKey stored False default False;
     property Descending: Boolean read GetDescending write SetDescending stored False default False;
     property NoCase: Boolean read GetNoCase write SetNoCase stored False default False;
+    property IsExpression: Boolean read GetIsExpression write SetIsExpression stored False default False;
     property UniqueConstraint: boolean read GetUniqueConstraint write SetUniqueConstraint default False;
 
     property AddIndexField: String read GetDummyStr write DoAddIndexField stored False;
@@ -912,7 +919,8 @@ type
     property Fields: String read GetFields write SetFields stored False;
     {:: This property retuns concatenated set of all custom properties of index fields. }
     property FieldProps: String read GetFieldProps write SetFieldProps stored False;
-    property DisplayFields: String read GetFields write SetDisplayFields stored False;
+    property DisplayFields: String read GetDisplayFields write SetDisplayFields stored False;
+    property IndexExpression: String read FIndexExpression write SetIndexExpression stored False;
 
     { ----------- DEPRECATED FIELDS ------------------ }
     {:$ Describes the characteristics of the index. }
@@ -6015,6 +6023,7 @@ begin
       S := TIndexDefinition(Source);
       Options := S.Options;
       IndexFields := S.IndexFields;
+      FIndexExpression := S.FIndexExpression;
       UniqueConstraint := S.UniqueConstraint;
     finally
       if Collection <> nil then
@@ -6031,6 +6040,7 @@ begin
       Fields := S1.Fields;
       DescFields := S1.DescFields;
       CaseInsFields := S1.CaseInsFields;
+      FIndexExpression := S1.Expression;
     finally
       if Collection <> nil then
         Collection.EndUpdate;
@@ -6054,9 +6064,13 @@ begin
       PropInfo := GetPropInfo(N, 'Options');
       if PropInfo <> nil then
         Options := TIndexOptions(Byte(GetOrdProp(N, PropInfo)));
-      PropInfo := GetPropInfo(N, 'UniqueConstraint');
+      PropInfo := GetPropInfo(N, 'Expression');
       if PropInfo <> nil then
-        UniqueConstraint := Boolean(byte(GetOrdProp(N, PropInfo)));
+      begin
+        FIndexExpression := GetStrProp(N, PropInfo);
+        if FIndexExpression <> '' then
+          IsExpression := True;
+      end;
     finally
       if Collection <> nil then
         Collection.EndUpdate;
@@ -6081,6 +6095,7 @@ begin
       D.Fields := Fields;
       D.DescFields := DescFields;
       D.CaseInsFields := CaseInsFields;
+      D.Expression := IndexExpression;
     finally
       if D.Collection <> nil then
         D.Collection.EndUpdate;
@@ -6104,9 +6119,13 @@ begin
       PropInfo := GetPropInfo(N, 'CaseInsFields');
       if PropInfo <> nil then
         SetStrProp(N, PropInfo, CaseInsFields);
-      PropInfo := GetPropInfo(N, 'UniqueConstraint');
-      if PropInfo <> nil then
-        SetOrdProp(N, PropInfo, byte(UniqueConstraint));
+
+      if IsExpression then
+      begin
+        PropInfo := GetPropInfo(N, 'Expression');
+        if PropInfo <> nil then
+          SetStrProp(N, PropInfo, IndexExpression);
+      end;
     finally
       if N.Collection <> nil then
         N.Collection.EndUpdate;
@@ -6413,6 +6432,36 @@ begin
   // Nothing
 end;
 
+procedure TIndexDefinition.SetIndexExpression(const Value: String);
+begin
+  FIndexExpression := Value;
+end;
+
+function TIndexDefinition.GetIsExpression: Boolean;
+begin
+  Result := ixExpression in Options;
+end;
+
+procedure TIndexDefinition.SetIsExpression(const Value: Boolean);
+begin
+  if GetIsExpression <> Value then
+  begin
+    if Value then
+      Options := Options + [ixExpression]
+    else Options := Options - [ixExpression];
+
+    if IsExpression then
+      FIndexFields.Clear
+    else FIndexExpression := '';
+  end;
+end;
+
+function TIndexDefinition.GetDisplayFields: String;
+begin
+  if IsExpression then
+    Result := IndexExpression
+  else Result := GetFields;
+end;
 
 { TIndexDefinitions }
 
