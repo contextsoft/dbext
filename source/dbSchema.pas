@@ -26,7 +26,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.06
+(*  VERSION     : 3.07
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 306;
+  dbSchemaLibVersion = 307;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -839,12 +839,12 @@ type
   protected
     FOptions: TIndexOptions;
     FIndexFields: TIndexFields;
-    FIndexExpression: String;
     FUniqueConstraint: boolean;
 
     function GetDisplayFields: String;
     function GetIsExpression: Boolean;
     procedure SetIndexExpression(const Value: String);
+    function  GetIndexExpression: String;
     procedure SetIsExpression(const Value: Boolean);
     function GetDummyBool: Boolean;
     function GetDummyStr: String;
@@ -920,7 +920,7 @@ type
     {:: This property retuns concatenated set of all custom properties of index fields. }
     property FieldProps: String read GetFieldProps write SetFieldProps stored False;
     property DisplayFields: String read GetDisplayFields write SetDisplayFields stored False;
-    property IndexExpression: String read FIndexExpression write SetIndexExpression stored False;
+    property IndexExpression: String read GetIndexExpression write SetIndexExpression stored False;
 
     { ----------- DEPRECATED FIELDS ------------------ }
     {:$ Describes the characteristics of the index. }
@@ -2403,6 +2403,7 @@ const
 const
   OppositeSide: array [TRelationSide] of TRelationSide = (sideMaster, sideDetail);
   SMultiplicity: array [TMultiplicity] of String = ('*', '1', '0..1', '0..N');
+  cIndexExpression = 'ComputedBy';
 
 var
   GlobalSQLFieldTypeChanged: TOnSQLFieldTypeChanged;
@@ -2420,7 +2421,7 @@ uses
 { Routines }
 
 const
-  cSignValidObj = $0A0B0C0D;  
+  cSignValidObj = $0A0B0C0D;
 
 
 function ValidObj(Obj: TSchemaCollectionItem): boolean;
@@ -6023,7 +6024,6 @@ begin
       S := TIndexDefinition(Source);
       Options := S.Options;
       IndexFields := S.IndexFields;
-      FIndexExpression := S.FIndexExpression;
       UniqueConstraint := S.UniqueConstraint;
     finally
       if Collection <> nil then
@@ -6040,7 +6040,6 @@ begin
       Fields := S1.Fields;
       DescFields := S1.DescFields;
       CaseInsFields := S1.CaseInsFields;
-      FIndexExpression := S1.Expression;
     finally
       if Collection <> nil then
         Collection.EndUpdate;
@@ -6067,8 +6066,8 @@ begin
       PropInfo := GetPropInfo(N, 'Expression');
       if PropInfo <> nil then
       begin
-        FIndexExpression := GetStrProp(N, PropInfo);
-        if FIndexExpression <> '' then
+        IndexExpression := GetStrProp(N, PropInfo);
+        if IndexExpression <> '' then
           IsExpression := True;
       end;
     finally
@@ -6434,12 +6433,17 @@ end;
 
 procedure TIndexDefinition.SetIndexExpression(const Value: String);
 begin
-  FIndexExpression := Value;
+  Props.Values[cIndexExpression] := Value;
+end;
+
+function TIndexDefinition.GetIndexExpression: String;
+begin
+  Result := Props.Values[cIndexExpression];
 end;
 
 function TIndexDefinition.GetIsExpression: Boolean;
 begin
-  Result := ixExpression in Options;
+  Result := (ixExpression in Options) or (IndexExpression <> '');
 end;
 
 procedure TIndexDefinition.SetIsExpression(const Value: Boolean);
@@ -6452,7 +6456,7 @@ begin
 
     if IsExpression then
       FIndexFields.Clear
-    else FIndexExpression := '';
+    else IndexExpression := '';
   end;
 end;
 

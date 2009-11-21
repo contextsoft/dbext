@@ -14,7 +14,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchemaTest.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.06
+(*  VERSION     : 3.07
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -318,7 +318,7 @@ resourcestring
   SIndexDuplicateName = 'Duplicate index "<%IndexName%>" in table "<%TableName%>"';
   SIndexFieldNotFound = 'Field not found in index "<%IndexName%>" in table "<%TableName%>"';
   SIndexInvalidFieldType = 'Field in index "<%IndexName%>" in table "<%TableName%>" cannot be indexed';
-  SIndexNoFields = 'No fields defined for index "<%IndexName%>" in table "<%TableName%>"';
+  SIndexNoFields = 'No fields or expression defined for index "<%IndexName%>" in table "<%TableName%>"';
   SIndexFieldNameCaseMismatch = 'Field in index "<%IndexName%>" in table "<%TableName%>" does not match case of the referred field';
 
   SRelationInvalidName = 'Invalid or empty relation name in table "<%TableName%>"';
@@ -1000,8 +1000,8 @@ begin
     if not FDBEngineProfile.IsValidNamePattern(Name) then
       AddResult(smcIndexNameInvalidPattern, smoIndex, smsWarning, IndexDef);
 
-    // Make sure that all fields exist
-    if IndexFields.Count = 0 then
+    // Make sure that all fields exist or IndexExpression is not empty
+    if (IndexFields.Count = 0) and (IndexDef.IndexExpression = '') then
       AddResult(smcIndexNoFields, smoIndex, smsError, IndexDef)
     else
       for I := 0 to IndexFields.Count - 1 do

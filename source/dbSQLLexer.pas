@@ -9,7 +9,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSQLLexer.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.06
+(*  VERSION     : 3.07
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -130,6 +130,8 @@ const
   setAlphaNum = ['A'..'Z', 'a'..'z', '_', '0'..'9'];
 
   DefaultCommentChars = '--;/*,*/;//';
+
+  chrEOLN = #13;
 
 resourcestring
   SUnexpectedEndOfToken = 'Unexpected end of token';
@@ -381,8 +383,12 @@ begin
 end;
 
 procedure TSQLLexer.ReadBuffer;
+var
+  P: integer;
 begin
-  FBufLen := FStream.Read(FBuffer[1], FBufSize * FSizeOfChar) div FSizeOfChar;
+  P := FBufLen-FBufPos+1;
+  Move(FBuffer[FBufPos], FBuffer[1], P);
+  FBufLen := P+FStream.Read(FBuffer[P+1], (FBufSize-P) * FSizeOfChar) div FSizeOfChar;
   FBufPos := 1;
 end;
 
@@ -392,20 +398,26 @@ begin
 end;
 
 procedure TSQLLexer.GetNextChar;
-begin
-  if FBufPos <= FBufLen then
+
+  procedure DoNextChar;
   begin
-    FNextChar := FBuffer[FBufPos];
-    Inc(FBufPos);
-    Inc(FLinePos);
-  end else begin
-    ReadBuffer;
+    if FBufPos >= FBufLen then
+      ReadBuffer;
     if FBufPos <= FBufLen then
     begin
       FNextChar := FBuffer[FBufPos];
       Inc(FBufPos);
       Inc(FLinePos);
     end else FNextChar := #0;
+  end;
+
+begin
+  DoNextChar;
+  if (FNextChar = #10) or (FNextChar = #13) then
+  begin
+    if (FBufPos <= FBufLen) and (FBuffer[FBufPos] = #10) or (FBuffer[FBufPos] = #13) then
+      DoNextChar;
+    FNextChar := chrEOLN;
   end;
 end;
 
@@ -439,7 +451,7 @@ begin
     if FNextChar = #0 then
       raise Exception.Create(SUnexpectedEndOfToken);
     AddTokenChar(FNextChar);
-    if FNextChar = #10 then
+    if FNextChar = chrEOLN then
     begin
       Inc(FLineNo);
       FLinePos := 1;
@@ -467,7 +479,7 @@ begin
       begin
         CommentEnd := copy(FComments[I], Length(CommentBegin) + 2, MaxInt);
         if CommentEnd = '' then
-          CommentEnd := #13;
+          CommentEnd := chrEOLN;
         MatchCount := 0;
         Len := Length(CommentEnd);
 
@@ -482,18 +494,12 @@ begin
             if FNextChar = CommentEnd[1] then
               MatchCount := 1;
           end;
-          if FNextChar = #10 then
+          if FNextChar = chrEOLN then
           begin
             Inc(FLineNo);
             FLinePos := 1;
           end;
           GetNextChar;
-        end;
-        if (CommentEnd = #13) and (FNextChar = #10) then
-        begin
-          GetNextChar;
-          Inc(FLineNo);
-          FLinePos := 1;
         end;
         if MatchCount = Len then
           Dec(FTokenLen, Len);
@@ -530,11 +536,10 @@ begin
   repeat
     case FNextChar of
       #0: Result := tokenEOF; // End of file
-      #10, #13: begin
+      chrEOLN:
+      begin
         // End of line
         GetNextChar;
-        if FNextChar = #10 then
-          GetNextChar;
         Result := tokenEOLN;
       end;
       '''': Result := ExtractQuotedToken('''', tokenLiteral);
