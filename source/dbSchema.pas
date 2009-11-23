@@ -895,6 +895,7 @@ type
     function HasField(const FieldName: String): Boolean;
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
+    procedure SetPropValue(const PropName, Value: String); override;
   published
     property DisplayProps: String read GetDisplayProps;
     property Unique: Boolean read GetUnique write SetUnique stored False default False;
@@ -6006,6 +6007,21 @@ destructor TIndexDefinition.Destroy;
 begin
   inherited;
   FIndexFields.Free;
+end;
+
+procedure TIndexDefinition.SetPropValue(const PropName, Value: String);
+var
+  S: string;
+begin
+  if AnsiSameText(PropName, 'AddExpression') then
+  begin
+    S := IndexExpression;
+    if Trim(S) <> '' then
+      S := S + ', ';
+    S := S + Value;
+    IndexExpression := S;
+    IsExpression := S <> '';
+  end else inherited;
 end;
 
 procedure TIndexDefinition.Assign(Source: TPersistent);
