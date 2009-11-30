@@ -748,6 +748,8 @@ begin
   FToken := AState.Token;
   FTokenID := AState.TokenID;
   FStream.Position := AState.Position;
+  FBufPos := 1;
+  FBufLen := 0;
   ReadBuffer;
 end;
 
