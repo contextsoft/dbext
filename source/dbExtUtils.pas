@@ -14,6 +14,8 @@
 (******************************************************************************)
 unit dbExtUtils;
 
+{$I CtxVer.inc}
+
 interface
 
 uses Classes, SysUtils,
@@ -22,6 +24,11 @@ uses Classes, SysUtils,
   FmtBcd,
 {$ENDIF}
   dbSchema, DB, CtxDBIntf, dbExtParser;
+
+{$IFnDEF D2009_ORLATER}
+  TRecordBuffer = PChar;
+{$ENDIF}
+
 
 type
   (* This interface is implemented to support client-side operations. *)
@@ -165,7 +172,7 @@ type
     ParamNames: String; ParamValues: Variant; ParamDataSet: TDataSet; ReturnSet,
     ReportProgress: Boolean): TDataSet;
 
-  procedure SetPrivateCalcBuffer(DataSet: TDataSet; Buffer: PChar);
+  procedure SetPrivateCalcBuffer(DataSet: TDataSet; Buffer: TRecordBuffer);
   function CalcSum(Fld: TField): Double;
   function VarDiff(NewValue, OldValue: Variant): Variant;
 
@@ -195,7 +202,7 @@ type
   {:: This method is called internally at the end of transaction. }
   procedure ExecuteScheduledAggregates(Database: IDatabaseExt);
   procedure WriteObjectChanges(Database: IDatabaseExt);
-  procedure CalculateFieldsExt(Buffer: PChar; DataSet: TDataSet);
+  procedure CalculateFieldsExt(Buffer: TRecordBuffer; DataSet: TDataSet);
 
   // procedure ExecuteUpdate(Database: IDatabaseExt;
   //  DatabaseUpdate: TDatabaseUpdate; var Abort: Boolean);
@@ -1218,16 +1225,16 @@ type
     FActiveRecord: Integer;
     FCurrentRecord: Integer;
     FBuffers: TBufferList;
-    FCalcBuffer: PChar;
+    FCalcBuffer: TRecordBuffer;
   end;
 {$HINTS ON}
 
-procedure SetPrivateCalcBuffer(DataSet: TDataSet; Buffer: PChar);
+procedure SetPrivateCalcBuffer(DataSet: TDataSet; Buffer: TRecordBuffer);
 begin
   TFriendlyDataSet(DataSet).FCalcBuffer := Buffer;
 end;
 
-procedure CalculateFieldsExt(Buffer: PChar; DataSet: TDataSet);
+procedure CalculateFieldsExt(Buffer: TRecordBuffer; DataSet: TDataSet);
 var
   I: Integer;
   Idx: Integer;
