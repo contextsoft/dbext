@@ -1160,10 +1160,13 @@ type
 
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
     function GetSchemaClassName: String; override;
+    function GetPropValue(const PropName: String): String; override;
 //    function GetAutoName(const Template: String = ''): String; override;
 
     function IsDataTemporary: Boolean;
     property Relationship: TRelationship read GetRelationship;
+
+
 
     function EffectiveDeleteAction: TRelationAction;
     function EffectiveUpdateAction: TRelationAction;
@@ -7230,6 +7233,13 @@ begin
   *)
 end;
 
+function TRelation.GetPropValue(const PropName: String): String;
+begin
+  Result := inherited GetPropValue(PropName);
+  if (Result = '') and (Relationship <> nil) then
+    Result := RelationShip.GetPropValue(PropName);
+end;
+
 procedure TRelation.DoAddForeignKeyField(const Value: String);
 begin
   if Value = '' then exit;
@@ -9779,6 +9789,8 @@ begin
     (TableDefs.Count = 0) and
     (StoredProcs.Count = 0) and
     (RelationShips.Count = 0) and
+    (CustomObjects.Count = 0) and
+    (Scripts.Count = 0) and
     (CustomObjects.Count = 0);
 end;
 

@@ -25,12 +25,13 @@ uses Classes, SysUtils,
 {$ENDIF}
   dbSchema, DB, CtxDBIntf, dbExtParser;
 
+
+type
 {$IFnDEF D2009_ORLATER}
   TRecordBuffer = PChar;
 {$ENDIF}
 
 
-type
   (* This interface is implemented to support client-side operations. *)
   IDatabaseExt = interface (ISchemaDatabase)
     ['{D5E345B5-63A8-42EE-8A4A-0969A9ABF99A}']

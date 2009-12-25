@@ -99,6 +99,8 @@ type
     function LocateObject(Schema: TDatabaseSchema; const ObjPath: String; ResultSet: TDataSet;
       var Obj: TSchemaCollectionItem; var Col: TSchemaItemsCollection): Boolean;
     procedure AssignObject(Obj: TSchemaCollectionItem; ResultSet: TDataSet; const ObjPath: String);
+    procedure ParseSQL(ASchema: TDatabaseSchema; const ASQL: string);
+
     function FormatIBDataType(const FieldType, SubType, Scale, Precision,
       Size, SegLen, CharSet: String): String;
 
@@ -1915,110 +1917,70 @@ begin
 end;
 
 procedure TDBEngineProfile.ReverseEngineer(Schema: TDatabaseSchema; ExecSQLProc: TExecSQLProc);
+type
+  TImportType = (itNormal, itList, itListAdd, itIterate, itIterateParse);
+
 var
-  I,ImpCnt: Integer;
+  I,C,ImpCnt: Integer;
   SQL, ObjPath: String;
-  ResultSet: TDataSet;
+  ListCol: TSchemaItemsCollection;
   LastObj: TSchemaCollectionItem;
   LastCol: TSchemaItemsCollection;
   ObjectFound: Boolean;
-  Tables: TStringList;
-begin
-  if (Schema = nil) or not Assigned(ExecSQLProc) then exit;
-  if not SupportsInfoSchema then
-    DatabaseError(SInfoSchemaNotSupported);
-  // Reverse Engineer using SQLExecuteStatement using ExecSQLProc
-  Tables := nil;
-  Schema.BeginUpdate;
-  try
-    LastCol := nil;
-    LastObj := nil;
-{$IFnDEF VER130}
-    Tables := TStringList.Create;
-    SQL := Trim(FInfoSchemaSQL.Values['*showtables']);
-    if SQL <> '' then
-    begin
-      ResultSet := nil;
-      ExecSQLProc(SQL, @ResultSet);
-      if ResultSet <> nil then
-      try
-        ResultSet.First;
-        while not ResultSet.EOF do
-        begin
-          if (not AnsiSameText(ResultSet.Fields[0].AsString, 'systable'))
-            and (Schema.TableDefs.Find(ResultSet.Fields[0].AsString) = nil)
-          then
-            Tables.Add(ResultSet.Fields[0].AsString);
-          ResultSet.Next;
-        end;
-      finally
-        FreeAndNil(ResultSet);
-      end;
-    end;
+  NameList: TStringList;
+  ParseFld: TField;
+  ImpType: TImportType;
 
-    SQL := Trim(FInfoSchemaSQL.Values['*showcreatetable']);
-    if SQL <> '' then
-    begin
-      for I := 0 to Tables.Count - 1 do
+  procedure DoExecSQL(const ASQL, AParam: string);
+  var
+    ResultSet: TDataSet;
+    S: string;
+  begin
+    ResultSet := nil;
+    try
+      if AParam <> '' then
+        ExecSQLProc(Format(ASQL, [AParam]), @ResultSet) else
+        ExecSQLProc(ASQL, @ResultSet);
+    except
+      on E:Exception do
       begin
-        ResultSet := nil;
-        ExecSQLProc(Format(SQL, [Tables[I]]), @ResultSet);
-        if ResultSet <> nil then
-        try
-          ResultSet.First;
-          dbSQLParser.ParseSQL(ResultSet.Fields[1].AsString, Schema, Self);
-        finally
-          FreeAndNil(ResultSet);
-        end;
-      end;
-    end;
-
-    SQL := Trim(FInfoSchemaSQL.Values['*showcreate']);
-    if SQL <> '' then
-    begin
-      ResultSet := nil;
-      ExecSQLProc(SQL, @ResultSet);
-      if ResultSet <> nil then
-      try
-        ResultSet.First;
-        while not ResultSet.EOF do
-        begin
-          dbSQLParser.ParseSQL(ResultSet.Fields[0].AsString, Schema, Self);
-          ResultSet.Next;
-        end;
-      finally
         FreeAndNil(ResultSet);
-      end;
-    end;
-{$ENDIF}
-    for I := 0 to FInfoSchemaSQL.Count - 1 do
-    begin
-      ImpCnt := 0;
-      ObjPath := Trim(FInfoSchemaSQL.Names[I]);
-      SQL := Trim(ValueFromIndex(FInfoSchemaSQL, I));
-      if (ObjPath = '') or (SQL = '') or CharInSet(ObjPath[1], ['*', ';']) then continue;
-      // Execute SQL
-      ResultSet := nil;
-      if Assigned(OnReverse) then
-        OnReverse(1, 'Importing '+GetHRName(FInfoSchemaSQL.Names[I]) + '...');
-      try
-        ExecSQLProc(SQL, @ResultSet);
-      except
-        // eat exception - import log???
-        on E:Exception do
+        if Assigned(OnReverse) then
         begin
-          FreeAndNil(ResultSet);
-          if Assigned(OnReverse) then
-          begin
-            OnReverse(-1, 'Importing '+GetHRName(FInfoSchemaSQL.Names[I]) + ' hase error:');
-            OnReverse(-1, E.Message);
-          end;
+          OnReverse(-1, 'Importing '+GetHRName(ObjPath) + ' hase error:');
+          OnReverse(-1, E.Message);
         end;
       end;
-      if ResultSet <> nil then
-      try
-        ResultSet.First;
-        while not ResultSet.EOF do
+    end;
+    if ResultSet <> nil then
+    try
+      ResultSet.First;
+      ParseFld := ResultSet.FindField('_CtxParse_');
+      if (ImpType = itIterateParse) and (ParseFld = nil) then
+        ParseFld := ResultSet.Fields[0];
+      while not ResultSet.EOF do
+      begin
+        if ImpType in [itList, itListAdd] then
+        begin
+          S := ResultSet.Fields[0].AsString;
+          if (ListCol <> nil) and (ListCol.Find(S) = nil) then
+          begin
+            if ImpType = itListAdd then
+              ListCol.Add.Name := S;
+            NameList.Add(S);
+          end;
+        end else
+        if ParseFld <> nil then
+        begin
+          ParseSQL(Schema, ParseFld.AsString);
+          inc(ImpCnt);
+        end else
+        if (ImpType = itIterate) and (ListCol <> nil) then
+        begin
+          LastObj := ListCol.Find(AParam);
+          if LastObj <> nil then
+            AssignObject(LastObj, ResultSet, ObjPath);
+        end else
         begin
           ObjectFound := LocateObject(Schema, ObjPath, ResultSet, LastObj, LastCol);
           if (not ObjectFound) and (LastCol <> nil) and LastCol.InheritsFrom(TSchemaItemsCollection) then
@@ -2032,18 +1994,77 @@ begin
           end;
           if ObjectFound then
             AssignObject(LastObj, ResultSet, ObjPath);
-
-          ResultSet.Next;
         end;
-      if Assigned(OnReverse) then
-        OnReverse(2, Format('Importing %s complete. %d object(s) imported.', [GetHRName(FInfoSchemaSQL.Names[I]), ImpCnt]));
-      finally
-        FreeAndNil(ResultSet);
+        ResultSet.Next;
       end;
+    finally
+      FreeAndNil(ResultSet);
+    end;
+  end;
+
+var
+  TempObj: TObject;
+begin
+  if (Schema = nil) or not Assigned(ExecSQLProc) then exit;
+  if not SupportsInfoSchema then
+    DatabaseError(SInfoSchemaNotSupported);
+  // Reverse Engineer using SQLExecuteStatement using ExecSQLProc
+  NameList := nil;
+  Schema.BeginUpdate;
+  try
+    LastCol := nil;
+    LastObj := nil;
+    NameList := TStringList.Create;
+    for I := 0 to FInfoSchemaSQL.Count - 1 do
+    begin
+      ImpCnt := 0;
+      ObjPath := Trim(FInfoSchemaSQL.Names[I]);
+      if Pos(';', ObjPath) = 1 then
+        Continue;
+
+      // Update relationships in case relations where affected by previous parse operation
+      Schema.UpdateRelationships;
+
+      if Pos('*', ObjPath) = 1 then
+        ImpType := itList else
+      if Pos('+', ObjPath) = 1 then
+        ImpType := itListAdd else
+      if Pos('-', ObjPath) = 1 then
+        ImpType := itIterate else
+      if Pos('$', ObjPath) = 1 then
+        ImpType := itIterateParse else
+        ImpType := itNormal;
+      if ImpType <> itNormal then
+        Delete(ObjPath, 1, 1);
+      SQL := Trim(ValueFromIndex(FInfoSchemaSQL, I));
+      if (ObjPath = '') or (SQL = '') then
+        Continue;
+      // Execute SQL
+      if ImpType in [itList, itListAdd, itIterate, itIterateParse] then
+      begin
+        TempObj := TObject(GetOrdProp(Schema, ObjPath));
+        if (TempObj <> nil) and (TempObj is TSchemaItemsCollection) then
+          ListCol := TSchemaItemsCollection(TempObj) else
+          ListCol := nil;
+      end;
+      if Assigned(OnReverse) then
+        OnReverse(1, 'Importing '+GetHRName(ObjPath) + '...');
+      if ImpType in [itIterate, itIterateParse] then
+      begin
+        LastCol := ListCol;
+        for C := 0 to NameList.Count-1 do
+          DoExecSQL(SQL, NameList[C]);
+      end else
+      begin
+        NameList.Clear;
+        DoExecSQL(SQL, '');
+      end;
+      if Assigned(OnReverse) then
+        OnReverse(2, Format('Importing %s complete. %d object(s) imported.', [GetHRName(ObjPath), ImpCnt]));
     end;
   finally
     Schema.EndUpdate;
-    Tables.Free;
+    NameList.Free;
   end;
 end;
 
@@ -2169,6 +2190,11 @@ begin
     end;
     Result := Temp;
   end;
+end;
+
+procedure TDBEngineProfile.ParseSQL(ASchema: TDatabaseSchema; const ASQL: string);
+begin
+  dbSQLParser.ParseSQL(ASQL, ASchema, Self);
 end;
 
 procedure TDBEngineProfile.AssignObject(Obj: TSchemaCollectionItem;
