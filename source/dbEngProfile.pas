@@ -11,7 +11,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbEngProfile.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.07
+(*  VERSION     : 3.08
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -1979,7 +1979,10 @@ var
         begin
           LastObj := ListCol.Find(AParam);
           if LastObj <> nil then
+          begin
             AssignObject(LastObj, ResultSet, ObjPath);
+            inc(ImpCnt);
+          end;
         end else
         begin
           ObjectFound := LocateObject(Schema, ObjPath, ResultSet, LastObj, LastCol);
