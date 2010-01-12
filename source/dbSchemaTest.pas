@@ -1002,8 +1002,8 @@ begin
 
     // Make sure that all fields exist or IndexExpression is not empty
     if (IndexFields.Count = 0) and (IndexDef.IndexExpression = '') then
-      AddResult(smcIndexNoFields, smoIndex, smsError, IndexDef)
-    else
+      AddResult(smcIndexNoFields, smoIndex, smsError, IndexDef) else
+    if not IndexDef.IsExpression then
       for I := 0 to IndexFields.Count - 1 do
       begin
         FieldDef := TableDef.FieldDefs.Find(IndexFields[I].Name);

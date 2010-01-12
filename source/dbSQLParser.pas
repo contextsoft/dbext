@@ -1338,6 +1338,7 @@ begin
     Lexer.Free;
     ExprStack.Free;
     Schema.EndUpdate;
+    Schema.UpdateRelationshipCardinality;
   end;
 end;
 

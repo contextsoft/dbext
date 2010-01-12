@@ -1775,6 +1775,8 @@ type
     procedure GetTableCategories(List: TStrings);
 
     procedure UpdateFieldDefinitions;
+    procedure UpdateRelationshipCardinality;
+
     function TopLevelUnique(Item: TSchemaCollectionItem; const NewName: String): Boolean;
 
     {:$ Saves schema information to file. }
@@ -3863,6 +3865,14 @@ begin
     Result := True;
   end;
 end;
+
+function KeyFieldsUnique(TableDef: TTableDefinition; KeyFields: String; ACaseInsensitive: boolean): boolean;
+begin
+  Result := False;
+  if TableDef = nil then exit;
+  Result := TableDef.IsUniqueKey(KeyFields, ACaseInsensitive);
+end;
+
 
 function CompareRelProps(SrcRel, DestRel: TRelationship): Boolean;
 begin
@@ -6601,6 +6611,7 @@ begin
   inherited SetItem(Index, Value);
 end;
 
+
 { TRelationship }
 
 constructor TRelationship.Create(Collection: TCollection);
@@ -6850,6 +6861,8 @@ procedure TRelationship.UpdateRelations;
     end;
   end;
 
+var
+  IsDetailReq: boolean;
 begin
   if IsUpdating or Schema.IsUpdating or (csLoading in Schema.ComponentState) then exit;
 
@@ -6858,7 +6871,8 @@ begin
   UpdateKeyFields;
 
   // Update Master Record is Optinal from Field's required state
-  MasterRecordOptional := not KeyFieldsRequired(Schema.TableDefs.Find(DetailTableName), DetailKeyFields);
+  IsDetailReq := KeyFieldsRequired(Schema.TableDefs.Find(DetailTableName), DetailKeyFields);
+  MasterRecordOptional := not IsDetailReq;
 
   // Update own name if necessary
   // if MasterRelationName = '' then InternalRelationshipError(Self);
@@ -9369,6 +9383,22 @@ begin
   for I := 0 to FTableDefs.Count - 1 do
     for J := 0 to FTableDefs[I].FieldDefs.Count - 1 do
       FTableDefs[I].FieldDefs[J].AssignFromDomain;
+end;
+
+procedure TDatabaseSchema.UpdateRelationshipCardinality;
+var
+  R: TRelationship;
+  IsDetailUniq: boolean;
+  I: integer;
+begin
+  for I := 0 to Relationships.Count - 1 do
+  begin
+    R := Relationships[I];
+    IsDetailUniq := KeyFieldsUnique(TableDefs.Find(R.DetailTableName), R.DetailKeyFields, R.CaseInsensitive);
+    if IsDetailUniq then
+      R.DetailCardinality := dcOne else
+      R.DetailCardinality := dcMany;
+  end;
 end;
 
 function TDatabaseSchema.TopLevelUnique(Item: TSchemaCollectionItem; const NewName: String): Boolean;

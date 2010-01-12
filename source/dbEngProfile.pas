@@ -2075,6 +2075,7 @@ begin
     end;
   finally
     Schema.EndUpdate;
+    Schema.UpdateRelationshipCardinality;
     NameList.Free;
   end;
 end;
