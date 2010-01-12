@@ -1935,6 +1935,7 @@ var
   var
     ResultSet: TDataSet;
     S: string;
+    fI: integer;
   begin
     ResultSet := nil;
     try
@@ -1957,7 +1958,14 @@ var
       ResultSet.First;
       ParseFld := ResultSet.FindField('_CtxParse_');
       if (ImpType = itIterateParse) and (ParseFld = nil) then
-        ParseFld := ResultSet.Fields[0];
+      begin
+        for fI := 0 to ResultSet.FieldCount do
+          if ResultSet.Fields[fI].Size > 128 then
+          begin
+            ParseFld := ResultSet.Fields[fI];
+            Break;
+          end;
+      end;  
       while not ResultSet.EOF do
       begin
         if ImpType in [itList, itListAdd] then

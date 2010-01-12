@@ -102,18 +102,30 @@ const
 
 function ExtractTableName(const Definition: String): String;
 var
-  I: Integer;
+  I, L: Integer;
   Temp: String;
+  Quote: Char;
 begin
   // CREATE TRIGGER name SKIP_TOKENS ON table_name
   I := 1;
   Temp := StringReplace(Definition, #13#10, ' ', [rfReplaceAll]);
-  while I <= Length(Temp) do
+  L := Length(Temp);
+  while I <= L do
   begin
     Result := NextToken(Temp, ' ', I);
     if AnsiSameText(Result, 'on') or AnsiSameText(Result, 'for') then
     begin
-      Result := NextToken(Temp, ' ', I);
+      while (I <= L) and (Temp[I] = ' ') do
+        Inc(I);
+      if (I <= L) and CharInSet(Temp[I], ['"', '`', '[']) then
+      begin
+        Quote := Temp[I];
+        if Temp[I] = '[' then
+          Quote := ']';
+        inc(I);
+        Result := NextToken(Temp, Quote, I);
+      end else
+        Result := NextToken(Temp, ' ', I);
       exit;
     end;
   end;
@@ -342,7 +354,17 @@ var
         csUndefined:
           Parent := nil;
         csField, csComputedField, csPrimaryKey, csForeignKey, csUnique, csTableConstraint:
-          Parent := LastTableDef;
+        begin
+          ParentName := ValueBuffer.Values['tablename'];
+          if ParentName = '' then
+          begin
+            ItemName := ExtractObjectName(Trim(ValueBuffer.Values['fullname']), ParentName);
+            ParentName := ExtractObjectName(ParentName);
+          end;
+          if ParentName = '' then
+            Parent := LastTableDef else
+            Parent := Schema.TableDefs.Find(ParentName);
+        end;
         csIndex: begin
           ParentName := ValueBuffer.Values['tablename'];
           if ParentName = '' then

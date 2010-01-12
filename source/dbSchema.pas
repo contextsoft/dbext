@@ -8395,7 +8395,8 @@ end;
 
 function TTriggerDefinition.GetDisplayName: String;
 begin
-  Result := TableName + '.' + FName;
+  //Result := TableName + '.' + FName; //DB 05012010
+  Result := FName;
 end;
 
 function TTriggerDefinition.GetTableName: String;
