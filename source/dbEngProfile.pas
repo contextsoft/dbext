@@ -11,7 +11,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbEngProfile.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.09
+(*  VERSION     : 3.10
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -36,6 +36,7 @@ type
   TDBEngineProfile = class (TComponent)
   protected
     FEngineName: String;
+    FDisplayName: String;
     FEngineProps: TStrings;
     FFieldTypeMap: TStrings;
     FParentStatements: TStrings;
@@ -105,6 +106,7 @@ type
       Size, SegLen, CharSet: String): String;
 
     function GetHRName(const AToken: string): string;
+    function GetDisplayName: string;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -180,6 +182,7 @@ type
     property CustomObjectTypes: TStrings read FCustomObjectTypes;
     property NamePatterns: TStrings read FNamePatterns;
     property MaxIdLength: Integer read FMaxIdLength;
+    property DisplayName: string read GetDisplayName;
   published
     property EngineName: String read FEngineName write SetEngineName;
     property EngineProps: TStrings read FEngineProps write SetEngineProps;
@@ -215,9 +218,9 @@ type
 
   procedure LoadProfiles(AOwner: TComponent; const Path: String; const FileExt: String = '.dbp');
 
-  procedure GetDBEngineProfiles(List: TStrings);
-  function GetDBEngineProfile(const EngineName: String): TDBEngineProfile;
-  function FindDBEngineProfile(const EngineName: String): TDBEngineProfile;
+  procedure GetDBEngineProfiles(List: TStrings; ADisplayName: boolean);
+  function  GetDBEngineProfile(const EngineName: String): TDBEngineProfile;
+  function  FindDBEngineProfile(const EngineName: String): TDBEngineProfile;
   procedure RegisterDBEngineProfile(Engine: TDBEngineProfile);
   procedure UnRegisterDBEngineProfile(Engine: TDBEngineProfile);
 
@@ -239,6 +242,7 @@ const
   SECTION_INFOSCHEMAVALUEMAP = 'InfoSchemaValueMap';
 
   ENTRY_ENGINENAME        = 'EngineName';
+  ENTRY_DISPLAYNAME       = 'DisplayName';
   ENTRY_DOMAINS           = 'Domains';
   ENTRY_TRIGGERS          = 'Triggers';
   ENTRY_INDEXNAMESUNIQUE  = 'IndexNamesUnique';
@@ -348,15 +352,21 @@ begin
   Result.Refresh;
 end;
 
-procedure GetDBEngineProfiles(List: TStrings);
+procedure GetDBEngineProfiles(List: TStrings; ADisplayName: boolean);
 var
   I: Integer;
+  Eng: TDBEngineProfile;
 begin
   List.BeginUpdate;
   try
     List.Clear;
     for I := 0 to DBEngineProfiles.Count - 1 do
-      List.Add(TDBEngineProfile(DBEngineProfiles[I]).EngineName);
+    begin
+      Eng := TDBEngineProfile(DBEngineProfiles[I]);
+      if ADisplayName then
+        List.AddObject(Eng.DisplayName, DBEngineProfiles[I]) else
+        List.AddObject(Eng.EngineName, DBEngineProfiles[I]);
+    end;
   finally
     List.EndUpdate;
   end;
@@ -1743,6 +1753,7 @@ begin
   FKeywords.Clear;
   // Update engine properties
   EngineName := EngineProps.Values[ENTRY_ENGINENAME];
+  FDisplayName := EngineProps.Values[ENTRY_DISPLAYNAME];
   FSupportsDomains := AnsiSameText(EngineProps.Values[ENTRY_DOMAINS], 'yes');
   FSupportsTriggers := AnsiSameText(EngineProps.Values[ENTRY_TRIGGERS], 'yes');
   FIndexNamesUnique := AnsiSameText(EngineProps.Values[ENTRY_INDEXNAMESUNIQUE], 'yes');
@@ -1870,6 +1881,13 @@ end;
 procedure TDBEngineProfile.SetInfoSchemaValueMap(const Value: TStrings);
 begin
   FInfoSchemaValueMap.Assign(Value);
+end;
+
+function TDBEngineProfile.GetDisplayName: string;
+begin
+  Result := FDisplayName;
+  if Trim(Result) = '' then
+    Result := FEngineName;
 end;
 
 function TDBEngineProfile.GetHRName(const AToken: string): string;
@@ -2174,23 +2192,17 @@ function TDBEngineProfile.FormatIBDataType(const FieldType, SubType,
 var
   Temp: String;
 begin
-  if AnsiSameText(FieldType, 'BLOB') then
+  Temp := FSynonyms.Values[FieldType];
+  if AnsiSameText(Temp, 'BLOB') then
   begin
-    Result := FieldType;
     if SubType <> '' then
-      Result := Result + ' SUB_TYPE ' + SubType;
+      Temp := Temp + ' SUB_TYPE ' + SubType;
     if SegLen <> '' then
-      Result := Result + ' SEGMENT SIZE ' + SegLen;
+      Temp := Temp + ' SEGMENT SIZE ' + SegLen;
     if (CharSet <> '') and not AnsiSameText(CharSet, 'NONE') then
-      Result := Result + ' CHARACTER SET ' + CharSet;
+      Temp := Temp + ' CHARACTER SET ' + CharSet;
   end else
   begin
-    Temp := FieldType;
-    if SubType <> '' then
-      Temp := SubType + Temp;
-    Temp := FSynonyms.Values[Temp];
-    if Temp = '' then
-      Temp := FieldType;
     if Size <> '' then
       Temp := Temp + '(' + Size + ')'
     else if ((Precision <> '') and (Precision <> '0')) or ((Scale <> '') and (Scale <> '0')) then
@@ -2200,8 +2212,8 @@ begin
         Temp := Temp + ', ' + Scale;
       Temp := Temp + ')';
     end;
-    Result := Temp;
   end;
+  Result := Temp;  
 end;
 
 procedure TDBEngineProfile.ParseSQL(ASchema: TDatabaseSchema; const ASQL: string);
@@ -2222,7 +2234,9 @@ begin
     if Pos('_', FldName) <> 1 then
     begin
       V := AsString;
-      if not (AnsiSameText('AddDefinition', FldName) or AnsiSameText('Definition', FldName)) then
+      if not (AnsiSameText('AddDefinition', FldName)
+        or AnsiSameText('Definition', FldName)
+        or AnsiSameText('AddDefinitionInLine', FldName)) then
       begin
         V := Trim(V);
         if V = '' then continue;
@@ -2264,7 +2278,7 @@ begin
           ResultSet.FieldByName('_IBParamSize').AsString,
           ResultSet.FieldByName('_IBParamSegLen').AsString,
           ResultSet.FieldByName('_IBParamCharSet').AsString);
-        FldName := 'AddDefinition';
+        FldName := 'AddDefinitionInLine';
       end else begin
         V2 := InfoSchemaValueMap.Values[ObjPath + '.' + FldName + '.' + V];
         if V2 <> '' then

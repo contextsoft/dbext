@@ -26,7 +26,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.09
+(*  VERSION     : 3.10
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 309;
+  dbSchemaLibVersion = 310;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -5265,11 +5265,17 @@ begin
   FDefinition.Assign(Value);
 end;
 
-procedure TStoredProcDefinition.SetPropValue(const PropName,
-  Value: String);
+procedure TStoredProcDefinition.SetPropValue(const PropName, Value: String);
+var
+  S: string;
 begin
-  if AnsiSameText(PropName, 'AddDefinition') then
-    FDefinition.Text := FDefinition.Text + Value
+  if AnsiSameText(PropName, 'AddDefinition') or (AnsiSameText(PropName, 'AddDefinitionInLine')) then
+  begin
+    S := FDefinition.Text;
+    if AnsiSameText(PropName, 'AddDefinitionInLine') then
+      S := TrimRight(S) + ' ';
+    FDefinition.Text := S + Value;
+  end
   else inherited;
 end;
 
@@ -5895,9 +5901,13 @@ begin
     and Props.Equals(TIndexField(Dest.DestItem).Props)
     and (Description = TIndexField(Dest.DestItem).Description)
     and (CaseInsensitive = TIndexField(Dest.DestItem).CaseInsensitive)
-    and (Descending = TIndexField(Dest.DestItem).Descending)
-    // We need to compare ItemID of the associated fields if found!
-    and (GetFieldID = TIndexField(Dest.DestItem).GetFieldID);
+    and (Descending = TIndexField(Dest.DestItem).Descending);
+
+  // We need to compare ItemID of the associated fields if found!
+  if Result then
+    if Schema.SchemaID = Dest.DestItem.Schema.SchemaID then
+      Result := GetFieldID = TIndexField(Dest.DestItem).GetFieldID else
+      Result := Name = TIndexField(Dest.DestItem).Name;
 
   Dest.PropsEqual := Result;
 end;

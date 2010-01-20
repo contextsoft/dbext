@@ -14,7 +14,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchemaTest.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.09
+(*  VERSION     : 3.10
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -997,7 +997,7 @@ begin
     if not IsNameUnique(IndexDef) then
       AddResult(smcIndexDuplicateName, smoIndex, smsError, IndexDef);
 
-    if not FDBEngineProfile.IsValidNamePattern(Name) then
+    if not FDBEngineProfile.IsValidNamePattern(IndexDef.Name) then
       AddResult(smcIndexNameInvalidPattern, smoIndex, smsWarning, IndexDef);
 
     // Make sure that all fields exist or IndexExpression is not empty
@@ -1050,7 +1050,7 @@ begin
     if not IsNameUnique(TriggerDef) then
       AddResult(smcTriggerDuplicateName, smoTrigger, smsError, TriggerDef);
 
-    if not FDBEngineProfile.IsValidNamePattern(Name) then
+    if not FDBEngineProfile.IsValidNamePattern(TriggerDef.Name) then
       AddResult(smcTriggerNameInvalidPattern, smoTrigger, smsWarning, TriggerDef);
 
     // Make sure, that if it is object trigger, primary key
@@ -1079,7 +1079,7 @@ begin
     if Trim(Definition.Text) = '' then
       AddResult(smcViewEmptyDefinition, smoView, smsError, ViewDef);
 
-    if not FDBEngineProfile.IsValidNamePattern(Name) then
+    if not FDBEngineProfile.IsValidNamePattern(ViewDef.Name) then
       AddResult(smcViewNameInvalidPattern, smoView, smsWarning, ViewDef);
   end;
 end;
@@ -1100,7 +1100,7 @@ begin
     if not IsNameUnique(Domain) then
       AddResult(smcDomainDuplicateName, smoDomain, smsError, Domain);
 
-    if not FDBEngineProfile.IsValidNamePattern(Name) then
+    if not FDBEngineProfile.IsValidNamePattern(Domain.Name) then
       AddResult(smcDomainNameInvalidPattern, smoDomain, smsWarning, Domain);
 
     if (DataType = ftUnknown) and (SQLFieldType = '') then
@@ -1142,14 +1142,14 @@ begin
     // Testing Relationship definition
     with Relationship do
     begin
-      DoStatus(STestingRelationship + Name);
+      DoStatus(STestingRelationship + Relationship.Name);
       // Test Relationship name to be unqie and non-empty
-      if not IsValidIdentifier(Relationship, Name) then
+      if not IsValidIdentifier(Relationship, Relationship.Name) then
         AddResult(smcRelationshipInvalidName, smoRelationship, smsError, Relationship);
       if not IsNameUnique(Relationship) then
         AddResult(smcRelationshipDuplicateName, smoRelationship, smsError, Relationship);
 
-      if not FDBEngineProfile.IsValidNamePattern(Name) then
+      if not FDBEngineProfile.IsValidNamePattern(Relationship.Name) then
         AddResult(smcRelationshipNameInvalidPattern, smoRelationship, smsWarning, Relationship);
 
       if MasterTableDef = nil then
@@ -1303,7 +1303,7 @@ begin
     if not IsNameUnique(Sequence) then
       AddResult(smcSequenceDuplicateName, smoSequence, smsError, Sequence);
 
-    if not FDBEngineProfile.IsValidNamePattern(Name) then
+    if not FDBEngineProfile.IsValidNamePattern(Sequence.Name) then
       AddResult(smcSequenceNameInvalidPattern, smoSequence, smsWarning, Sequence);
 
     {if Unknown ??? then
@@ -1326,7 +1326,7 @@ begin
       AddResult(smcStoredProcDuplicateName, smoStoredProc, smsError, StoredProc);
     if Trim(Definition.Text) = '' then
       AddResult(smcStoredProcEmptyDefinition, smoStoredProc, smsError, StoredProc);
-    if not FDBEngineProfile.IsValidNamePattern(Name) then
+    if not FDBEngineProfile.IsValidNamePattern(StoredProc.Name) then
       AddResult(smcStoredProcNameInvalidPattern, smoStoredProc, smsWarning, StoredProc);
   end;
 end;
@@ -1345,7 +1345,7 @@ begin
     if not IsNameUnique(TableConstraint) then
       AddResult(smcTableConstraintDuplicateName, smoTableConstraint, smsError, TableConstraint);
 
-    if not FDBEngineProfile.IsValidNamePattern(Name) then
+    if not FDBEngineProfile.IsValidNamePattern(TableConstraint.Name) then
       AddResult(smcConstraintNameInvalidPattern, smoTableConstraint, smsWarning, TableConstraint);
 
     if Trim(Check) = '' then
@@ -1364,7 +1364,7 @@ begin
       AddResult(smcCustomObjectInvalidName, smoCustomObject, smsError, CustomObject);
     if not IsNameUnique(CustomObject) then
       AddResult(smcCustomObjectDuplicateName, smoCustomObject, smsError, CustomObject);
-    if not FDBEngineProfile.IsValidNamePattern(Name) then
+    if not FDBEngineProfile.IsValidNamePattern(CustomObject.Name) then
       AddResult(smcCustomObjectNameInvalidPattern, smoCustomObject, smsWarning, CustomObject);
   end;
 end;
