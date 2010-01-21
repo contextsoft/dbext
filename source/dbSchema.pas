@@ -2490,7 +2490,7 @@ end;
 
 function VersionToStr(const Version: TSchemaVersion): String;
 begin
-  if (Version.Major > 0) and (Version.Minor > 0) then
+  if (Version.Major > 0) and (Version.Minor >= 0) then
     Result := Format('%d.%2.2d', [Version.Major, Version.Minor])
   else Result := VERSION_NOT_AVAILABLE;
 end;
