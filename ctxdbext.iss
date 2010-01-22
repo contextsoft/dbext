@@ -2,7 +2,7 @@
 
 [Setup]
 AppName=Context Database Extensions
-AppVerName=Context Database Extensions v.3.08
+AppVerName=Context Database Extensions v.3.11
 AppCopyright=Copyright © 2003-2009, Michael Baytalsky
 DefaultDirName={pf}\Context Software\DBExt3
 DefaultGroupName=Context Database Extensions

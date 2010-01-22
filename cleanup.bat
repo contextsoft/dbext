@@ -9,3 +9,7 @@ del /s demos\*.exe
 del /q /s lib\*.*
 del /q /s libt\*.*
 del /q /s /a:h *.lck
+del /q /s demos\*.dproj
+del /q /s demos\*.2007
+del /q /s demos\*.local
+del /q /s demos\*.identcache
