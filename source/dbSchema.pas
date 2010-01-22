@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 310;
+  dbSchemaLibVersion = 311;
 
 {$IFDEF D2009_ORLATER}
 type

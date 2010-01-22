@@ -1,0 +1,1 @@
+mfsr version.ini source\*.pas
