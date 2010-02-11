@@ -345,14 +345,22 @@ var
       if StatementFields.IndexOf(PropName) < 0 then
         ValueBuffer.Add(PropName + '='+ StringReplace(AdjPropValue, #13#10, ' ', [rfReplaceAll]));
 
+       //DB +++++ ERROR
+
       ItemClass := ItemClasses[ItemClassIdx];
+      {
       if ItemClass = nil then
         exit;
+      }
       ItemName := '';
       ParentName := '';
       case ItemClassIdx of
         csUndefined:
           Parent := nil;
+        csConstraints:
+          if ItemOperation in [ioAlter, ioDrop] then
+            Parent := LastTableDef else
+            Parent := nil;
         csField, csComputedField, csPrimaryKey, csForeignKey, csUnique, csTableConstraint:
         begin
           ParentName := ValueBuffer.Values['tablename'];
@@ -410,7 +418,8 @@ var
       end;
       if Parent = nil then exit;
       Coll := GetItemCollection(Parent, ItemClass);
-      if Coll = nil then exit;
+      if (Coll = nil) and not (ItemOperation in [ioAlter, ioDrop]) then
+        exit;
 
       if ItemName = '' then
         ItemName := Trim(ValueBuffer.Values['name']);
@@ -418,12 +427,15 @@ var
         if ItemOperation in [ioAlter, ioDrop] then
         begin
           // Locate item
-          if ItemName <> '' then
+          if (ItemName <> '') and (Coll <> nil) then
             Item := Coll.Find(ItemName);
           if (Item = nil) and Parent.InheritsFrom(TTableDefinition) and
-            (ItemClassIdx in [csPrimaryKey, csForeignKey, csUnique, csTableConstraint, csConstraints])
-          then
+            (ItemClassIdx in [csPrimaryKey, csForeignKey, csUnique, csTableConstraint, csConstraints]) then
+          begin
             Item := TTableDefinition(Parent).FindConstraint(ItemName);
+            if (Item <> nil) and (Item is TRelation) then
+              Item := TRelation(Item).Relationship;
+          end;
 
           // Drop indexfields before processing alter for index collection item
           if (Item <> nil) and (ItemOperation = ioAlter) and Item.InheritsFrom(TIndexDefinition) then
