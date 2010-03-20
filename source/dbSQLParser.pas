@@ -1263,7 +1263,11 @@ begin
   StatementFields := nil;
 
   ExprStack := TList.Create;
+  {$IFDEF D2009_ORLATER}
+  Lexer := TSQLLexer.Create(AStream, 1024, 2);
+  {$ELSE}
   Lexer := TSQLLexer.Create(AStream);
+  {$ENDIF}
   Schema.BeginUpdate;
   try
     Lexer.Comments := Profile.CommentChars;
@@ -1359,7 +1363,11 @@ procedure ParseSQL(const SQL: String; Schema: TDatabaseSchema;
 var
   Stream: TStringStream;
 begin
+  {$IFDEF D2009_ORLATER}
+  Stream := TStringStream.Create(SQL, TEncoding.Unicode);
+  {$ELSE}
   Stream := TStringStream.Create(SQL);
+  {$ENDIF}
   try
     ParseSQL(Stream, Schema, Profile, StatusEvent, DefTerm);
   finally
@@ -1371,12 +1379,27 @@ procedure ParseSQLFile(const FileName: String; Schema: TDatabaseSchema;
   Profile: TDBEngineProfile = nil; StatusEvent: TParseStatusEvent = nil);
 var
   Stream: TFileStream;
+  {$IFDEF D2009_ORLATER}
+  Encoding: TEncoding;
+  Str: string;
+  Size: Integer;
+  Buffer: TBytes;
+  {$ENDIF}
 begin
   Stream := TFileStream.Create(FileName, fmOpenRead);
   try
     if Assigned(StatusEvent) then
       StatusEvent(Schema, pstMessage, Format(SBeginParsingFile, [FileName]), 0);
+    {$IFDEF D2009_ORLATER}
+    Size := Stream.Size - Stream.Position;
+    SetLength(Buffer, Size);
+    Stream.Read(Buffer[0], Size);
+    Encoding := nil;
+    Size := TEncoding.GetBufferEncoding(Buffer, Encoding);
+    ParseSQL(Encoding.GetString(Buffer, Size, Length(Buffer) - Size), Schema, Profile, StatusEvent);
+    {$ELSE}
     ParseSQL(Stream, Schema, Profile, StatusEvent);
+    {$ENDIF}
   finally
     Stream.Free;
   end;

@@ -1112,7 +1112,7 @@ begin
   begin
     if (FLastAlterOperations <> nil) and (FLastAlterOperations.Count > 0) then
     begin
-      if (Item as TCompareSchemaItem).GetItem.GetSchemaClassName = 'table' then
+      if AnsiSameText((Item as TCompareSchemaItem).GetItem.GetSchemaClassName, 'table') then
         TempRes := RecreateTable(Item as TCompareSchemaItem)
       else
         TempRes := RecreateObject(Item as TCompareSchemaItem);
@@ -1387,10 +1387,20 @@ begin
       Result := Result + DropObjectSQL(SrcTable);
     end else begin
       TempTable.Name := TempTable.GetAutoName('temp_' + SrcTable.Name);
+      // DB++ 09032010
+      for I := 0 to SrcTable.FieldDefs.Count - 1 do
+        with TempTable.FieldDefs.Add do
+        begin
+          Name := SrcTable.FieldDefs[I].Name;
+          SQLFieldType := SrcTable.FieldDefs[I].SQLFieldType;
+          Size := SrcTable.FieldDefs[I].Size;
+        end;
+      { DB-- 09032010
       TempTable.FieldDefs := SrcTable.FieldDefs;
       // Turn off identity for temporary table. This will not guarantee, that the identity will be actually turned off.
       for I := 0 to TempTable.FieldDefs.Count - 1 do
         TempTable.FieldDefs[I].Identity := False;
+      }
       Result := Result + CreateObjectSQL(TempTable);
       Result := Result
         + InsertIdentitySwitch(TempTable, True)

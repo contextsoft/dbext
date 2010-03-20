@@ -3528,10 +3528,14 @@ var
   function PosFrom(const SubStr, Str: String; FromPos: Integer): Integer;
   var P: PChar;
   begin
+    {$IFDEF D2009_ORLATER}
+    Result := PosEx(SubStr, Str, FromPos);
+    {$ELSE}
     P := StrPos(@PChar(Str)[FromPos - 1], PChar(SubStr));
     if P <> nil then
       Result := Longint(P) - Longint(PChar(Str)) + 1
     else Result := 0;
+    {$ENDIF}
   end;
 
 begin
