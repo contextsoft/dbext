@@ -554,12 +554,14 @@ begin
       end
       else begin
         // Extract comments
+        PrevChar := #0;
         if CharInSet(FNextChar, FCommentChars) and not DotDelimitedID then
         begin
           PrevChar := FNextChar;
           Result := ParseComments;
           if Result <> tokenComment then
-            Result := Ord(PrevChar);
+            Result := Ord(PrevChar)
+          else PrevChar := #0;
         end else if CharInSet(FNextChar, setSpecialChars) and not DotDelimitedID then
         begin
           if FNextChar = FTerm then
@@ -568,9 +570,11 @@ begin
           GetNextChar;
         end;
 
-        if (Result = tokenUnknown) or (Result = tokenIdentifier) or (Result = tokenToken) then
+        if (Result = tokenUnknown) or (Result = tokenIdentifier) or (Result = tokenToken) or CharInSet(PrevChar, FCommentChars) then
         begin
           IsTerm := FNextChar = FTermChar;
+          if PrevChar > #0 then
+            AddTokenChar(PrevChar);
           while CharInSet(FNextChar, setTokenChars - FCommentChars) and (IsTerm or (FNextChar <> FTermChar)) do
           begin
             AddTokenChar(FNextChar);

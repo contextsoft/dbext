@@ -588,7 +588,8 @@ var
       33..128: begin
         Token := Lexer.Token;
         Lexer.GetNextToken;
-        KeyToken := True;
+        KeyToken := CharInSet(Token[1], ['(', ')', '[', ']', ',', '.', ';', '"', '''', '`', '^', '{', '}']);
+        // KeyToken := True;
       end;
       else
         ParseErrorFmt(SUnexpectedToken, [Lexer.LineNo, Lexer.LinePos]);

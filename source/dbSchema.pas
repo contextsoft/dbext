@@ -6497,7 +6497,7 @@ begin
       Options := Options + [ixExpression]
     else Options := Options - [ixExpression];
 
-    if IsExpression then
+    if ixExpression in Options then
       FIndexFields.Clear
     else IndexExpression := '';
   end;
