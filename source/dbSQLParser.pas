@@ -1382,7 +1382,6 @@ var
   Stream: TFileStream;
   {$IFDEF D2009_ORLATER}
   Encoding: TEncoding;
-  Str: string;
   Size: Integer;
   Buffer: TBytes;
   {$ENDIF}

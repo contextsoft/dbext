@@ -3526,7 +3526,9 @@ var
   Res: String;
 
   function PosFrom(const SubStr, Str: String; FromPos: Integer): Integer;
+  {$IFnDEF D2009_ORLATER}
   var P: PChar;
+  {$ENDIF}
   begin
     {$IFDEF D2009_ORLATER}
     Result := PosEx(SubStr, Str, FromPos);
