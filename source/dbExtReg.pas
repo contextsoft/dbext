@@ -4,7 +4,7 @@
 (*
 (*  Registration unit.
 (*
-(*  Copyright (c) 2005-2009, Context Software LLC
+(*  Copyright (c) 2005-2010, Context Software LLC
 (*
 (******************************************************************************)
 unit dbExtReg;

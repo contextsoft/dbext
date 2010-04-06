@@ -5,13 +5,13 @@
 (*  Contains: ParseSQL procedures implementing generic SQL parsing for
 (*            use with TDBEngineProfile component.
 (*
-(*  Copyright (c) 2005-2009, Context Software LLC
+(*  Copyright (c) 2005-2010, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbSQLParser.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.13
-(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009
+(*  VERSION     : 3.14
+(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
 unit dbSQLParser;

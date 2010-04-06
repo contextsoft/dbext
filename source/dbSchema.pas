@@ -21,12 +21,12 @@
 (*                TDomains - collection of TDomain
 (*                TSQLScripts - collection of TSQLScript
 (*
-(*  Copyright (c) 2005-2009, Context Software LLC
+(*  Copyright (c) 2005-2010, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.13
+(*  VERSION     : 3.14
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 313;
+  dbSchemaLibVersion = 314;
 
 {$IFDEF D2009_ORLATER}
 type
