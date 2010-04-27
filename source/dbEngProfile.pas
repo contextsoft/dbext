@@ -1987,13 +1987,13 @@ var
       ParseFld := ResultSet.FindField('_CtxParse_');
       if (ImpType = itIterateParse) and (ParseFld = nil) then
       begin
-        for fI := 0 to ResultSet.FieldCount do
-          if ResultSet.Fields[fI].Size > 128 then
+        for fI := 0 to ResultSet.FieldCount-1 do
+          if (ResultSet.FieldCount = 1) or (ResultSet.Fields[fI].Size > 128) then
           begin
             ParseFld := ResultSet.Fields[fI];
             Break;
           end;
-      end;  
+      end;
       while not ResultSet.EOF do
       begin
         if ImpType in [itList, itListAdd] then
@@ -2005,8 +2005,8 @@ var
               ListCol.Add.Name := S;
             NameList.Add(S);
           end;
-        end else
-        if ParseFld <> nil then
+        end;
+        if (ImpType in [itList, itListAdd, itIterateParse]) and (ParseFld <> nil) then
         begin
           ParseSQL(Schema, ParseFld.AsString);
           inc(ImpCnt);
@@ -2081,7 +2081,9 @@ begin
       // Execute SQL
       if ImpType in [itList, itListAdd, itIterate, itIterateParse] then
       begin
-        TempObj := TObject(GetOrdProp(Schema, ObjPath));
+        if TypInfo.GetPropInfo(Schema, ObjPath) <> nil then
+          TempObj := TObject(GetOrdProp(Schema, ObjPath)) else
+          TempObj := nil;
         if (TempObj <> nil) and (TempObj is TSchemaItemsCollection) then
           ListCol := TSchemaItemsCollection(TempObj) else
           ListCol := nil;
@@ -2091,8 +2093,10 @@ begin
       if ImpType in [itIterate, itIterateParse] then
       begin
         LastCol := ListCol;
-        for C := 0 to NameList.Count-1 do
-          DoExecSQL(SQL, NameList[C]);
+        {if NameList.Count = 0 then
+          DoExecSQL(SQL, '') else}
+          for C := 0 to NameList.Count-1 do
+            DoExecSQL(SQL, NameList[C]);
       end else
       begin
         NameList.Clear;
