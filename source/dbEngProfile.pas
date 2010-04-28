@@ -1996,20 +1996,23 @@ var
       end;
       while not ResultSet.EOF do
       begin
-        if ImpType in [itList, itListAdd] then
+        if ImpType in [itList, itListAdd, itIterateParse] then
         begin
-          S := ResultSet.Fields[0].AsString;
-          if (ListCol <> nil) and (ListCol.Find(S) = nil) then
+          if ImpType in [itList, itListAdd] then
           begin
-            if ImpType = itListAdd then
-              ListCol.Add.Name := S;
-            NameList.Add(S);
+            S := ResultSet.Fields[0].AsString;
+            if (ListCol <> nil) and (ListCol.Find(S) = nil) then
+            begin
+              if ImpType = itListAdd then
+                ListCol.Add.Name := S;
+              NameList.Add(S);
+            end;
           end;
-        end;
-        if (ImpType in [itList, itListAdd, itIterateParse]) and (ParseFld <> nil) then
-        begin
-          ParseSQL(Schema, ParseFld.AsString);
-          inc(ImpCnt);
+          if ParseFld <> nil then
+          begin
+            ParseSQL(Schema, ParseFld.AsString);
+            inc(ImpCnt);
+          end;
         end else
         if (ImpType = itIterate) and (ListCol <> nil) then
         begin
