@@ -44,6 +44,7 @@ type
     FProperties: TStrings;
     FInfoSchemaSQL: TStrings;
     FInfoSchemaValueMap: TStrings;
+    FInfoSchemaFieldMap: TStrings;
     FSynonyms: TStrings;
     FKeywords: TStrings;
     FFileName: String;
@@ -74,6 +75,7 @@ type
     FMaxIdLength: Integer;
     FViewObjects: string;
     procedure SetInfoSchemaValueMap(const Value: TStrings);
+    procedure SetInfoSchemaFieldMap(const Value: TStrings);
     procedure SetSynonyms(const Value: TStrings);
     procedure SetInfoSchemaSQL(const Value: TStrings);
     function GetSupportsInfoSchema: Boolean;
@@ -192,6 +194,7 @@ type
     property Synonyms: TStrings read FSynonyms write SetSynonyms;
     property InfoSchemaSQL: TStrings read FInfoSchemaSQL write SetInfoSchemaSQL;
     property InfoSchemaValueMap: TStrings read FInfoSchemaValueMap write SetInfoSchemaValueMap;
+    property InfoSchemaFieldMap: TStrings read FInfoSchemaFieldMap write SetInfoSchemaFieldMap;
   end;
 
   { Format Expression Parsing }
@@ -240,6 +243,7 @@ const
   SECTION_PROPERTIES      = 'Properties';
   SECTION_INFOSCHEMASQL   = 'InfoSchemaSQL';
   SECTION_INFOSCHEMAVALUEMAP = 'InfoSchemaValueMap';
+  SECTION_INFOSCHEMAFIELDMAP = 'InfoSchemaFieldMap';
 
   ENTRY_ENGINENAME        = 'EngineName';
   ENTRY_DISPLAYNAME       = 'DisplayName';
@@ -626,6 +630,7 @@ begin
   FProperties := TStringList.Create;
   FInfoSchemaSQL := TStringList.Create;
   FInfoSchemaValueMap := TStringList.Create;
+  FInfoSchemaFieldMap := TStringList.Create;
   FStatements := TStringList.Create;
   FParentStatements := TStringList.Create;
   FFieldTypeMap := TStringList.Create;
@@ -639,6 +644,7 @@ begin
   TStringList(FFieldTypeMap).OnChange := StatementChanged;
   TStringList(FSynonyms).OnChange := StatementChanged;
   TStringList(FInfoSchemaValueMap).OnChange := StatementChanged;
+  TStringList(FInfoSchemaFieldMap).OnChange := StatementChanged;
   TStringList(FInfoSchemaSQL).OnChange := StatementChanged;
 
   FCustomObjectTypes := TStringList.Create;
@@ -664,6 +670,7 @@ begin
   FProperties.Free;
   FInfoSchemaSQL.Free;
   FInfoSchemaValueMap.Free;
+  FInfoSchemaFieldMap.Free;  
   FEngineProps.Free;
   FTopLevelObjects.Free;
   FParentStatements.Free;
@@ -1588,6 +1595,7 @@ begin
     ReadSection(SECTION_SYNONYMS, TempList, FSynonyms);
     ReadSection(SECTION_INFOSCHEMASQL, TempList, FInfoSchemaSQL);
     ReadSection(SECTION_INFOSCHEMAVALUEMAP, TempList, FInfoSchemaValueMap);
+    ReadSection(SECTION_INFOSCHEMAFIELDMAP, TempList, FInfoSchemaFieldMap);
     FParentStatements.Clear;
   finally
     TempList.Free;
@@ -1636,6 +1644,7 @@ begin
     ReplaceSection(SECTION_SYNONYMS, TempList, FSynonyms);
     ReplaceSection(SECTION_INFOSCHEMASQL, TempList, FInfoSchemaSQL);
     ReplaceSection(SECTION_INFOSCHEMAVALUEMAP, TempList, FInfoSchemaValueMap);
+    ReplaceSection(SECTION_INFOSCHEMAFIELDMAP, TempList, FInfoSchemaFieldMap);
     TempList.SaveToFile(FileName);
   finally
     TempList.Free;
@@ -1891,6 +1900,11 @@ end;
 procedure TDBEngineProfile.SetInfoSchemaValueMap(const Value: TStrings);
 begin
   FInfoSchemaValueMap.Assign(Value);
+end;
+
+procedure TDBEngineProfile.SetInfoSchemaFieldMap(const Value: TStrings);
+begin
+  FInfoSchemaFieldMap.Assign(Value);
 end;
 
 function TDBEngineProfile.GetDisplayName: string;
@@ -2242,12 +2256,15 @@ procedure TDBEngineProfile.AssignObject(Obj: TSchemaCollectionItem;
   ResultSet: TDataSet; const ObjPath: String);
 var
   I: Integer;
-  FldName, V, V2: String;
+  FldName, V, V2, F: String;
 begin
   for I := 0 to ResultSet.FieldCount - 1 do
   with ResultSet.Fields[I] do
   begin
     FldName := FieldName;
+    F := InfoSchemaFieldMap.Values[ObjPath + '.' + FldName];
+    if F <> '' then
+      FldName := F;
     if Pos('_', FldName) <> 1 then
     begin
       V := AsString;
