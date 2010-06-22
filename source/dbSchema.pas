@@ -26,7 +26,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.14
+(*  VERSION     : 3.15
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
 (*
 (******************************************************************************)
@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 314;
+  dbSchemaLibVersion = 315;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -874,7 +874,7 @@ type
     procedure SetOptions(const Value: TIndexOptions);
     procedure SetDisplayFields(const Value: String);
 
-
+    procedure SetFieldsDefinition(const Value: String = '');
     procedure ValidateRename(const NewName: String); override;
   public
     function GetSchemaClassName: String; override;
@@ -6050,7 +6050,40 @@ begin
     S := S + Value;
     IndexExpression := S;
     IsExpression := S <> '';
+  end else
+  if AnsiSameText(PropName, 'SetFieldsDefinition') then
+  begin
+    SetFieldsDefinition(Value);  
   end else inherited;
+end;
+
+procedure TIndexDefinition.SetFieldsDefinition(const Value: String = '');
+var
+  I,PA,PD: Integer;
+  S,FieldName: String;
+  F: TIndexField;
+begin
+  FIndexFields.Clear;
+  I := 1;
+  while I <= Length(Value) do
+  begin
+    S := NextToken(Value, ',', I);
+    PA := Pos(' ASC', UpperCase(S));
+    if PA = 0 then
+      PD := Pos(' DESC', UpperCase(S)) else
+      PD := 0;
+    if PA > 0 then
+      SetLength(S, PA) else
+      if PD > 0 then
+        SetLength(S, PA);
+    FieldName := Trim(S);
+    if FieldName <> '' then
+    begin
+      F := FIndexFields.Add;
+      F.Name := FieldName;
+      F.FDescending := PD > 0;
+    end;
+  end;
 end;
 
 procedure TIndexDefinition.Assign(Source: TPersistent);
