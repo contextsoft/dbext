@@ -7307,9 +7307,9 @@ end;
 
 procedure TRelation.SetPropValue(const PropName, Value: String);
 begin
+  inherited SetPropValue(PropName, Value);
   if Relationship <> nil then
-    Relationship.SetPropValue(PropName, Value) else
-    inherited SetPropValue(PropName, Value);
+    Relationship.SetPropValue(PropName, Value);
 end;
 
 procedure TRelation.DoAddForeignKeyField(const Value: String);
