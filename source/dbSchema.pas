@@ -5277,11 +5277,15 @@ procedure TStoredProcDefinition.SetPropValue(const PropName, Value: String);
 var
   S: string;
 begin
-  if AnsiSameText(PropName, 'AddDefinition') or (AnsiSameText(PropName, 'AddDefinitionInLine')) then
+  if AnsiSameText(PropName, 'AddDefinition')
+    or AnsiSameText(PropName, 'AddDefinitionInLine')
+    or AnsiSameText(PropName, 'AddDefinitionText') then
   begin
     S := FDefinition.Text;
     if AnsiSameText(PropName, 'AddDefinitionInLine') then
-      S := TrimRight(S) + ' ';
+      S := TrimRight(S) + ' ' else
+      if AnsiSameText(PropName, 'AddDefinitionText') then
+        S := TrimRight(S);
     FDefinition.Text := S + Value;
   end
   else inherited;
