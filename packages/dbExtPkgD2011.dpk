@@ -1,0 +1,85 @@
+package dbExtPkgD2011;
+
+{$R *.res}
+{$R '..\source\dbExtReg.dcr'}
+{$R '..\source\dbRecord.dcr'}
+{$R '..\source\dbSequence.dcr'}
+{$R '..\source\BDEExt.dcr'}
+{$R '..\source\dbManager.dcr'}
+{$R '..\source\CtxDBDesigner_TLB.dcr'}
+{$R '..\source\CtxData.dcr'}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO ON}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION ON}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES OFF}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST ON}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DESCRIPTION 'Context Database Extensions'}
+{$DESIGNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  vcl,
+  designide,
+  vclx,
+  vcldb,
+  rtl,
+  dbrtl,
+  bdertl,
+  ibxpress,
+  adortl;
+
+contains
+  ADOExt in '..\source\ADOExt.pas',
+  BDEExt in '..\source\BDEExt.pas',
+  IBExt in '..\source\IBExt.pas',
+  CtxDataTypes in '..\source\CtxDataTypes.pas',
+  CtxDBIntf in '..\source\CtxDBIntf.pas',
+  CtxData in '..\source\CtxData.pas',
+  CtxDataSet in '..\source\CtxDataSet.pas',
+  CtxDBAdapter in '..\source\CtxDBAdapter.pas',
+  CtxDataSetCommand in '..\source\CtxDataSetCommand.pas',
+  CtxDataSetProvider in '..\source\CtxDataSetProvider.pas',
+  CtxDBDesigner_TLB in '..\source\CtxDBDesigner_TLB.pas',
+  dbDocument in '..\source\dbDocument.pas',
+  dbEngProfile in '..\source\dbEngProfile.pas',
+  dbEnum in '..\source\dbEnum.pas',
+  dbExtParser in '..\source\dbExtParser.pas',
+  dbExtReg in '..\source\dbExtReg.pas',
+  dbExtUtils in '..\source\dbExtUtils.pas',
+  dbManager in '..\source\dbManager.pas',
+  dbRecord in '..\source\dbRecord.pas',
+  dbSchema in '..\source\dbSchema.pas',
+  dbSchemaEnum in '..\source\dbSchemaEnum.pas',
+  dbSchemaTest in '..\source\dbSchemaTest.pas',
+  dbSequence in '..\source\dbSequence.pas',
+  dbSQLLexer in '..\source\dbSQLLexer.pas',
+  dbSQLParser in '..\source\dbSQLParser.pas',
+  fCommandBuilder in '..\source\designtime\fCommandBuilder.pas' {frmCommandBuilder},
+  fDataContainerEditor in '..\source\designtime\fDataContainerEditor.pas' {frmDataContainerEditor},
+  fDataExplorer in '..\source\designtime\fDataExplorer.pas' {frmDataExplorer},
+  fDataRelationEditor in '..\source\designtime\fDataRelationEditor.pas' {frmDataRelationEditor},
+  fDataTableWizard in '..\source\designtime\fDataTableWizard.pas' {frmDataTableWizard},
+  fDBAdapterEditor in '..\source\designtime\fDBAdapterEditor.pas',
+  fSelectCommandTypes in '..\source\designtime\fSelectCommandTypes.pas' {frmSelectCommandTypes},
+  fSelFields in '..\source\designtime\fSelFields.pas',
+  CtxDBDesignerAdapter in '..\source\CtxDBDesignerAdapter.pas',
+  CtxDataSetCommandBuilder in '..\source\CtxDataSetCommandBuilder.pas' {frmCtxDataSetCommandBuilder},
+  CtxFieldsUpdater in '..\source\CtxFieldsUpdater.pas';
+
+end.
