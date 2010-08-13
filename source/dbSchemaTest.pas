@@ -580,9 +580,13 @@ end;
 
 function TDBSchemaMessage.GetField(const FieldText: String; Data: Pointer): String;
 begin
-  if IsPublishedProp(Self, FieldText) then
-    Result := GetPropValue(Self, FieldText)
-  else Result := 'ERROR';
+  try
+    if IsPublishedProp(Self, FieldText) then
+      Result := GetPropValue(Self, FieldText) else
+      Result := 'ERROR';
+  except
+    Result := 'ERROR';  
+  end;
 end;
 
 function TDBSchemaMessage.GetContextName: String;
