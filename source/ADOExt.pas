@@ -612,6 +612,7 @@ var
   AdoDataSize: Integer;
 
   Restrict: OleVariant;
+  STable: string;
 
   function FindCheck(const AName: String): TTableConstraint;
   var
@@ -709,6 +710,15 @@ begin
   CheckActive;
   CheckSchema;
   Schema.Clear;
+
+  if Self.GetSchema <> nil then
+    STable := Self.GetSchema.SystemTableName else
+    STable := GetSystemTableName;
+
+  if Trim(STable) = '' then
+    STable := defSysTableName;
+
+
   // Update schema from the physical tables
   DS := TADODataSet.Create(nil);
   try
@@ -723,7 +733,7 @@ begin
     DS.Active := True;
     while not DS.Eof do
     begin
-      if not AnsiSameText(DS.FieldByName('TABLE_NAME').AsString, GetSystemTableName) then
+      if not AnsiSameText(DS.FieldByName('TABLE_NAME').AsString, STable) then
         if AnsiSameText(DS.FieldByName('TABLE_TYPE').AsString, 'TABLE') then
         try
           with Schema.TableDefs.Add do

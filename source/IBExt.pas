@@ -465,9 +465,18 @@ var
   Table: TIBTable;
   Tables: TStringList;
   LogicalTableName: String;
+  STable: string;
 begin
   CheckActive;
   CheckSchema;
+
+  if Self.GetSchema <> nil then
+    STable := Self.GetSchema.SystemTableName else
+    STable := FSystemTableName;
+
+  if Trim(STable) = '' then
+    STable := defSysTableName;
+
   // Update schema from the physical tables
   Table := CreateTable('') as TIBTable;
   Tables := TStringList.Create;
@@ -479,7 +488,7 @@ begin
     begin
       LogicalTableName := ChangeFileExt(Tables[I], '');
 
-      if AnsiSameText(LogicalTableName, FSystemTableName) then continue;
+      if AnsiSameText(LogicalTableName, STable) then continue;
 
       Table.TableName := Tables[I];
       Table.FieldDefs.Update;

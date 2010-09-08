@@ -2041,12 +2041,18 @@ var
           ObjectFound := LocateObject(Schema, ObjPath, ResultSet, LastObj, LastCol);
           if (not ObjectFound) and (LastCol <> nil) and LastCol.InheritsFrom(TSchemaItemsCollection) then
           begin
+            LastObj := LastCol.Add;
+            inc(ImpCnt);
+            ObjectFound := True;
+          {
+            ++ Old fashion skip system table
             if not ((LastCol is TTableDefinitions) and AnsiSameText(Trim(ResultSet.Fields[0].AsString), 'systable')) then
             begin
               LastObj := LastCol.Add;
               inc(ImpCnt);
               ObjectFound := True;
             end;
+          }
           end;
           if ObjectFound then
             AssignObject(LastObj, ResultSet, ObjPath);

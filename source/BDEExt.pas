@@ -496,10 +496,19 @@ var
   I, J, Idx, DefIdx: Integer;
   Table: TTable;
   Tables: TStringList;
-  FileExt, LogicalTableName: String;
+  FileExt, LogicalTableName, STable: String;
 begin
   CheckActive;
   CheckSchema;
+
+  if Self.GetSchema <> nil then
+    STable := Self.GetSchema.SystemTableName else
+    STable := FSystemTableName;
+
+  if Trim(STable) = '' then
+    STable := defSysTableName;
+
+
   // Update schema from the physical tables
   Table := CreateTable('') as TTable;
   Tables := TStringList.Create;
@@ -514,7 +523,7 @@ begin
         LogicalTableName := ChangeFileExt(Tables[I], '')
       else LogicalTableName := Tables[I];
 
-      if AnsiSameText(LogicalTableName, FSystemTableName) then continue;
+      if AnsiSameText(LogicalTableName, STable) then continue;
 
       Table.TableName := Tables[I];
 
