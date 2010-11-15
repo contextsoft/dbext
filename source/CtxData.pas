@@ -572,7 +572,7 @@ type
   published
     {:$ Contains collection of data columns. }
     property Columns: TCtxDataColumns read FColumns write SetColumns;
-    property DataColumns: TCtxDataColumns read FColumns write SetColumns stored False; 
+    property DataColumns: TCtxDataColumns read FColumns write SetColumns stored False;
     {:$ Specifies the name of this data table in data container. This name must be unique }
     {:$ within the data container. }
     property Name;
@@ -2074,6 +2074,9 @@ begin
       for J := 0 to ChildTable.RowCount - 1 do
       begin
         ChildRow := ChildTable.Rows[J];
+        if ChildRow.Editing then
+          raise Exception.Create(SRowInEditingState);
+
         if CompareRows(ARow.OldRow, ChildRow, ParentColumns, ChildColumns, []) = 0 then
         begin
           if UpdateAction = draCascade then
@@ -2106,6 +2109,8 @@ begin
       while J < ChildTable.RowCount do
       begin
         ChildRow := ChildTable.Rows[J];
+        if ChildRow.Editing then
+          raise Exception.Create(SRowInEditingState);
         if CompareRows(ARow.OldRow, ChildRow, ParentColumns, ChildColumns, []) = 0 then
         begin
           if DeleteAction = draCascade then
