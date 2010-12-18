@@ -33,6 +33,8 @@ type
   TExecSQLProc = procedure (const SQL: String; ResultSet: Pointer = nil) of object;
   TOnReverseEvent = procedure (Tag: integer; const LogStr: string = '') of object;
 
+  TInfoSchemaItem = (isSchema, isTable, isView, isStoredProc, isDomain, isUser, isField, isIndex, isTrigger, isCheck);
+
   TDBEngineProfile = class (TComponent)
   protected
     FEngineName: String;
