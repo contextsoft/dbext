@@ -34,6 +34,8 @@ type
   TOnReverseEvent = procedure (Tag: integer; const LogStr: string = '') of object;
 
   TInfoSchemaItem = (isSchema, isTable, isView, isStoredProc, isDomain, isUser, isField, isIndex, isTrigger, isCheck);
+  TInfoSchemaItems = set of TInfoSchemaItem;
+
 
   TDBEngineProfile = class (TComponent)
   protected
@@ -76,6 +78,8 @@ type
     FNamePatterns: TStrings;
     FMaxIdLength: Integer;
     FViewObjects: string;
+    FDateFormat: string;
+    FDateConvert: string;
     procedure SetInfoSchemaValueMap(const Value: TStrings);
     procedure SetInfoSchemaFieldMap(const Value: TStrings);
     procedure SetSynonyms(const Value: TStrings);
@@ -187,6 +191,8 @@ type
     property NamePatterns: TStrings read FNamePatterns;
     property MaxIdLength: Integer read FMaxIdLength;
     property DisplayName: string read GetDisplayName;
+    property DateFormat: string read FDateFormat write FDateFormat;
+    property DateConvert: string read FDateConvert write FDateConvert;
   published
     property EngineName: String read FEngineName write SetEngineName;
     property EngineProps: TStrings read FEngineProps write SetEngineProps;
@@ -244,6 +250,7 @@ const
   SECTION_STATEMENTS      = 'Statements';
   SECTION_PROPERTIES      = 'Properties';
   SECTION_INFOSCHEMASQL   = 'InfoSchemaSQL';
+  SECTION_INFOSCHEMASQLLIGHT   = 'InfoSchemaSQLLight';  
   SECTION_INFOSCHEMAVALUEMAP = 'InfoSchemaValueMap';
   SECTION_INFOSCHEMAFIELDMAP = 'InfoSchemaFieldMap';
 
@@ -273,6 +280,8 @@ const
   ENTRY_NAMEPATTERNS      = 'NamePatterns';
   ENTRY_MAXIDLENGTH       = 'MaxIdLength';
   ENTRY_VIEWOBJECTS       = 'ViewObjects';
+  ENTRY_DATEFORMAT        = 'DateFormat';
+  ENTRY_DATECONVERT       = 'DateConvert';
 
 const
   DefaultIdentProps = 'Name,TableName,ForeignTable,ForeignKeyFields,KeyFields,AddKeyField,AddForeignKeyField,RelationshipName';
@@ -648,6 +657,7 @@ begin
   TStringList(FInfoSchemaValueMap).OnChange := StatementChanged;
   TStringList(FInfoSchemaFieldMap).OnChange := StatementChanged;
   TStringList(FInfoSchemaSQL).OnChange := StatementChanged;
+
 
   FCustomObjectTypes := TStringList.Create;
   FNamePatterns := TStringList.Create;
@@ -1788,6 +1798,9 @@ begin
   QuoteStr := EngineProps.Values[ENTRY_QUOTECHAR];
   if QuoteStr <> '' then
     FQuoteChar := QuoteStr[1];
+
+  FDateFormat := EngineProps.Values[ENTRY_DATEFORMAT];
+  FDateConvert := EngineProps.Values[ENTRY_DATECONVERT];
 
   FEncloseNames := EngineProps.Values[ENTRY_ENCLOSENAMES];
   if Length(FEncloseNames) = 1 then
