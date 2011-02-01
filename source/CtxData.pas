@@ -4223,12 +4223,22 @@ end;
 
 procedure TCtxDataContainer.Fill(ADataAdapter: TCtxDataAdapter = nil);
 begin
-  CheckDataAdapter(ADataAdapter).Fill(Self);
+  BeginUpdate;
+  try
+    CheckDataAdapter(ADataAdapter).Fill(Self);
+  finally
+    EndUpdate;
+  end;
 end;
 
 procedure TCtxDataContainer.Refresh(ADataAdapter: TCtxDataAdapter = nil);
 begin
-  CheckDataAdapter(ADataAdapter).Refresh(Self);
+  BeginUpdate;
+  try
+    CheckDataAdapter(ADataAdapter).Refresh(Self);
+  finally
+    EndUpdate;
+  end;
 end;
 
 procedure TCtxDataContainer.Update(ADataAdapter: TCtxDataAdapter = nil);

@@ -149,7 +149,7 @@ type
     {:$ Execute an update command for the given row. }
     procedure ExecuteUpdateRow(Row: TCtxDataRow);
     {:$ Execute a refresh command for the given row. }
-    function ExecuteRefreshRow(Row: TCtxDataRow): Boolean;
+    function ExecuteRefreshRow(Row: TCtxDataRow; DeleteIfNotFound: Boolean = False): Boolean;
     {:$ Execute a refresh command for each row in the given table. }
     function ExecuteRefreshRows(DataTable: TCtxDataTable; AllRows, DeleteIfNotFound: Boolean): Integer;
 
@@ -216,6 +216,7 @@ type
     FParamPrefix: String;
 
     FFillingCounter: Integer;
+    FFetchingAll: Boolean;
 
     function GetDataProvider: ICtxDataProvider;
     procedure SetCommands(const Value: TCtxDBCommandItems);
@@ -725,14 +726,21 @@ procedure TCtxDBCommandItem.DoUpdateSourceRow(Command: TCtxDataCommand; ARow: TC
 begin
   if (not UpdateSourceRow) or (ResultType = crtNone) then exit;
 
-  if (ResultType = crtResultSet) and not Command.EOF then
-  begin
-    // Assign source row columns from fields
-    AssignRowFromOutputParams(ARow, Command.Fields);
-  end else
-  begin
-    // Assign source row columns from output params
-    AssignRowFromOutputParams(ARow, Params);
+  ARow.BeginEdit;
+  try
+    if (ResultType = crtResultSet) and not Command.EOF then
+    begin
+      // Assign source row columns from fields
+      AssignRowFromOutputParams(ARow, Command.Fields);
+    end else
+    begin
+      // Assign source row columns from output params
+      AssignRowFromOutputParams(ARow, Params);
+    end;
+    ARow.EndEdit;
+  except
+    ARow.CancelEdit;
+    raise;
   end;
 end;
 
@@ -784,14 +792,23 @@ begin
   Adapter.InternalFillChildRows(ARow);
 end;
 
-function TCtxDBCommandItem.ExecuteRefreshRow(Row: TCtxDataRow): Boolean;
+function TCtxDBCommandItem.ExecuteRefreshRow(Row: TCtxDataRow; DeleteIfNotFound: Boolean = False): Boolean;
 begin
   Row.NeedRefresh := False; // MB: 11/20/2008
-  InternalExecuteCommand(Row, Row.DataTable.DataContainer.Params);
-  // what if we have output parameters? +++
+
+  // 2011-02-01 MB: Added DeleteIfNotFound parameter so now we can use this method in ExecuteRefreshRows
+
+  InternalExecuteCommand(Row, Row.DataContainer.Params);
+  // What if we have output parameters?
+  // NOTE: we do not correctly support refreshing row via return of
+  // output parameters, only select statement is supported correctly!
   Result := not Command.EOF;
   if Result then
-    InternalRefreshRow(Command, Row);
+    InternalRefreshRow(Command, Row)
+  else
+    with Row.DataTable do
+    if DeleteIfNotFound and CanDeleteRow(Row) then
+      Delete(Row);
 end;
 
 function TCtxDBCommandItem.ExecuteRefreshRows(DataTable: TCtxDataTable;
@@ -799,31 +816,32 @@ function TCtxDBCommandItem.ExecuteRefreshRows(DataTable: TCtxDataTable;
 var
   R: Integer;
   Row: TCtxDataRow;
+  DataTableWasUpdating: Boolean;
 begin
   Result := 0;
-
-  // After preparing refresh command, we will iterate this table and
-  R := 0;
-  with DataTable do
-    while R < RowCount do
-    begin
-      Row := Rows[R];
-      if AllRows or Row.NeedRefresh then
+  DataTableWasUpdating := DataTable.IsUpdating;
+  try
+    // After preparing refresh command, we will iterate this table
+    R := 0;
+    with DataTable do
+      while R < RowCount do
       begin
-        Row.NeedRefresh := False; // MB: 11/20/2008
-        InternalExecuteCommand(Row, Row.DataContainer.Params);
-        // what if we have output parameters? +++
-        if not Command.EOF then
+        Row := Rows[R];
+        if AllRows or Row.NeedRefresh then
         begin
-          InternalRefreshRow(Command, Row);
-          Inc(Result);
-        end else
-          if DeleteIfNotFound and CanDeleteRow(Row) then
-            Delete(Row);
+          if not DataTable.IsUpdating then
+            DataTable.BeginUpdate;
+
+          if ExecuteRefreshRow(Row, DeleteIfNotFound) then
+            Inc(Result);
+        end;
+        if not Row.Deleted then
+          Inc(R);
       end;
-      if not Row.Deleted then
-        Inc(R);
-    end;
+  finally
+    if not DataTableWasUpdating and DataTable.IsUpdating then
+      DataTable.EndUpdate;
+  end;
 end;
 
 procedure TCtxDBCommandItem.ExecuteUpdateRow(Row: TCtxDataRow);
@@ -1221,6 +1239,7 @@ end;
 constructor TCtxDBAdapter.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  FFetchingAll := False;
   FCommands := TCtxDBCommandItems.Create(Self, TCtxDBCommandItem);
   FParamPrefix := ':';
   FFillingCounter := 0;
@@ -1340,13 +1359,20 @@ begin
   // refresh them until all rows that need refresh are refreshed.
   // This can be improved by having NeedRefresh flag on table level
   // set by setting NeedRefresh flag for one of the rows.
-  if FetchAll then
-  repeat
-    Refreshed := 0;
-    // for each table that needs refreshing do refresh
-    for I := 0 to DataContainer.Tables.Count - 1 do
-      Inc(Refreshed, RefreshRows(DataContainer.Tables[I]));
-  until Refreshed = 0;
+  if FetchAll and not FFetchingAll then
+  begin
+    FFetchingAll := True;
+    try
+      repeat
+        Refreshed := 0;
+        // for each table that needs refreshing do refresh
+        for I := 0 to DataContainer.Tables.Count - 1 do
+          Inc(Refreshed, RefreshRows(DataContainer.Tables[I]));
+      until Refreshed = 0;
+    finally
+      FFetchingAll := False;
+    end;
+  end;
 end;
 
 procedure TCtxDBAdapter.FetchRows(DataTable: TCtxDataTable; const ACommandName: String; const AParams: Variant);
@@ -1502,10 +1528,8 @@ begin
       (Commands[I].CommandType = citRefresh)
     then
     begin
-      if not Commands[I].ExecuteRefreshRow(Row) then
-        if Row.DataTable.CanDeleteRow(Row) then
-          Row.DataTable.Delete(Row);
       // Only execute first refresh operation
+      Commands[I].ExecuteRefreshRow(Row, True {Delete if not found}); // 2011-02-01 MB
       break;
     end;
   finally
@@ -1528,7 +1552,7 @@ begin
         (CommandItem.CommandType = citRefresh)
       then
       begin
-        Inc(Result, CommandItem.ExecuteRefreshRows(DataTable, False, False));
+        Inc(Result, CommandItem.ExecuteRefreshRows(DataTable, False, True));
         break;
       end;
     end;
