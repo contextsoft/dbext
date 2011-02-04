@@ -809,6 +809,7 @@ type
     procedure ValidateRename(const NewName: String); override;
     function GetItemID: Integer; override;
     procedure SetItemID(const Value: Integer); override;
+    function GetIndexFieldPropStr: string;
   public
     {:$ Copies the contents from another TIndexField object. }
     procedure Assign(Source: TPersistent); override;
@@ -896,6 +897,8 @@ type
     {:$ Compares two item's physical properties. Returns true if they're identical. }
     function Compare(Dest: TCompareSchemaItem): Boolean; override;
     procedure SetPropValue(const PropName, Value: String); override;
+    function GetPropValue(const PropName: String): String; override;
+    function GetIndexPropStr: string;
   published
     property DisplayProps: String read GetDisplayProps;
     property Unique: Boolean read GetUnique write SetUnique stored False default False;
@@ -5959,6 +5962,16 @@ begin
   // Any index name accepted
 end;
 
+function TIndexField.GetIndexFieldPropStr: string;
+begin
+  Result := Name +
+    GetPropValue('CaseInsesitive') +
+    GetPropValue('Descending') +
+    GetPropValue('Expression') +
+    Props.CommaText;
+end;
+
+
 { TIndexFields }
 
 function TIndexFields.GetTableDef: TTableDefinition;
@@ -6059,8 +6072,15 @@ begin
   end else
   if AnsiSameText(PropName, 'SetFieldsDefinition') then
   begin
-    SetFieldsDefinition(Value);  
+    SetFieldsDefinition(Value);
   end else inherited;
+end;
+
+function TIndexDefinition.GetPropValue(const PropName: String): String;
+begin
+  if AnsiSameText(PropName, 'indexpropstr') then
+    Result := GetIndexPropStr else
+    Result := inherited GetPropValue(PropName);
 end;
 
 procedure TIndexDefinition.SetFieldsDefinition(const Value: String = '');
@@ -6219,6 +6239,21 @@ end;
 function TIndexDefinition.HasField(const FieldName: String): Boolean;
 begin
   Result := FIndexFields.Find(FieldName) <> nil;
+end;
+
+function TIndexDefinition.GetIndexPropStr: string;
+var
+  I: Integer;
+begin
+  // Iterate IndexFields collection and build string representation all props for compare
+{
+  Result := GetPropValue('Options') +
+    GetPropValue('UniqueConstraint') +
+    GetPropValue('IsExpression') +
+    Props.CommaText;
+}    
+  for I := 0 to FIndexFields.Count - 1 do
+    Result := Result + FIndexFields[I].GetIndexFieldPropStr;
 end;
 
 function TIndexDefinition.GetFields: String;
