@@ -723,10 +723,14 @@ begin
 end;
 
 procedure TCtxDBCommandItem.DoUpdateSourceRow(Command: TCtxDataCommand; ARow: TCtxDataRow);
+var
+  WasEditing: Boolean;
 begin
   if (not UpdateSourceRow) or (ResultType = crtNone) then exit;
 
-  ARow.BeginEdit;
+  WasEditing := ARow.Editing;
+  if not WasEditing then
+    ARow.BeginEdit;
   try
     if (ResultType = crtResultSet) and not Command.EOF then
     begin
@@ -737,9 +741,11 @@ begin
       // Assign source row columns from output params
       AssignRowFromOutputParams(ARow, Params);
     end;
-    ARow.EndEdit;
+    if not WasEditing then
+      ARow.EndEdit;
   except
-    ARow.CancelEdit;
+    if not WasEditing then
+      ARow.CancelEdit;
     raise;
   end;
 end;
