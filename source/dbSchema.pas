@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 319;
+  dbSchemaLibVersion = 321;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -5483,7 +5483,7 @@ begin
       ftBCD: if FSize = 0 then FSize := 4;
       ftBytes, ftVarBytes: if FSize = 0 then FSize := 16;
       ftArray: if FSize = 0 then FSize := 10;
-      else FSize := 0;
+      else {FSize := 0}; // DB 10.02.2011 We don`t set Size to 0 (probably ;-)
     end;
 
     // MB: 2.14 - this is not necessary. We don't rely on DataType anyway, so

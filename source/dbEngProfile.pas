@@ -1975,7 +1975,7 @@ end;
 
 procedure TDBEngineProfile.ReverseEngineer(Schema: TDatabaseSchema; ExecSQLProc: TExecSQLProc);
 type
-  TImportType = (itNormal, itList, itListAdd, itIterate, itIterateParse);
+  TImportType = (itNormal, itList, itListAdd, itIterate, itIterateParse, itParse);
 
 var
   I,C,ImpCnt: Integer;
@@ -2014,7 +2014,7 @@ var
     try
       ResultSet.First;
       ParseFld := ResultSet.FindField('_CtxParse_');
-      if (ImpType = itIterateParse) and (ParseFld = nil) then
+      if (ImpType in [itIterateParse, itParse]) and (ParseFld = nil) then
       begin
         for fI := 0 to ResultSet.FieldCount-1 do
           if (ResultSet.FieldCount = 1) or (ResultSet.Fields[fI].Size > 128) then
@@ -2025,6 +2025,11 @@ var
       end;
       while not ResultSet.EOF do
       begin
+        if (ImpType = itParse) and (ParseFld <> nil) then
+        begin
+          ParseSQL(Schema, ParseFld.AsString);
+          inc(ImpCnt);
+        end else
         if ImpType in [itList, itListAdd, itIterateParse] then
         begin
           if ImpType in [itList, itListAdd] then
@@ -2110,6 +2115,8 @@ begin
         ImpType := itIterate else
       if Pos('$', ObjPath) = 1 then
         ImpType := itIterateParse else
+      if Pos('?', ObjPath) = 1 then
+        ImpType := itParse else
         ImpType := itNormal;
       if ImpType <> itNormal then
         Delete(ObjPath, 1, 1);
