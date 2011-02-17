@@ -4,13 +4,13 @@
 (*
 (*  Contains: TIBDatabaseExt components.
 (*
-(*  Copyright (c) 2005-2010, Context Software LLC
+(*  Copyright (c) 2005-2011, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : IBExt.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
 (*  VERSION     : 3.21
-(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010
+(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
 unit IBExt;

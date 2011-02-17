@@ -4,7 +4,7 @@
 (*
 (*  ICtxDBDesignerAdapter - interface implemented by database designer adapters
 (*
-(*  Copyright (c) 2005-2010, Context Software LLC
+(*  Copyright (c) 2005-2011, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxDBDesignerAdapter;

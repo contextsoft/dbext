@@ -4,7 +4,7 @@
 (*
 (*  ICtxDatabase - common interface implemented by all database adapters
 (*
-(*  Copyright (c) 2005-2010, Context Software LLC
+(*  Copyright (c) 2005-2011, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxDBIntf;

@@ -6,7 +6,7 @@
 (*                       on VCL.DB DataSet based databases, implementing ICtxDatabase
 (*                       interface (defined in CtxDBIntf unit).
 (*
-(*  Copyright (c) 2005-2010, Context Software LLC
+(*  Copyright (c) 2005-2011, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxDataSetCommand;
