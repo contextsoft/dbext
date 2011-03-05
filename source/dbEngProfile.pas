@@ -2366,6 +2366,7 @@ var
   CurKeyFld, P: Integer;
   CurObj: TObject;
   S: String;
+  F: TField;
 begin
   Result := False;
   P := 1;
@@ -2398,7 +2399,19 @@ begin
       if ResultSet.Fields[CurKeyFld].AsInteger < Col.Count then
         CurObj := Col.Items[ResultSet.Fields[CurKeyFld].AsInteger]
       else CurObj := nil;
-    end else CurObj := Col.Find(Trim(ResultSet.Fields[CurKeyFld].AsString));
+    end else
+    begin
+      CurObj := Col.Find(Trim(ResultSet.Fields[CurKeyFld].AsString));
+      {
+      // test for duplicate relationship name
+      if (CurObj <> nil) and (CurObj is TRelationship) then
+      begin
+        F := ResultSet.FindField('detailtablename');
+        if (F <> nil) and not AnsiSameText(F.AsString, TRelationship(CurObj).DetailTableName) then
+          CurObj := CurObj;
+      end;
+      }
+    end;
     Inc(CurKeyFld);
   end;
 end;

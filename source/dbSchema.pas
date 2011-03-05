@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 321;
+  dbSchemaLibVersion = 322;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -6101,7 +6101,7 @@ begin
     if PA > 0 then
       SetLength(S, PA) else
       if PD > 0 then
-        SetLength(S, PA);
+        SetLength(S, PD);
     FieldName := Trim(S);
     if FieldName <> '' then
     begin
