@@ -1035,6 +1035,7 @@ type
     function GetDisplayName: String; override;
 
     procedure SetPropValue(const PropName, Value: String); override;
+    function GetPropValue(const PropName: String): string; override;
 
     function GetSchemaClassName: String; override;
     {:$ Compares two item's physical properties. Returns true if they're identical. }
@@ -7006,6 +7007,11 @@ begin
     if MasterKeyFields <> '' then MasterKeyFields := MasterKeyFields + ';';
     MasterKeyFields := MasterKeyFields + Value;
   end else inherited;
+end;
+
+function TRelationship.GetPropValue(const PropName: String): string;
+begin
+  Result := inherited GetPropValue(PropName);
 end;
 
 procedure TRelationship.UpdateFieldReferences(const Side: TRelationSide);
