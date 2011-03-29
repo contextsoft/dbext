@@ -2284,7 +2284,7 @@ procedure TDBEngineProfile.AssignObject(Obj: TSchemaCollectionItem;
   ResultSet: TDataSet; const ObjPath: String);
 var
   I: Integer;
-  FldName, V, V2, F, D: String;
+  FldName, V, V2, F: String;
   TempF: TField;
 begin
   for I := 0 to ResultSet.FieldCount - 1 do
@@ -2379,7 +2379,7 @@ var
   CurKeyFld, P: Integer;
   CurObj: TObject;
   S: String;
-  F: TField;
+//  F: TField;
 begin
   Result := False;
   P := 1;
