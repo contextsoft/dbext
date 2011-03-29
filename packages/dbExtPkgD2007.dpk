@@ -32,6 +32,7 @@ package dbExtPkgD2007;
 {$DESCRIPTION 'Context Database Extensions'}
 {$DESIGNONLY}
 {$IMPLICITBUILD OFF}
+{$DEFINE DEBUG}
 
 requires
   vcl,
