@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 322;
+  dbSchemaLibVersion = 323;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -5278,6 +5278,27 @@ begin
 end;
 
 procedure TStoredProcDefinition.SetPropValue(const PropName, Value: String);
+  function ExtractParams: string;
+  var
+    I: integer;
+    V: string;
+  begin
+    Result := '';
+    I := 0;
+    repeat
+      V := FProps.Values[Format('PARAM%d', [I])];
+      if V <> '' then
+      begin
+        if Result <> '' then
+          Result := Result + ','+#13#10;
+        Result := Result + '  ' + V;
+        FProps.Values[Format('PARAM%d', [I])] := '';
+      end;
+      inc(I);
+    until V = '';
+    if Result <> '' then
+      Result := '(' + #13#10 + Result + #13#10 + ')';
+  end;
 var
   S: string;
 begin
@@ -5291,8 +5312,11 @@ begin
       if AnsiSameText(PropName, 'AddDefinitionText') then
         S := TrimRight(S);
     FDefinition.Text := S + Value;
-  end
-  else inherited;
+  end else
+  if AnsiSameText(PropName, 'AddParams') then
+  begin
+    FDefinition.Text := FDefinition.Text + ExtractParams;
+  end else inherited;
 end;
 
 procedure TStoredProcDefinition.UpdateDefinition(const Value: String);

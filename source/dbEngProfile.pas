@@ -2284,7 +2284,8 @@ procedure TDBEngineProfile.AssignObject(Obj: TSchemaCollectionItem;
   ResultSet: TDataSet; const ObjPath: String);
 var
   I: Integer;
-  FldName, V, V2, F: String;
+  FldName, V, V2, F, D: String;
+  TempF: TField;
 begin
   for I := 0 to ResultSet.FieldCount - 1 do
   with ResultSet.Fields[I] do
@@ -2331,16 +2332,28 @@ begin
           ResultSet.FieldByName('_IBSegLen').AsString,
           ResultSet.FieldByName('_IBCharSet').AsString);
         FldName := 'SQLFieldType';
-      end else if AnsiSameText(FldName, 'IBParamType') then
+      end else if AnsiSameText(FldName, 'AddParam') then
       begin
-        V := FormatIBDataType(V,
-          ResultSet.FieldByName('_IBSubType').AsString,
-          ResultSet.FieldByName('_IBParamScale').AsString,
-          ResultSet.FieldByName('_IBParamPrecision').AsString,
-          ResultSet.FieldByName('_IBParamSize').AsString,
-          ResultSet.FieldByName('_IBParamSegLen').AsString,
-          ResultSet.FieldByName('_IBParamCharSet').AsString);
-        FldName := 'AddDefinitionInLine';
+        V := ResultSet.FieldByName('_IBParamName').AsString;
+        TempF := ResultSet.FindField('_IBParamSrc');
+        if (TempF <> nil) and (Copy(TempF.AsString, 1, 4) <> 'RDB$') then
+        begin
+          V := V + ' ' + TempF.AsString;
+          TempF := ResultSet.FieldByName('_IBParamCharSet');
+          if TempF.AsString <> '' then
+            V := V + ' ' + TempF.AsString;
+        end else
+        begin
+          V := V + ' ' + FormatIBDataType(
+            ResultSet.FieldByName('_IBParamType').AsString,
+            ResultSet.FieldByName('_IBSubType').AsString,
+            ResultSet.FieldByName('_IBParamScale').AsString,
+            ResultSet.FieldByName('_IBParamPrecision').AsString,
+            ResultSet.FieldByName('_IBParamSize').AsString,
+            ResultSet.FieldByName('_IBParamSegLen').AsString,
+            ResultSet.FieldByName('_IBParamCharSet').AsString);
+        end;
+        FldName := ResultSet.FieldByName('AddParam').AsString;
       end else begin
         V2 := InfoSchemaValueMap.Values[ObjPath + '.' + FldName + '.' + V];
         if V2 <> '' then
