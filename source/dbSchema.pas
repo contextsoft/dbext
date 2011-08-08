@@ -26,7 +26,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.25
+(*  VERSION     : 3.26
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 325;
+  dbSchemaLibVersion = 326;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -221,6 +221,7 @@ type
     FUpdateCounter: Integer;
     FCategory: String;
     FProduceSQL: Boolean;
+    FExternal: Boolean;
 
     function GetFullName: String; virtual;
     function GetSchema: TDatabaseSchema; virtual;
@@ -280,6 +281,7 @@ type
     property Description: String read FDescription write FDescription;
     property Props: TStrings read FProps write SetProps;
     property ProduceSQL: Boolean read FProduceSQL write FProduceSQL default True;
+    property External: Boolean read FExternal write FExternal default False;
   end;
 
   TTableCollectionItem = class (TSchemaCollectionItem)
@@ -4079,11 +4081,51 @@ begin
 end;
 
 function TCompareItem.GetItemOperation: TItemOperation;
+
+function IsProduceSQL(AObj: TObject): boolean;
+begin
+  Result := (AObj <> nil) and not AnsiSameText(GetPropValue(AObj, 'ProduceSQL'), 'False');
+end;
+
+function IsExternal(AObj: TObject): boolean;
+begin
+  Result := (AObj <> nil) and AnsiSameText(GetPropValue(AObj, 'External'), 'True');
+end;
+
+
 var
   SrcPresent, DestPresent: Boolean;
+  R: TRelationship;
+
 begin
-  SrcPresent := (SrcObj <> nil) and not AnsiSameText(GetPropValue(SrcObj, 'ProduceSQL'), 'False');
-  DestPresent := (DestObj <> nil) and not AnsiSameText(GetPropValue(DestObj, 'ProduceSQL'), 'False');
+  SrcPresent := IsProduceSQL(SrcObj) and not IsExternal(SrcObj);
+  DestPresent := IsProduceSQL(DestObj) and not IsExternal(DestObj);
+
+  if SrcPresent then
+  begin
+    if SrcObj is TRelationship then
+      R := TRelationship(SrcObj) else
+    if SrcObj is TRelation then
+      R := TRelation(SrcObj).Relationship else
+      R := nil;
+    if R <> nil then
+      SrcPresent := IsProduceSQL(R.DetailTableDef)
+        and IsProduceSQL(R.MasterTableDef)
+        and not IsExternal(R.DetailTableDef);
+  end;
+
+  if DestPresent then
+  begin
+    if DestObj is TRelationship then
+      R := TRelationship(DestObj) else
+    if DestObj is TRelation then
+      R := TRelation(DestObj).Relationship else
+      R := nil;
+    if R <> nil then
+      DestPresent := IsProduceSQL(R.DetailTableDef)
+      and IsProduceSQL(R.MasterTableDef)
+      and not IsExternal(R.DetailTableDef);
+  end;
 
   Result := ioNone;
   if DestPresent and not SrcPresent then
@@ -4246,6 +4288,7 @@ begin
   FOldIndex := -1;
   FUpdateCounter := 0;
   FProduceSQL := True;
+  FExternal := False;
 end;
 
 destructor TSchemaCollectionItem.Destroy;
@@ -4265,6 +4308,7 @@ begin
     FDescription := TSchemaCollectionItem(Source).FDescription;
     FProps.Assign(TSchemaCollectionItem(Source).FProps);
     FProduceSQL := TSchemaCollectionItem(Source).FProduceSQL;
+    FExternal := TSchemaCollectionItem(Source).FExternal;
   end else
     inherited;
 end;
@@ -8194,6 +8238,7 @@ begin
   end;
 
   FProduceSQL := TempSource.FProduceSQL;
+  FExternal := TempSource.FExternal;
   FDefinition.Assign(TempSource.FDefinition);
   FIsView := TempSource.FIsView;
 
@@ -10031,6 +10076,7 @@ var
           FMasterRecord := TTableDefinition(SrcItem).MasterRecord;
           FObjectKeyCaseInsensitive := TTableDefinition(SrcItem).ObjectKeyCaseInsensitive;
           FProduceSQL := SrcItem.ProduceSQL;
+          FExternal := SrcItem.FExternal;
           FIsView := TTableDefinition(SrcItem).FIsView;
           FDefinition.Assign(TTableDefinition(SrcItem).Definition);
 
@@ -10118,6 +10164,7 @@ procedure TDBSchemaVersion.ApplyDifference(Dest: TDatabaseSchema);
           TTableDefinition(DestItem).FMasterRecord := MasterRecord;
           TTableDefinition(DestItem).FObjectKeyCaseInsensitive := ObjectKeyCaseInsensitive;
           TTableDefinition(DestItem).FProduceSQL := ProduceSQL;
+          TTableDefinition(DestItem).FExternal := External;
           TTableDefinition(DestItem).FIsView := IsView;
           TTableDefinition(DestItem).Definition.Assign(Definition);
 
