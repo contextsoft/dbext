@@ -79,8 +79,8 @@ type
     function ParseComments: Integer;
     procedure AddTokenChar(const C: Char);
   public
-    constructor Create(AStream: TStream; BufSize: Integer = 1024; ASizeOfChar: Integer = 1); overload;
-    constructor Create(const SQLString: String); overload;
+    constructor Create(AStream: TStream; BufSize: Integer = 1024; ASizeOfChar: Integer = 1; const ATerm: string =''; const AComments: string = ''); overload;
+    constructor Create(const SQLString: String; const ATerm: string =''; const AComments: string = ''); overload;
     destructor Destroy; override;
 
     procedure GetNextChar;
@@ -306,7 +306,7 @@ end;
 
 { TSQLLexer }
 
-constructor TSQLLexer.Create(AStream: TStream; BufSize: Integer = 1024; ASizeOfChar: Integer = 1);
+constructor TSQLLexer.Create(AStream: TStream; BufSize: Integer = 1024; ASizeOfChar: Integer = 1; const ATerm: string =''; const AComments: string = '');
 begin
   inherited Create;
   FBufSize := BufSize;
@@ -318,10 +318,13 @@ begin
   FComments := TStringList.Create;
   // +++ FComments.NameValueSeparator := ',';
   // +++ FComments.Delimiter := ';';
-  Comments := DefaultCommentChars;
-  FTerm := '';
   FSetTermCommand := '';
   FTermChar := #0;
+  if AComments = '' then
+    Comments := DefaultCommentChars else
+    Comments := AComments;
+  if ATerm <> '' then
+    Term := ATerm;
   FLiteralPrefixes := TStringList.Create;
   FLinePos := 1;
   FLineNo := 1;
@@ -332,12 +335,12 @@ begin
   GetNextChar;
 end;
 
-constructor TSQLLexer.Create(const SQLString: String);
+constructor TSQLLexer.Create(const SQLString: String; const ATerm: string =''; const AComments: string = '');
 begin
   {$IFDEF D2009_ORLATER}
-  Create(TStringStream.Create(SQLString, TEncoding.Unicode), 1024, 2);
+  Create(TStringStream.Create(SQLString, TEncoding.Unicode), 1024, 2, ATerm, AComments);
   {$ELSE}
-  Create(TStringStream.Create(SQLString));
+  Create(TStringStream.Create(SQLString), 1024, 1, ATerm, AComments);
   {$ENDIF}
   FOwnStream := True;
 end;

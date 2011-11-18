@@ -1061,6 +1061,7 @@ type
     procedure SetRelationName(const Index: TRelationSide; const Value: String);
     procedure SetTableName(const Index: TRelationSide; const Value: String);
     procedure SetRelDescription(const Index: TRelationSide; const Value: String);
+    function EffectiveProduceSQL: boolean;
 
     property DetailRelation: TRelation index sideDetail read GetRelation;
     property MasterRelation: TRelation index sideMaster read GetRelation;
@@ -3925,7 +3926,8 @@ begin
     and (Src.FCaseInsensitive = Dest.FCaseInsensitive)
     and (Src.FDeleteErrorMessage = Dest.FDeleteErrorMessage)
     and (Src.FUpdateErrorMessage = Dest.FUpdateErrorMessage)
-    and (Src.FRequireRecordErrorMessage = Dest.FRequireRecordErrorMessage);
+    and (Src.FRequireRecordErrorMessage = Dest.FRequireRecordErrorMessage)
+    and (Src.EffectiveProduceSQL = Dest.EffectiveProduceSQL)
 end;
 
 function CheckVersion(Database: ISchemaDatabase): Boolean;
@@ -4081,6 +4083,9 @@ begin
 end;
 
 function TCompareItem.GetItemOperation: TItemOperation;
+var
+  SrcPresent, DestPresent: Boolean;
+  R: TRelationship;
 
 function IsProduceSQL(AObj: TObject): boolean;
 begin
@@ -4091,11 +4096,6 @@ function IsExternal(AObj: TObject): boolean;
 begin
   Result := (AObj <> nil) and AnsiSameText(GetPropValue(AObj, 'External'), 'True');
 end;
-
-
-var
-  SrcPresent, DestPresent: Boolean;
-  R: TRelationship;
 
 begin
   SrcPresent := IsProduceSQL(SrcObj) and not IsExternal(SrcObj);
@@ -4109,9 +4109,9 @@ begin
       R := TRelation(SrcObj).Relationship else
       R := nil;
     if R <> nil then
-      SrcPresent := IsProduceSQL(R.DetailTableDef)
-        and IsProduceSQL(R.MasterTableDef)
-        and not IsExternal(R.DetailTableDef);
+      SrcPresent :=
+        IsProduceSQL(R.DetailTableDef) and not IsExternal(R.DetailTableDef) and
+        IsProduceSQL(R.MasterTableDef);
   end;
 
   if DestPresent then
@@ -4122,9 +4122,9 @@ begin
       R := TRelation(DestObj).Relationship else
       R := nil;
     if R <> nil then
-      DestPresent := IsProduceSQL(R.DetailTableDef)
-      and IsProduceSQL(R.MasterTableDef)
-      and not IsExternal(R.DetailTableDef);
+      DestPresent :=
+        IsProduceSQL(R.DetailTableDef) and not IsExternal(R.DetailTableDef) and
+        IsProduceSQL(R.MasterTableDef);
   end;
 
   Result := ioNone;
@@ -7125,6 +7125,13 @@ begin
   Writer.WriteInteger(FRelationIndex[sideMaster]);
   Writer.WriteInteger(FRelationIndex[sideDetail]);
   Writer.WriteListEnd;
+end;
+
+function TRelationship.EffectiveProduceSQL: boolean;
+begin
+  Result := (DetailTableDef <> nil) and (MasterTableDef <> nil)
+    and DetailTableDef.ProduceSQL and MasterTableDef.ProduceSQL
+    and not DetailTableDef.External;
 end;
 
 { TFieldDefinitions }
