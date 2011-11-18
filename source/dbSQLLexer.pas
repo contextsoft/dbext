@@ -42,6 +42,8 @@ type
     TokenID: Integer;
   end;
 
+  TSQLLexerPragmaEvent = procedure (Sender: TObject; const Pragma: String) of object;
+
   TSQLLexer = class
   protected
     FStream: TStream;
@@ -67,6 +69,7 @@ type
     FTerm: String;
     FSetTermCommand: String;
     FSizeOfChar: Integer;
+    FOnPragma: TSQLLexerPragmaEvent;
 
     procedure SetTerm(const Value: String);
     function GetComments: String;
@@ -110,6 +113,7 @@ type
     property Token: String read FToken;
     property TokenID: Integer read FTokenID;
     property SizeOfChar: Integer read FSizeOfChar;
+    property OnPragma: TSQLLexerPragmaEvent read FOnPragma write FOnPragma;
   end;
 
 const
@@ -657,7 +661,9 @@ begin
     else if AnsiSameText(PropName, 'delimiter') then
       Term := PropValue
     else if AnsiSameText(PropName, 'setterm') then
-      SetTermCommand := PropValue;
+      SetTermCommand := PropValue
+    else if Assigned(OnPragma) then
+      OnPragma(Self, Pragma);
   end;
 end;
 
@@ -680,43 +686,46 @@ begin
   FirstToken := True;
   while (TokenID <> tokenEOF) and (TokenID <> tokenTerm) do
   begin
-    if FirstToken and (FSetTermCommand <> '') and (TokenID = tokenToken) and MatchText(Token, FSetTermCommand, CmdPos) then
-    begin
-      Matching := True;
-      GetNextToken;
-      while (TokenID = tokenToken) and Matching and (CmdPos <= Length(FSetTermCommand)) do
+    try
+      if FirstToken and (FSetTermCommand <> '') and (TokenID = tokenToken) and MatchText(Token, FSetTermCommand, CmdPos) then
       begin
-        Matching := MatchText(Token, FSetTermCommand, CmdPos);
+        Matching := True;
         GetNextToken;
-      end;
-      if CmdPos > Length(FSetTermCommand) then
-      begin
-        // Process set term
-        Term := Token;
-        GetNextToken;
-        while (TokenID <> tokenEOLN) and (TokenID <> tokenEOF) do
+        while (TokenID = tokenToken) and Matching and (CmdPos <= Length(FSetTermCommand)) do
+        begin
+          Matching := MatchText(Token, FSetTermCommand, CmdPos);
           GetNextToken;
-        if TokenID = tokenEOF then break;
-        StartPos := TokenBeginPos;
-      end else
-        FirstToken := False;
-    end else if (TokenID = tokenComment) then
-    begin
-      // Parse first comments
-      FToken := Trim(FToken);
-      if copy(Token, 1, 2) = '##' then
-        ParsePragmaComments(copy(Token, 3, MaxInt))
-      else if AnsiPos('GO ', FToken) = 1 then
+        end;
+        if CmdPos > Length(FSetTermCommand) then
+        begin
+          // Process set term
+          Term := Token;
+          GetNextToken;
+          while (TokenID <> tokenEOLN) and (TokenID <> tokenEOF) do
+            GetNextToken;
+          if TokenID = tokenEOF then break;
+          StartPos := TokenBeginPos;
+        end else
+          FirstToken := False;
+      end else if (TokenID = tokenComment) then
       begin
-        EndPos := TokenBeginPos;
-        GetNextToken;
-        break;
-      end;
-    end else if TokenID >= tokenToken then
-      FirstToken := False;
-    GetNextToken;
-    if FirstToken then
-      StartPos := TokenBeginPos;
+        // Parse first comments
+        FToken := Trim(FToken);
+        if copy(Token, 1, 2) = '##' then
+          ParsePragmaComments(copy(Token, 3, MaxInt))
+        else if AnsiPos('GO ', FToken) = 1 then
+        begin
+          EndPos := TokenBeginPos;
+          GetNextToken;
+          break;
+        end;
+      end else if TokenID >= tokenToken then
+        FirstToken := False;
+    finally
+      GetNextToken;
+      if FirstToken then
+        StartPos := TokenBeginPos;
+    end;
   end;
   if EndPos < 0 then
     if TokenID = tokenTerm then
