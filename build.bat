@@ -7,4 +7,5 @@
 @call build_d2009.bat
 @call build_d2010.bat
 @call build_d2011.bat
+@call build_dXE2.bat
 

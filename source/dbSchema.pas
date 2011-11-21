@@ -6138,6 +6138,8 @@ begin
     S := S + Value;
     IndexExpression := S;
     IsExpression := S <> '';
+    if IsExpression then
+      IndexFields.Clear;
   end else
   if AnsiSameText(PropName, 'SetFieldsDefinition') then
   begin
