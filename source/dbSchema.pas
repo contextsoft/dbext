@@ -123,8 +123,8 @@ type
   end;
 
   TCompareOptions = record
-    CaseSensitive: boolean;
-    WholeWords: boolean;
+    IgnoreCase: boolean;
+    IgnoreSpaces: boolean;
   end;
 
   TOnCompare = function (SrcObj, DestObj: TObject): boolean of object;
@@ -4209,8 +4209,8 @@ constructor TCompareSchema.Create(ASrcSchema, ADestSchema: TDatabaseSchema);
 var
   CmpOpt: TCompareOptions;
 begin
-  CmpOpt.CaseSensitive := True;
-  CmpOpt.WholeWords := True;
+  CmpOpt.IgnoreCase := False;
+  CmpOpt.IgnoreSpaces := False;
   CreateOptions(ASrcSchema, ADestSchema, CmpOpt);
 end;
 
