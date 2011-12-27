@@ -11,7 +11,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbEngProfile.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.27
+(*  VERSION     : 3.28
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -1116,8 +1116,13 @@ begin
           Item.CompareObjects;
         end;
         ForEach2(ioDrop, gsDrop);
-      end;     
+      end;
     end;
+
+    // If no subitems, don't trigger property change
+    if (Item.SubItems = nil) or (Item.SubItems.Count = 0) then
+      Item.PropsEqual := OldPropsEqual;
+
     if OldPropsEqual and FIgnoreSubExpressionsChanged then
       Item.PropsEqual := True;
   end else if AnsiSameText(PropName, 'go') then

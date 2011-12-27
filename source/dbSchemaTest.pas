@@ -14,7 +14,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchemaTest.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.27
+(*  VERSION     : 3.28
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -158,6 +158,7 @@ type
     function GetDisplayName: String; override;
 
     function GetField(const FieldText: String; Data: Pointer): String;
+
     property DefaultMessage: String read GetDefaultMessage;
     property ContextObject: TObject read FContextObject write FContextObject;
   published
@@ -202,6 +203,7 @@ type
     FShowWarnings: Boolean;
     FIdentifiers: TStringList;
     FDisabledMessages: TStrings;
+    FWrongNames: TStringList;
     FDBEngineProfile: TDBEngineProfile;
     FOnResultMessage: TOnResultMessage;
     FOnStatusMessage: TOnStatusMessage;
@@ -218,7 +220,7 @@ type
     destructor Destroy; override;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
 
-    function IsValidIdentifier(Obj: TObject; const Str: String): Boolean;
+    function IsValidIdentifier(Obj: TObject; const Str: String; ACode: TDBSchemaMessageCode): Boolean;
     function IsNameUnique(Item: TSchemaCollectionItem): Boolean;
     procedure TestEnumeration(Enumeration: TEnumeration); virtual;
     procedure TestTable(TableDef: TTableDefinition); virtual;
@@ -234,6 +236,7 @@ type
     procedure TestTableConstraint(TableConstraint: TTableConstraint); virtual;
     procedure TestCustomObject(CustomObject: TCustomObject); virtual;
     procedure TestSchema(Schema: TDatabaseSchema = nil); virtual;
+    procedure PrepareWrongNames;
     procedure ClearResults;
     function TopLevelUnique(Item: TSchemaCollectionItem): Boolean;
     function IsCodeDisabled(Code: TDBSchemaMessageCode): Boolean;
@@ -242,6 +245,7 @@ type
       ContextObject: TObject = nil; ContextInfo: String = ''): TDBSchemaMessage;
     procedure DoStatus(const StatusMessage: String);
     procedure DoValidate(AItem: TSchemaCollectionItem; const ObjectType: TDBSchemaMessageObject);
+
     property DisabledMessages: String read GetDisabledMessages write SetDisabledMessages;
     property DBEngineProfile: TDBEngineProfile read FDBEngineProfile;
     property ErrorCount: integer read FErrorCount;
@@ -729,7 +733,7 @@ begin
   Result := FDisabledMessages.CommaText;
 end;
 
-function TDBSchemaTester.IsValidIdentifier(Obj: TObject; const Str: String): Boolean;
+function TDBSchemaTester.IsValidIdentifier(Obj: TObject; const Str: String; ACode: TDBSchemaMessageCode): Boolean;
 var
   I: Integer;
 begin
@@ -739,8 +743,13 @@ begin
   if Length(Str) > FDBEngineProfile.MaxIdLength then
     AddResult(smcIdentifierIsTooLong, GetSchemaMessageObject(Obj), smsError, Obj, Str);
 
+  if not FSchema.EncloseIdentifiersInQuotes then
+    if FWrongNames.Indexof(AnsiUpperCase(Str)) >= 0 then
+      AddResult(ACode, GetSchemaMessageObject(Obj), smsWarning, Obj, Str);
+
   for I := 1 to Length(Str) do
     if AnsiPos(Str[I], FDBEngineProfile.EncloseNames) > 0 then exit;
+
   Result := True;
 end;
 
@@ -759,6 +768,8 @@ begin
   if FDBEngineProfile = nil then
     raise Exception.CreateFmt(SProfileNotFound, [Schema.TargetDB]);
 
+  PrepareWrongNames;    
+
   DoStatus(STestingSchema + Schema.SchemaName);
   ClearResults;
   FIdentifiers := TStringList.Create;
@@ -769,7 +780,7 @@ begin
     DisabledMessages := FDBEngineProfile.EngineProps.Values['DisabledMessages'];
 
     // Test schema properties
-    if not IsValidIdentifier(Schema, Schema.SchemaName) then
+    if not IsValidIdentifier(Schema, Schema.SchemaName, smcInvalidSchemaName) then
       AddResult(smcInvalidSchemaName);
     // Test enumerations
     for I := 0 to Schema.Enumerations.Count - 1 do
@@ -798,6 +809,7 @@ begin
   finally
     FIdentifiers.Free;
     DoStatus(STestingComplete);
+    FreeAndNil(FWrongNames);
   end;
 end;
 
@@ -814,7 +826,7 @@ begin
   // Callback external validation
   DoValidate(Enumeration, smoEnum);
   // Test enumeration
-  if not IsValidIdentifier(Enumeration, Enumeration.Name) then
+  if not IsValidIdentifier(Enumeration, Enumeration.Name, smcEnumInvalidName) then
     AddResult(smcEnumInvalidName, smoEnum, smsError, Enumeration);
   if Enumeration.Items.Count = 0 then
     AddResult(smcEnumEmpty, smoEnum, smsWarning, Enumeration)
@@ -831,7 +843,7 @@ begin
         else begin
           ConstValue := Trim(Copy(Enumeration.Items[I], 1, EqPos - 1));
           ConstName := Trim(Copy(Enumeration.Items[I], EqPos + 1, Length(Enumeration.Items[I])));
-          if not IsValidIdentifier(Enumeration, ConstName) then
+          if not IsValidIdentifier(Enumeration, ConstName, smcEnumInvalidItem) then
             AddResult(smcEnumInvalidItem, smoEnum, smsError, Enumeration, Enumeration.Items[I]);
           if FIdentifiers.IndexOf(Enumeration.TypePrefix + ConstName) >= 0 then
             AddResult(smcEnumDuplicateIdentifier, smoEnum, smsError, Enumeration, Enumeration.TypePrefix + ConstName);
@@ -868,7 +880,7 @@ begin
   begin
     DoStatus(STestingTable + TableName);
     // Test table properties
-    if not IsValidIdentifier(TableDef, TableName) then
+    if not IsValidIdentifier(TableDef, TableName, smcTableInvalidName) then
       AddResult(smcTableInvalidName, smoTable, smsError, TableDef);
     if not IsNameUnique(TableDef) then
       AddResult(smcTableDuplicateName, smoTable, smsError, TableDef);
@@ -925,7 +937,7 @@ begin
     DoStatus(STestingField + TableDef.TableName + '.' + Name);
 
     // Test field name to be unqie and non-empty
-    if not IsValidIdentifier(FieldDef, Name) then
+    if not IsValidIdentifier(FieldDef, Name, smcFieldInvalidName) then
       AddResult(smcFieldInvalidName, smoField, smsError, FieldDef);
     if not IsNameUnique(FieldDef) then
       AddResult(smcFieldDuplicateName, smoField, smsError, FieldDef);
@@ -994,7 +1006,7 @@ begin
 
     // Test index name to be unqie and non-empty
     if FDBEngineProfile.NamedPrimaryKeys or not (ixPrimary in IndexDef.Options) then
-      if not IsValidIdentifier(IndexDef, Name) then
+      if not IsValidIdentifier(IndexDef, Name, smcIndexInvalidName) then
         AddResult(smcIndexInvalidName, smoIndex, smsError, IndexDef);
 
     // +++ Only check to be unique among indexes (MS SQL)
@@ -1033,7 +1045,7 @@ begin
   begin
     DoStatus(STestingRelation + TableDef.TableName + '.' + Name);
     // Test relation name to be unqie and non-empty
-    if not IsValidIdentifier(Relation, Name) then
+    if not IsValidIdentifier(Relation, Name, smcRelationInvalidName) then
       AddResult(smcRelationInvalidName, smoRelation, smsError, Relation);
     if not IsNameUnique(Relation) then
       AddResult(smcRelationDuplicateName, smoRelation, smsError, Relation);
@@ -1049,7 +1061,7 @@ begin
   begin
     DoStatus(STestingTrigger + TableDef.TableName + '.' + Name);
     // Test trigger name to be unqie and non-empty
-    if not IsValidIdentifier(TriggerDef, Name) then
+    if not IsValidIdentifier(TriggerDef, Name, smcTriggerInvalidName) then
       AddResult(smcTriggerInvalidName, smoTrigger, smsError, TriggerDef);
     if not IsNameUnique(TriggerDef) then
       AddResult(smcTriggerDuplicateName, smoTrigger, smsError, TriggerDef);
@@ -1076,7 +1088,7 @@ begin
   begin
     DoStatus(STestingView + Name);
     // Test view name to be unqie and non-empty
-    if not IsValidIdentifier(ViewDef, Name) then
+    if not IsValidIdentifier(ViewDef, Name, smcViewInvalidName) then
       AddResult(smcViewInvalidName, smoView, smsError, ViewDef);
     if not IsNameUnique(ViewDef) then
       AddResult(smcViewDuplicateName, smoView, smsError, ViewDef);
@@ -1099,7 +1111,7 @@ begin
   begin
     DoStatus(STestingDomain + Name);
     // Test Domain name to be unqie and non-empty
-    if not IsValidIdentifier(Domain, Name) then
+    if not IsValidIdentifier(Domain, Name, smcDomainInvalidName) then
       AddResult(smcDomainInvalidName, smoDomain, smsError, Domain);
     if not IsNameUnique(Domain) then
       AddResult(smcDomainDuplicateName, smoDomain, smsError, Domain);
@@ -1148,7 +1160,7 @@ begin
     begin
       DoStatus(STestingRelationship + Relationship.Name);
       // Test Relationship name to be unqie and non-empty
-      if not IsValidIdentifier(Relationship, Relationship.Name) then
+      if not IsValidIdentifier(Relationship, Relationship.Name, smcRelationshipInvalidName) then
         AddResult(smcRelationshipInvalidName, smoRelationship, smsError, Relationship);
       if not IsNameUnique(Relationship) then
         AddResult(smcRelationshipDuplicateName, smoRelationship, smsError, Relationship);
@@ -1302,7 +1314,7 @@ begin
   begin
     DoStatus(STestingSequence + Name);
     // Test Sequence name to be unqie and non-empty
-    if not IsValidIdentifier(Sequence, Name) then
+    if not IsValidIdentifier(Sequence, Name, smcSequenceInvalidName) then
       AddResult(smcSequenceInvalidName, smoSequence, smsError, Sequence);
     if not IsNameUnique(Sequence) then
       AddResult(smcSequenceDuplicateName, smoSequence, smsError, Sequence);
@@ -1324,7 +1336,7 @@ begin
   begin
     DoStatus(STestingStoredProc + Name);
     // Test StoredProc name to be unqie and non-empty
-    if not IsValidIdentifier(StoredProc, Name) then
+    if not IsValidIdentifier(StoredProc, Name, smcStoredProcInvalidName) then
       AddResult(smcStoredProcInvalidName, smoStoredProc, smsError, StoredProc);
     if not IsNameUnique(StoredProc) then
       AddResult(smcStoredProcDuplicateName, smoStoredProc, smsError, StoredProc);
@@ -1344,7 +1356,7 @@ begin
   begin
     DoStatus(STestingTableConstraint + Name);
     // Test StoredProc name to be unqie and non-empty
-    if not IsValidIdentifier(TableConstraint, Name) then
+    if not IsValidIdentifier(TableConstraint, Name, smcTableConstraintInvalidName) then
       AddResult(smcTableConstraintInvalidName, smoTableConstraint, smsError, TableConstraint);
     if not IsNameUnique(TableConstraint) then
       AddResult(smcTableConstraintDuplicateName, smoTableConstraint, smsError, TableConstraint);
@@ -1364,7 +1376,7 @@ begin
   with CustomObject do
   begin
     DoStatus(STestingCustomObject + Name);
-    if not IsValidIdentifier(CustomObject, Name) then
+    if not IsValidIdentifier(CustomObject, Name, smcCustomObjectInvalidName) then
       AddResult(smcCustomObjectInvalidName, smoCustomObject, smsError, CustomObject);
     if not IsNameUnique(CustomObject) then
       AddResult(smcCustomObjectDuplicateName, smoCustomObject, smsError, CustomObject);
@@ -1436,5 +1448,17 @@ begin
     Result := TopLevelUnique(Item)
   else Result := dbSchema.IsUnique(Item, Item.Name);
 end;
+
+procedure TDBSchemaTester.PrepareWrongNames;
+var
+  I: Integer;
+begin
+  FWrongNames := TStringList.Create;
+  for I := 0 to FDBEngineProfile.KeyWords.Count-1 do
+    FWrongNames.Add(AnsiUpperCase(FDBEngineProfile.KeyWords[I]));
+  FWrongNames.Duplicates := dupIgnore;
+  FWrongNames.Sorted := True;
+end;
+
 
 end.
