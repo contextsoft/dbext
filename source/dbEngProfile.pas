@@ -68,6 +68,7 @@ type
     FCommentChars: String;
     FCommentFormat: String;
     FSupportsScripts: Boolean;
+    FSupportsFunctions: boolean;
     FTopLevelObjects: TStrings;
     FIgnoreSubExpressionsChanged: Boolean;
     FQuoteChar: Char;
@@ -180,6 +181,7 @@ type
     property OutputTerm: String read FOutputTerm;
     property SetTermCommand: String read FSetTermCommand;
     property SupportsScripts: Boolean read FSupportsScripts;
+    property SupportsFunctions: boolean read FSupportsFunctions;
     property CommentFormat: String read FCommentFormat;
     property NamedPrimaryKeys: Boolean read FNamedPrimaryKeys;
     property NamesCaseSensitive: Boolean read FNamesCaseSensitive;
@@ -250,7 +252,7 @@ const
   SECTION_STATEMENTS      = 'Statements';
   SECTION_PROPERTIES      = 'Properties';
   SECTION_INFOSCHEMASQL   = 'InfoSchemaSQL';
-  SECTION_INFOSCHEMASQLLIGHT   = 'InfoSchemaSQLLight';  
+  SECTION_INFOSCHEMASQLLIGHT   = 'InfoSchemaSQLLight';
   SECTION_INFOSCHEMAVALUEMAP = 'InfoSchemaValueMap';
   SECTION_INFOSCHEMAFIELDMAP = 'InfoSchemaFieldMap';
 
@@ -828,8 +830,11 @@ var
   Item: TCompareSchemaItem;
 begin
   Item := TCompareSchemaItem.Create(nil, AnItem);
+  Item.PropsEqual := False;
   try
-    Result := InternalGenerateSQL(AnItem.GetSchemaClassName +'.template', Item);
+    if (AnItem <> nil) and (AnItem is TStoredProcDefinition) and TStoredProcDefinition(AnItem).IsFunction and SupportsFunctions then
+      Result := InternalGenerateSQL('function.template', Item) else
+      Result := InternalGenerateSQL(AnItem.GetSchemaClassName +'.template', Item);
   finally
     Item.Free;
   end;
@@ -1817,6 +1822,8 @@ begin
   if FCommentChars = '' then
     FCommentChars := DefaultCommentChars;
   FSupportsScripts := AnsiSameText(EngineProps.Values[ENTRY_SUPPORTSSCRIPTS], 'yes');
+  FSupportsFunctions := Statements.Values['FUNCTION.TEMPLATE'] <> '';
+
   FDefaultTerm := Trim(EngineProps.Values[ENTRY_DEFAULTTERM]);
   if FDefaultTerm = '' then
     FDefaultTerm := ';';

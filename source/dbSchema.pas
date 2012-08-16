@@ -131,13 +131,15 @@ type
 
   TCompareItem = class
   protected
+    FPropsEqual: Boolean;
     function GetItemOperation: TItemOperation;
+    procedure SetPropsEqual(Value: boolean);
   public
     ParentItem: TCompareItem;
     SrcObj: TObject;
     DestObj: TObject;
     SubItems: TObjectList;
-    PropsEqual: Boolean;
+//    PropsEqual: Boolean;
 
     constructor Create(ASrcObj, ADestObj: TObject; AParentItem: TCompareItem = nil);
     destructor Destroy; override;
@@ -146,11 +148,13 @@ type
     procedure CompareObjects; virtual;
 
     property Operation: TItemOperation read GetItemOperation;
+    property PropsEqual: Boolean read FPropsEqual write SetPropsEqual;
     function GetObj: TObject;
     function GetSubItems: TObjectList;
     function GetPropValue(AObj: TObject; const PropName: String): String; virtual;
     function GetDefaultPropValue(AObj: TObject; const PropName: String): String; virtual;
     class procedure SwapSrcDestList(List: TList);
+
   end;
 
   TCompareSchema = class (TCompareItem)
@@ -4070,6 +4074,12 @@ destructor TCompareItem.Destroy;
 begin
   SubItems.Free;
   inherited;
+end;
+
+procedure TCompareItem.SetPropsEqual(Value: boolean);
+begin
+  if Value <> FPropsEqual then
+    FPropsEqual := Value;
 end;
 
 procedure TCompareItem.SwapSrcDest;
