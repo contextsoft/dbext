@@ -162,6 +162,9 @@ type
     {:$ Retrieves the row referenced by value in the specified Column. }
     function GetReferencedRow(Column: TCtxDataColumn): TCtxDataRow;
 
+    {:$ Force sync with master even if master link is disabled . }
+    procedure MasterSync;
+
     {:$ Saves data to a disk file. This method will write all data from a data  }
     {:$ table (TCtxDataTable) in proprietary binary format. It will NOT respect filters or }
     {:$ persistent fields defined for this data set. }
@@ -1259,8 +1262,14 @@ end;
 procedure TCtxDataSet.MasterChanged(Sender: TObject);
 begin
   CheckBrowseMode;
-  if FMasterLink.Active
-    and (FMasterLink.Fields.Count > 0)
+  if FMasterLink.Active then
+    MasterSync;
+end;
+
+procedure TCtxDataSet.MasterSync;
+begin
+  if (FMasterLink.Fields.Count > 0)
+    and (FDetailFields <> '')
     and FCursor.SetMasterKey(FDetailFields, DataSource.DataSet.FieldValues[FMasterLink.FieldNames])
   then
     First;

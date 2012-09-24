@@ -873,6 +873,7 @@ var
   ObjClasses, ObjClass: String;
   Delimiter, LineBreak: String;
   P: Integer;
+  Postfix: String;
   IdxDef: TIndexDefinition;
 
   function EffectiveEngineFieldType(const AFieldType: String; AItem: TSchemaCollectionItem): String;
@@ -1237,6 +1238,15 @@ begin
       Item.PropsEqual := False;
   end else with Item do
   begin
+    // extract and then append postfix
+    Postfix := '';
+    P := AnsiPos('|', PropName);
+    if P > 1 then
+    begin
+      Postfix := copy(PropName, P+1, MaxInt);
+      PropName := copy(PropName, 1, P-1);
+    end;
+
     if UseOldValue then
     begin
       if SrcObj <> nil then
@@ -1246,6 +1256,9 @@ begin
         TempRes := GetPropValue(DestObj, PropName)
       else TempRes := GetPropValue(SrcObj, PropName)
     end;
+
+    // append postfix after name has been formatted
+    TempRes := TempRes + Postfix;
 
     if not TestOnly then
       if QuoteFieldValue then

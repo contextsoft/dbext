@@ -326,6 +326,11 @@ var
     if PropName = '' then exit;
     if PropName = '__ignore' then exit;
 
+    // Remove postfix if any
+    I := AnsiPos('|', PropName);
+    if I > 1 then
+      PropName := copy(PropName, 1, I-1);
+
     if (Item <> nil) and (ItemClassIdx <> csUndefined)
       and not Item.InheritsFrom(ItemClasses[ItemClassIdx])
     then
