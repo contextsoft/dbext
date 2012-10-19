@@ -26,7 +26,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.29
+(*  VERSION     : 3.30
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 329;
+  dbSchemaLibVersion = 330;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -6332,9 +6332,10 @@ begin
     GetPropValue('UniqueConstraint') +
     GetPropValue('IsExpression') +
     Props.CommaText;
-}    
+}
   for I := 0 to FIndexFields.Count - 1 do
     Result := Result + FIndexFields[I].GetIndexFieldPropStr;
+  Result := Result+IndexExpression;
 end;
 
 function TIndexDefinition.GetFields: String;

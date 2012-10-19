@@ -2,8 +2,8 @@
 
 [Setup]
 AppName=Context Database Extensions
-AppVerName=Context Database Extensions v.3.29 Trial
-AppCopyright=Copyright © 2003-2011, Michael Baytalsky
+AppVerName=Context Database Extensions v.3.30 Trial
+AppCopyright=Copyright © 2003-2012, Michael Baytalsky
 DefaultDirName={pf}\Context Software\DBExt3
 DefaultGroupName=Context Database Extensions
 ;UninstallDisplayIcon={app}\
@@ -58,7 +58,7 @@ Source: "source\*.*"; Excludes: "*.pas"; DestDir: "{app}\libd2010"; Flags: recur
 Source: "lib\d2011\*.*"; Excludes: "CtxGridView.*,CtxProfiles.*,CtxPropView.*"; DestDir: "{app}\libd2011"; Flags: ignoreversion; Components: libd2011
 Source: "source\*.*"; Excludes: "*.pas"; DestDir: "{app}\libd2011"; Flags: recursesubdirs ignoreversion; Components: libd2011
 
-Source: "lib\dXE2\*.*"; Excludes: "CtxGridView.*,CtxProfiles.*,CtxPropView.*"; DestDir: "{app}\libd2011"; Flags: ignoreversion; Components: libdXE2
+Source: "lib\dXE2\*.*"; Excludes: "CtxGridView.*,CtxProfiles.*,CtxPropView.*"; DestDir: "{app}\libdXE2"; Flags: ignoreversion; Components: libdXE2
 Source: "source\*.*"; Excludes: "*.pas"; DestDir: "{app}\libdXE2"; Flags: recursesubdirs ignoreversion; Components: libdXE2
 
 
