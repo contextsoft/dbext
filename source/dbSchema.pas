@@ -5695,11 +5695,13 @@ begin
       ftFixedChar,
       ftNChar,
       ftWideString,
-      ftString: Result := Result + Format('(%d)', [Size]);
+      ftString: if Size > 0 then
+        Result := Result + Format('(%d)', [Size]);
 
       ftFMTBcd, ftBCD,
       ftVarBytes, ftBytes,
-      ftADT, ftArray: if Size > 0 then Result := Result + Format('(%d)', [Size]);
+      ftADT, ftArray: if Size > 0 then
+        Result := Result + Format('(%d)', [Size]);
 
       ftFloat: begin
         FldSize := '';
