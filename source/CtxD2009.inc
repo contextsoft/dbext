@@ -1,5 +1,5 @@
-
 {$IFnDEF D2009_ORLATER}
+{$IFnDEF VER240}
 type
   CharSet = set of AnsiChar;
 
@@ -8,4 +8,4 @@ begin
   Result := C in CharSet;
 end;
 {$ENDIF}
-
+{$ENDIF}

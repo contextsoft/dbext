@@ -3414,7 +3414,11 @@ begin
           cdtFloat: Writer.WriteFloat(PDouble(P)^);
           cdtDateTime, cdtDate, cdtTime: Writer.WriteDate(PDateTime(P)^);
           cdtString, cdtMemo, cdtBlob: Writer.WriteString(String(PAnsiString(P)^));
+          {$IFDEF D2013_ORLATER}
+          cdtWideString: Writer.WriteString(PWideString(P)^);
+          {$ELSE}
           cdtWideString: Writer.WriteWideString(PWideString(P)^);
+          {$ENDIF}
         end;
       end;
     end;
@@ -3448,7 +3452,11 @@ begin
             cdtFloat: Reader.ReadFloat;
             cdtDateTime, cdtDate, cdtTime: Reader.ReadDate;
             cdtString, cdtMemo, cdtBlob: Reader.ReadString;
+          {$IFDEF D2013_ORLATER}
+            cdtWideString: Reader.ReadString;
+          {$ELSE}
             cdtWideString: Reader.ReadWideString;
+          {$ENDIF}
           end;
         end else
         begin
@@ -3465,7 +3473,11 @@ begin
               cdtFloat: PDouble(P)^ := Reader.ReadFloat;
               cdtDateTime, cdtDate, cdtTime: PDateTime(P)^ := Reader.ReadDate;
               cdtString, cdtMemo, cdtBlob: PAnsiString(P)^ := AnsiString(Reader.ReadString);
+          {$IFDEF D2013_ORLATER}
+              cdtWideString: PWideString(P)^ := Reader.ReadString;
+          {$ELSE}
               cdtWideString: PWideString(P)^ := Reader.ReadWideString;
+          {$ENDIF}
             end;
           end;
         end;
