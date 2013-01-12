@@ -127,6 +127,9 @@ type
     smcInvalidPropValue, //Add DB 21/07/2009
     smcCustomMessage, //Add DB 21/07/2009
 
+    smcRelationshipNullifyDetailFieldsRequired,
+    smcRelationshipDefaultDetailFieldsNotDefault,
+
     smcUnknown);
 
   TDBSchemaMessageCodes = set of TDBSchemaMessageCode;
@@ -387,6 +390,9 @@ resourcestring
   SCustomObjectInvalidName = 'Duplicate object name "<%CustomObjectName%>"';
   SCustomObjectNameInvalidPattern = 'Object name "<%CustomObjectName%>" contains characters or patterns not allowed by database engine';
 
+  SRelationshipNullifyDetailFieldsRequired = 'Creating a constraint with Nullify action but some of the fields are having "NOT NULL" constraint.';
+  SRelationshipDefaultDetailFieldsNotDefault = 'Creating a constraints with Set Default action but some of the fields are not having a default value.';
+
   SIdentifierIsTooLong = 'Identifier exceeds maximum allowed length for this database';
 
 const
@@ -475,6 +481,10 @@ const
     SFieldInvalidEnum,
     '', //smcInvalidPropValue
     '', //smcCustomMessage
+
+    SRelationshipNullifyDetailFieldsRequired,
+    SRelationshipDefaultDetailFieldsNotDefault,
+
     SUnknown);
 
   DBSchemaMessageSeverityDisplayText: array [TDBSchemaMessageSeverity] of String =
@@ -1147,7 +1157,10 @@ var
   I: Integer;
   AllFieldsFound: Boolean;
   DetailFieldsRequired: Boolean;
+  NameDetailFieldRequired: string;
   DetailFieldsUnique: Boolean;
+  DetailFieldsHasDefault: Boolean;
+  NameDetailFieldHasNoDefault: string;
 begin
   // Callback external validation
   DoValidate(Relationship, smoRelationship);
@@ -1214,8 +1227,24 @@ begin
       if AllFieldsFound and (DetailCardinality <> dcLogical) then
       begin
         DetailFieldsRequired := True;
+        DetailFieldsHasDefault := True;
         for I := 0 to DetailList.Count - 1 do
+        begin
           DetailFieldsRequired := DetailFieldsRequired and TFieldDefinition(DetailList.Objects[I]).Required;
+          if TFieldDefinition(DetailList.Objects[I]).Required and (NameDetailFieldRequired = '') then
+            NameDetailFieldRequired := Relationship.DetailTableName+'.'+TFieldDefinition(DetailList.Objects[I]).Name;
+          DetailFieldsHasDefault := DetailFieldsHasDefault and (TFieldDefinition(DetailList.Objects[I]).DefaultExpression <> '');
+          if not DetailFieldsHasDefault and (NameDetailFieldHasNoDefault = '') then
+            NameDetailFieldHasNoDefault := Relationship.DetailTableName+'.'+TFieldDefinition(DetailList.Objects[I]).Name;
+        end;
+
+        if ((Relationship.DeleteAction = raNullify) or (Relationship.UpdateAction = raNullify))
+          and DetailFieldsRequired then
+          AddResult(smcRelationshipNullifyDetailFieldsRequired, smoRelationship, smsWarning, Relationship, NameDetailFieldRequired);
+
+        if ((Relationship.DeleteAction = raSetDefault) or (Relationship.UpdateAction = raSetDefault))
+          and not DetailFieldsHasDefault then
+          AddResult(smcRelationshipDefaultDetailFieldsNotDefault, smoRelationship, smsWarning, Relationship, NameDetailFieldHasNoDefault);
 
         if MasterRecordOptional and DetailFieldsRequired then
           AddResult(smcRelationshipMasterRecordNotOptional, smoRelationship, smsWarning, Relationship)
