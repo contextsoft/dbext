@@ -6017,6 +6017,10 @@ begin
     and (CaseInsensitive = TIndexField(Dest.DestItem).CaseInsensitive)
     and (Descending = TIndexField(Dest.DestItem).Descending);
 
+  // Compare type and size of the correspoding field
+{  if Result then
+    Result := GetFieldProps = TIndexField(Dest.DestItem).GetFieldProps;}
+
   // We need to compare ItemID of the associated fields if found!
   if Result then
     if Schema.SchemaID = Dest.DestItem.Schema.SchemaID then
