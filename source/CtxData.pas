@@ -71,14 +71,14 @@ type
   );
 
   {:$ TCtxDataRowState enumerates different states bits which can be assigned to a data row. }
-  TCtxDataRowState = (drsInserted, drsUpdated, drsDeleted, drsStored, drsEditing, drsNeedRefresh);
+  TCtxDataRowState = (drsInserted, drsUpdated, drsDeleted, drsStored, drsEditing, drsNeedRefresh, drsBlobsNotFetched);
   {$NODEFINE TCtxDataRowState}
 
   (*$HPPEMIT 'namespace Ctxdata' *)
   (*$HPPEMIT '{' *)
   (*$HPPEMIT '  typedef int TCtxDataRowState;' *)
   (*$HPPEMIT '  #pragma option push -b-' *)
-  (*$HPPEMIT '  enum TCtxDataRowStateValues {drsInserted=0, drsUpdated=1, drsDeleted=2, drsStored=3, drsEditing=4, drsNeedRefresh=5};' *)
+  (*$HPPEMIT '  enum TCtxDataRowStateValues {drsInserted=0, drsUpdated=1, drsDeleted=2, drsStored=3, drsEditing=4, drsNeedRefresh=5, drsBlobsNotFetched=6};' *)
   (*$HPPEMIT '  #pragma option pop' *)
   (*$HPPEMIT '}'*)
 
@@ -777,8 +777,6 @@ type
     procedure AssignColumn(Source: TCtxDataRow; SrcColumn, DestColumn: TCtxDataColumn); overload;
 
     procedure SaveOriginalValue;
-    function IsModified(const Columns: TCtxColumnArray): Boolean;
-    function AssignedValues(const Columns: TCtxColumnArray): Boolean;
 
     procedure TransactionSave;
     procedure TransactionRollback;
@@ -793,6 +791,10 @@ type
     procedure AcceptChanges;
     {:$ Rejects all changes made to the row since AcceptChanges or RejectChanges was last called. }
     procedure RejectChanges;
+
+    function IsModified(const Columns: TCtxColumnArray): Boolean; overload;
+    function IsModified: Boolean; overload;
+    function AssignedValues(const Columns: TCtxColumnArray): Boolean;
 
     {:$ Begins edit operation on the data row. }
     procedure BeginEdit;
@@ -854,6 +856,8 @@ type
     {:$ methods are not inserted into the table and must be inserted there explicitly by call to }
     {:$ Store method or data table's Insert method. }
     property Stored: Boolean index drsStored read GetState;
+    {:$ Specifies whether this row has all its blobs fetched from server. This state value is optional. }
+    property BlobsNotFetched: Boolean index drsBlobsNotFetched read GetState write SetState;
 
     {:$ Provides read-only access to row's state (TCtxDataRowStates set of flags). }
     property State: TCtxDataRowStates read FState;
@@ -1241,20 +1245,23 @@ resourcestring
 const
   DataTypeNames: array [TCtxDataType] of String = (
     'Unknown', 'SmallInt', 'LargeInt', 'Boolean', 'Integer', 'Float',
-    'DateTime', 'Date', 'Time', 'String', 'WideString', 'Guid', 'Memo', 'Blob', 'Reference');
+    'DateTime', 'Date', 'Time', 'String', 'WideString', 'Guid', 'Memo', 'Blob', 'Reference',
+    'BCD', 'SQLTimeStamp');
 
 const
   // Variant types
   VarTypes: array [TCtxDataType] of Integer =
     (varNULL, varSmallInt, varInt64, varBoolean, varInteger, varDouble,
-     varDate, varDate, varDate, varString, varOleStr, varString, varNULL, varNULL, varNULL);
+     varDate, varDate, varDate, varString, varOleStr, varString, varNULL, varNULL,
+     varNULL, varDouble, varDate);
 
   DataTypeHasSize: array [TCtxDataType] of Boolean =
-    (False, False, False, False, False, False, False, False, False, True, True, False, False, False, False);
+    (False, False, False, False, False, False, False, False, False, True, True,
+    False, False, False, False, False, False);
 
 implementation
 
-uses Variants;
+uses Math, FmtBCD, SqlTimSt, Variants;
 
 const
   ByRefDataType = [cdtString, cdtWideString, cdtMemo, cdtBlob];
@@ -1275,7 +1282,9 @@ const
      SizeOf(TGuid),
      SizeOf(String),
      SizeOf(String),
-     SizeOf(Pointer)
+     SizeOf(Pointer),
+     SizeOf(TBCD),
+     SizeOf(TSQLTimeStamp)
   );
 
 function DataTypeNameToType(const Value: String): TCtxDataType;
@@ -1435,6 +1444,14 @@ begin
     cdtFloat, cdtDateTime, cdtDate, cdtTime:
       begin
         D := PDouble(P1)^ - PDouble(P2)^;
+        if D > 0 then Result := 1 else
+        if D < 0 then Result := -1;
+      end;
+    cdtBCD:
+      Result := BcdCompare(PBCD(P1)^, PBCD(P2)^);
+    cdtSQLTimeStamp:
+      begin
+        D := SQLTimeStampToDateTime(PSQLTimeStamp(P1)^) - SQLTimeStampToDateTime(PSQLTimeStamp(P2)^);
         if D > 0 then Result := 1 else
         if D < 0 then Result := -1;
       end;
@@ -2904,6 +2921,8 @@ begin
     FDataType := Value;
     if FDataType in [cdtString, cdtWideString] then
       FDataSize := 20
+    else if FDataType = cdtBCD then
+      FDataSize := 2
     else FDataSize := 0;
 
     DataTable.NotifyEvent(Self, cdeColumnListChanged);
@@ -2917,7 +2936,7 @@ end;
 
 function TCtxDataColumn.GetDataLength: word;
 begin
-  if FDataType in [cdtString, cdtWideString] then
+  if FDataType in [cdtString, cdtWideString, cdtBcd] then
     Result := FDataSize else
     Result := DataTypeSizes[FDataType];
 end;
@@ -2928,7 +2947,9 @@ begin
   begin
     DataTable.CheckUnPrepared;
     if FDataType in [cdtString, cdtWideString] then
-      FDataSize := Value;
+      FDataSize := Value
+    else if FDataType = cdtBcd then
+      FDataSize := Min(Value, 4);
 
     DataTable.NotifyEvent(Self, cdeColumnListChanged);
   end;
@@ -3302,6 +3323,26 @@ begin
   end;
 end;
 
+function TCtxDataRow.IsModified: Boolean;
+var
+  I: Integer;
+  C: TCtxDataColumn;
+begin
+  if (FOldRow = nil) or (FOldRow.FData = nil) then
+    Result := False
+  else
+  begin
+    Result := True;
+    for I := 0 to DataTable.Columns.Count - 1 do
+    begin
+      C := DataTable.Columns[I];
+      if _CompareData(GetDataPtr(C), InternalGetDataPtr(FOldRow.FData, C, False), C.DataType, []) <> 0
+      then exit;
+    end;
+    Result := False;
+  end;
+end;
+
 function TCtxDataRow.AssignedValues(const Columns: TCtxColumnArray): Boolean;
 var
   I: Integer;
@@ -3414,11 +3455,9 @@ begin
           cdtFloat: Writer.WriteFloat(PDouble(P)^);
           cdtDateTime, cdtDate, cdtTime: Writer.WriteDate(PDateTime(P)^);
           cdtString, cdtMemo, cdtBlob: Writer.WriteString(String(PAnsiString(P)^));
-          {$IFDEF D2013_ORLATER}
-          cdtWideString: Writer.WriteString(PWideString(P)^);
-          {$ELSE}
           cdtWideString: Writer.WriteWideString(PWideString(P)^);
-          {$ENDIF}
+          cdtBCD: Writer.Write(P^, SizeOf(TBCD));
+          cdtSQLTimeStamp: Writer.Write(P^, SizeOf(TSQLTimeStamp));
         end;
       end;
     end;
@@ -3430,6 +3469,8 @@ var
   P: Pointer;
   Column: TCtxDataColumn;
   NotNull: Boolean;
+  Bcd: TBcd;
+  TimeStamp: TSQLTimeStamp;
 begin
   if Reader.ReadBoolean then
   begin
@@ -3452,11 +3493,9 @@ begin
             cdtFloat: Reader.ReadFloat;
             cdtDateTime, cdtDate, cdtTime: Reader.ReadDate;
             cdtString, cdtMemo, cdtBlob: Reader.ReadString;
-          {$IFDEF D2013_ORLATER}
-            cdtWideString: Reader.ReadString;
-          {$ELSE}
             cdtWideString: Reader.ReadWideString;
-          {$ENDIF}
+            cdtBCD: Reader.Read(Bcd, SizeOf(TBCD));
+            cdtSQLTimeStamp: Reader.Read(TimeStamp, SizeOf(TSQLTimeStamp));
           end;
         end else
         begin
@@ -3473,11 +3512,9 @@ begin
               cdtFloat: PDouble(P)^ := Reader.ReadFloat;
               cdtDateTime, cdtDate, cdtTime: PDateTime(P)^ := Reader.ReadDate;
               cdtString, cdtMemo, cdtBlob: PAnsiString(P)^ := AnsiString(Reader.ReadString);
-          {$IFDEF D2013_ORLATER}
-              cdtWideString: PWideString(P)^ := Reader.ReadString;
-          {$ELSE}
               cdtWideString: PWideString(P)^ := Reader.ReadWideString;
-          {$ENDIF}
+              cdtBCD: Reader.Read(PBcd(P)^, SizeOf(TBCD));
+              cdtSQLTimeStamp: Reader.Read(PSQLTimeStamp(P)^, SizeOf(TSQLTimeStamp));
             end;
           end;
         end;
@@ -3545,7 +3582,12 @@ begin
       raise;
     end;
   end else if C = 1 then
-    SetValue(Columns[0], Value);
+  begin
+    if VarIsArray(Value) then
+      SetValue(Columns[0], Value[0])
+    else
+      SetValue(Columns[0], Value)
+  end;
 end;
 
 procedure TCtxDataRow.SetRowValues(Value: variant);
@@ -3593,6 +3635,10 @@ begin
         Result := PAnsiString(P)^;
       cdtWideString:
         Result := PWideString(P)^;
+      cdtBCD:
+        Result := BcdToDouble(PBCD(P)^);
+      cdtSQLTimeStamp:
+        Result := VarFromDateTime(SQLTimeStampToDateTime(PSQLTimeStamp(P)^));
       else
         raise Exception.CreateFmt(SUnableToCastValueToVariant, [DataTable.Name, Column.Name]);
     end;
@@ -3629,6 +3675,10 @@ begin
         PAnsiString(P)^ := AnsiString(VarToStr(Value));
       cdtWideString:
         PWideString(P)^ := VarToWideStr(Value);
+      cdtBCD:
+        DoubleToBcd(Value, PBCD(P)^);
+      cdtSQLTimeStamp:
+        PSQLTimeStamp(P)^ := DateTimeToSQLTimeStamp(VarToDateTime(Value));
       else
         raise Exception.CreateFmt(SUnableToAssignValueAsVariant, [DataTable.Name, Column.Name]);
     end;
@@ -3658,13 +3708,15 @@ begin
       cdtFloat: Result := FloatToStr(PDouble(P)^);
       cdtDateTime: Result := DateTimeToStr(PDateTime(P)^);
       cdtDate: Result := DateToStr(PDateTime(P)^);
-      cdtTime: Result := TimeToStr(PDateTime(P)^);      
+      cdtTime: Result := TimeToStr(PDateTime(P)^);
       cdtString: Result := String(PAnsiString(P)^);
       cdtWideString: Result := PWideString(P)^;
       cdtGuid: Result := GUIDToString(PGuid(P)^);
       cdtMemo: Result := String(PAnsiString(P)^);
       cdtBlob: Result := '{BLOB}';
       cdtReference: Result := '{ROW}';
+      cdtBcd: Result := BcdToStr(PBcd(P)^);
+      cdtSQLTimeStamp: Result := SQLTimeStampToStr('', PSQLTimeStamp(P)^)
     end;
   end;
 end;
@@ -3676,6 +3728,7 @@ var
 begin
   ASSERT(Column <> nil);
   P := @Buffer[0];
+  FillChar(P^, Column.BufSize, 0);
   case Column.FDataType of
     cdtLargeInt: PInt64(P)^ := StrToInt64(Value);
     cdtSmallInt: PSmallInt(P)^ := StrToInt(Value);
@@ -3690,6 +3743,8 @@ begin
     cdtGuid: PGuid(P)^ := StringToGUID(Value);
     cdtMemo: PAnsiString(P)^ := AnsiString(Value);
     cdtBlob: PAnsiString(P)^ := AnsiString(Value);
+    cdtBcd: PBcd(P)^ := StrToBcd(Value);
+    cdtSQLTimeStamp: PSQLTimeStamp(P)^ := StrToSQLTimeStamp(Value);
     else
       raise Exception.CreateFmt(SUnableToAssignValueAsVariant, [DataTable.Name, Column.Name]);
   end;
@@ -3866,6 +3921,7 @@ function TCtxDataRow.GetDataContainer: TCtxDataContainer;
 begin
   Result := FDataTable.DataContainer;
 end;
+
 
 { TCtxDataContainer }
 

@@ -36,9 +36,7 @@ type
   {:$ TCtxDataSet - TDataSet descendant, which can store rows in memory or }
   {:$ access rows from TCtxDataTable object residing in TCtxDataContainer }
   {:$ component. }
-  TCtxDataSet = class(TDataSet)
-  private
-    FInDelete: boolean;
+  TCtxDataSet = class (TDataSet)
   protected
     { FieldMap }
     FRecBufSize: integer;
@@ -69,6 +67,8 @@ type
 
     FFilterEvaluator: TObject;
     FIgnoreFilteringForLookup: Boolean;
+    FInDelete: Boolean;
+    FFetching: Boolean;
 
     procedure OnFilterDataRow(ARow: TCtxDataRow; var Accept: boolean);
     procedure OnNotifyDataEvent(Context: TObject; DataEvent: TCtxDataEventType);
@@ -103,6 +103,8 @@ type
     procedure InternalHandleException; override;
     procedure InternalInitFieldDefs; override;
     procedure InternalInitRecord(Buffer: TRecordBuffer); override;
+    procedure InternalInitRequiredFields; 
+    procedure InternalAddRecord(Buffer: Pointer; Append: Boolean); override;
     procedure InternalLast; override;
     procedure InternalOpen; override;
     procedure InternalEdit; override;
@@ -115,13 +117,25 @@ type
     function IsCursorOpen: Boolean; override;
     procedure OpenCursor(InfoQuery: Boolean = False); override;
     procedure SetFiltered(Value: Boolean); override;
+    procedure SetFilterText(const Value: string); override;
     procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag); override;
     procedure SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
     procedure ClearCalcFields(Buffer: TRecordBuffer); override;
     procedure DoOnNewRecord; override;
+    procedure CreateFieldDefsFromFields;
     procedure CreateInternalDataColumns;
     procedure SetOrderBy(const Value: String);
     function GetDataRow: TCtxDataRow;
+
+    { Data Provider Interface functions for Query/Table like access }
+    function OpenRemoteCursor: Boolean; virtual;
+    procedure CloseRemoteCursor; virtual;
+    function FetchRows(FetchCount: Integer = 0): Integer; virtual;
+    function FetchComplete: Boolean; virtual;
+    procedure FetchRowBlobs(Row: TCtxDataRow); virtual;
+    procedure DeleteRow(Row: TCtxDataRow); virtual;
+    procedure InsertRow(Row: TCtxDataRow); virtual;
+    procedure UpdateRow(Row: TCtxDataRow); virtual;
 
     procedure DoOnDataEvent(Sender, Context: TObject; DataEvent: TCtxDataEventType);
   protected
@@ -143,6 +157,7 @@ type
     function GetDataSource: TDataSource; override;
     procedure InternalUpdateFilter;
     procedure UpdateOrderBy;
+    procedure CheckBlobFields;
     //OldValue Support
     function GetStateFieldValue(State: TDataSetState; Field: TField): Variant; override;
   public
@@ -296,10 +311,11 @@ const
 
 resourcestring
   SUnableToWriteIntoReadOnlyBlobStream = 'Unable to write into a read-only blob stream';
+  SInternalAddRecordNotSupported = 'Method InternalAddRecord is not supported';
 
 implementation
 
-uses DBConsts, Variants  {$IFnDEF _NODATASETFILTER}, dbExtParser {$ENDIF};
+uses SqlTimSt, FmtBcd, DBConsts, Variants  {$IFnDEF _NODATASETFILTER}, dbExtParser {$ENDIF};
 
 const
   ARefTypes = [ftString, ftWideString, ftBlob, ftMemo, ftGraphic, ftFmtMemo];
@@ -356,10 +372,23 @@ begin
       Result := ftBlob;
     cdtMemo:
       Result := ftMemo;
+    cdtBcd:
+      Result := ftBCD;
+    cdtSQLTimeStamp:
+      Result := ftTimeStamp;
   else
     Result := ftUnknown;
   end;
 end;
+
+(*
+  TFieldType = (ftUnknown, ftString, ftSmallint, ftInteger, ftWord,
+    ftBoolean, ftFloat, ftCurrency, ftBCD, ftDate, ftTime, ftDateTime,
+    ftBytes, ftVarBytes, ftAutoInc, ftBlob, ftMemo, ftGraphic, ftFmtMemo,
+    ftParadoxOle, ftDBaseOle, ftTypedBinary, ftCursor, ftFixedChar, ftWideString,
+    ftLargeint, ftADT, ftArray, ftReference, ftDataSet, ftOraBlob, ftOraClob,
+    ftVariant, ftInterface, ftIDispatch, ftGuid, ftTimeStamp, ftFMTBcd);
+*)
 
 function GetCtxDataType(AType: TFieldType): TCtxDataType;
 begin
@@ -374,7 +403,7 @@ begin
       Result := cdtBoolean;
     ftFloat:
       Result := cdtFloat;
-    ftDateTime, ftTimeStamp:
+    ftDateTime:
       Result := cdtDateTime;
     ftDate:
       Result := cdtDate;
@@ -384,18 +413,40 @@ begin
       Result := cdtSmallInt;
     ftLargeInt:
       Result := cdtLargeInt;
-    ftBlob, ftGraphic:
+    ftBlob, ftGraphic, ftParadoxOle, ftDBaseOle, ftTypedBinary, ftCursor,
+    ftADT, ftArray, ftReference, ftDataSet, ftOraBlob, ftOraClob:
       Result := cdtBlob;
     ftMemo, ftFmtMemo:
       Result := cdtMemo;
     ftCurrency:
       Result := cdtFloat;
-    ftBCD:
-      Result := cdtFloat;
     ftGuid:
       Result := cdtGuid;
-  else
-    Result := cdtUnknown;
+    ftBCD, ftFmtBCD:
+      Result := cdtBCD;
+    ftTimeStamp:
+      Result := cdtSQLTimeStamp;
+    else
+      Result := cdtUnknown;
+  end;
+end;
+
+function GetFieldDefDataSize(FieldType: TFieldType; DataLength: Integer): Integer;
+begin
+  Result := 0;
+  case FieldType of
+    ftString, ftWideString {$IFDEF VER5P},ftGuid{$ENDIF}:
+    begin
+      Result := DataLength;
+      if Result = 0 then
+        Result := 1;
+    end;
+    ftBCD, ftFMTBcd:
+      Result := DataLength;
+    ftBytes, ftVarBytes:
+      Result := DataLength;
+    ftBlob, ftMemo, ftFmtMemo, ftGraphic:
+      Result := SizeOf(Pointer);
   end;
 end;
 
@@ -441,7 +492,7 @@ begin
       Active := False;
     cdeContainerDataChanged,
     cdeTableDataChanged:
-      if Active then
+      if not FFetching and Active then
       begin
         if State in dsEditModes then
           Cancel;
@@ -502,8 +553,12 @@ begin
       Result := SizeOf(SmallInt);
     ftAutoInc, ftInteger:
       Result := SizeOf(Integer);
-    ftFloat, ftCurrency, ftDate, ftTime, ftDateTime, ftTimeStamp:
+    ftBCD, ftFmtBCD:
+      Result := SizeOf(TBCD);
+    ftFloat, ftCurrency, ftDate, ftTime, ftDateTime:
       Result := SizeOf(Double);
+    ftTimeStamp:
+      Result := SizeOf(TSQLTimeStamp);
     ftLargeint:
       Result := SizeOf(Int64);
     ftGUID:
@@ -659,7 +714,6 @@ begin
   Result := True;
 end;
 
-
 function TCtxDataSet.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
 begin
   Result := TCtxBlobStream.Create(Field as TBlobField, Mode);
@@ -667,7 +721,7 @@ end;
 
 procedure TCtxDataSet.CheckActive;
 begin
-  Active := True;
+  // Active := True;
   inherited CheckActive;
 end;
 
@@ -689,6 +743,15 @@ end;
 procedure TCtxDataSet.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
 begin
   PRecInfo(Buffer).Flag := Value;
+end;
+
+procedure TCtxDataSet.CheckBlobFields;
+var
+  B: TRecordBuffer;
+begin
+  // Make sure to fetch blobs
+  if GetActiveRecBuf(B) and PRecInfo(B).Obj.BlobsNotFetched then
+    FetchRowBlobs(PRecInfo(B).Obj);
 end;
 
 function TCtxDataSet.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
@@ -873,12 +936,28 @@ begin
     inherited SetFiltered(Value);
 end;
 
+procedure TCtxDataSet.SetFilterText(const Value: string);
+begin
+  if Filter <> Value then
+  begin
+    inherited SetFilterText(Value);
+    if Filtered then
+    begin
+      InternalUpdateFilter;
+      Refresh;
+      First;
+    end;
+  end;
+end;
+
 function TCtxDataSet.GetActiveRecBuf(var RecBuf: TRecordBuffer): boolean;
 begin
   RecBuf := nil;
   case State of
     dsBlockRead, dsBrowse:
-      if IsEmpty then RecBuf := nil else RecBuf := ActiveBuffer;
+      if IsEmpty then
+        RecBuf := nil
+      else RecBuf := ActiveBuffer;
     dsEdit, dsInsert:
       RecBuf := ActiveBuffer;
     dsCalcFields:
@@ -940,7 +1019,7 @@ end;
 function TCtxDataSet.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
   DoCheck: Boolean): TGetResult;
 var
-  RecCount:integer;
+  RecCount: Integer;
 begin
   RecCount := FCursor.RowCount;
   if RecCount < 1 then
@@ -949,8 +1028,11 @@ begin
     Result := grOK;
     case GetMode of
       gmNext:
-        if FCurRec < RecCount-1 then
-          inc(FCurRec) else
+        if FCurRec < RecCount - 1 then
+          Inc(FCurRec)
+        else if (FetchRows > 0) and (FCurRec < FCursor.RowCount - 1) then
+          Inc(FCurRec)
+        else
           Result := grEOF;
       gmPrior:
         if FCurRec > 0 then
@@ -990,6 +1072,7 @@ function TCtxDataSet.GetRecordCount: Integer;
 begin
   CheckActive;
   Result := FCursor.RowCount;
+  // if not FetchComplete then Inc(Result);
 end;
 
 function TCtxDataSet.GetRecordSize: Word;
@@ -1004,6 +1087,7 @@ end;
 
 procedure TCtxDataSet.InternalLast;
 begin
+  FetchRows(-1);
   FCurRec := FCursor.RowCount;
 end;
 
@@ -1016,16 +1100,18 @@ begin
     FDataTable := FDataContainer.Tables.Add;
     FDataTableName := DEFAULT_TABLE_NAME;
     FDataTable.Name := FDataTableName;
-
-    CreateInternalDataColumns;
   end;
   FDataTable := FDataContainer.Tables.Get(FDataTableName);
+
+  if not OpenRemoteCursor then
+    CreateInternalDataColumns;
 
   FCursor.DataTable := FDataTable;
   FCursor.Relation := nil;
   FCursor.OnNotifyDataEvent := OnNotifyDataEvent;
   FCursor.OnFilterDataRow := OnFilterDataRow;
   FCursor.Filtered := Filtered;
+
   InternalUpdateFilter;
 
   if FDetailFields <> '' then
@@ -1037,7 +1123,7 @@ begin
 
   UpdateOrderBy;
 
-  FieldDefs.Updated := False;
+  FieldDefs.Updated := False; // FIsInternal and (FieldDefs.Count > 0);
   inherited OpenCursor(InfoQuery);
 
   FCursor.Active := True;
@@ -1084,6 +1170,7 @@ begin
   BindFields(False);
   if DefaultFields then DestroyFields;
   FCursorOpen := False;
+  CloseRemoteCursor;
 end;
 
 procedure TCtxDataSet.InternalInitRecord(Buffer: TRecordBuffer);
@@ -1093,22 +1180,18 @@ begin
     _FreeRecordPointers(Buffer);
     FillChar(Buffer^, RecordSize, 0);
     PRecInfo(Buffer)^.Idx := -1;
+    // 2013-02-08 MB: Moved from InternalInsert. TDataSet expects the buffer to be fully initialized
+    // here, so we much provide the row to store data in.
+    FreeAndNil(FInsertedRow);
+    FInsertedRow := FDataTable.New;
+    PRecInfo(Buffer)^.Obj := FInsertedRow;
   end;
 end;
 
-procedure TCtxDataSet.InternalEdit;
-begin
-  // Edit Row
-  PRecInfo(ActiveBuffer)^.Obj.BeginEdit;
-end;
-
-procedure TCtxDataSet.InternalInsert;
+procedure TCtxDataSet.InternalInitRequiredFields;
 var
   I: Integer;
 begin
-  FreeAndNil(FInsertedRow);
-  FInsertedRow := FDataTable.New;
-  PRecInfo(ActiveBuffer).Obj := FInsertedRow;
   for I := 0 to Fields.Count - 1 do
   with Fields[I] do
   if Required and (FieldKind = fkData) then
@@ -1120,6 +1203,30 @@ begin
   end;
 end;
 
+procedure TCtxDataSet.InternalEdit;
+begin
+  // Edit Row
+  PRecInfo(ActiveBuffer)^.Obj.BeginEdit;
+end;
+
+procedure TCtxDataSet.InternalInsert;
+begin
+  // 2013-02-08 MB: Moved to InternalInitRecord
+  (*
+  FreeAndNil(FInsertedRow);
+  FInsertedRow := FDataTable.New;
+  PRecInfo(ActiveBuffer).Obj := FInsertedRow;
+  *)
+  InternalInitRequiredFields;
+end;
+
+procedure TCtxDataSet.InternalAddRecord(Buffer: Pointer; Append: Boolean);
+begin
+  // 2013-02-08 MB: Added support for AppendRecord and InsertRecord
+  InternalInitRequiredFields;
+  InternalPost;
+end;
+
 procedure TCtxDataSet.InternalDelete;
 var
   I: TRecInfo;
@@ -1128,6 +1235,10 @@ begin
   FInDelete := True;
   try
     I := PRecInfo(ActiveBuffer)^;
+
+    // Delete I.Obj from Database
+    DeleteRow(I.Obj);
+
     FDataTable.Delete(I.Obj);
   finally
     FInDelete := False;
@@ -1146,23 +1257,20 @@ begin
   if State = dsInsert then
   begin
     ASSERT(I.Obj = FInsertedRow);
+
+    // Insert Row into Database and read it back
+    InsertRow(I.Obj);
+
     FDataTable.Insert(I.Obj);
     FInsertedRow := nil;
-    (*
-    I.Obj := FDataTable.New;
-    try
-      DataBufferToObject(ActiveBuffer, I.Obj);
-      FDataTable.Insert(I.Obj);
-    except
-      FreeAndNil(I.Obj);
-      raise;
-    end;
-    *)
   end else
   begin
     if not PRecInfo(ActiveBuffer)^.Obj.Editing then
       DatabaseError(SNotEditing);
-    // DataBufferToObject(ActiveBuffer, I.Obj);
+
+    // Update PRecInfo(ActiveBuffer)^.Obj to Database and read it back
+    UpdateRow(PRecInfo(ActiveBuffer)^.Obj);
+
     // End editing row
     PRecInfo(ActiveBuffer)^.Obj.EndEdit;
   end;
@@ -1202,12 +1310,11 @@ end;
 procedure TCtxDataSet.InternalInitFieldDefs;
 var
   I: integer;
-  aSize: word;
   FieldType: TFieldType;
   FieldDef: TFieldDef;
 begin
   // Initialize FieldDefs from DataTable
-  if FIsInternal or (FDataTable = nil) or FieldDefs.Updated then Exit;
+  if (FIsInternal and (FieldDefs.Count > 0)) or (FDataTable = nil) or FieldDefs.Updated then Exit;
 
   FDataTable.DataContainer.Active := True;
 
@@ -1219,25 +1326,12 @@ begin
       with FDataTable.Columns[I] do
       begin
         FieldType := GetFieldType(FDataTable.Columns[I].DataType);
-        aSize := 0;
-        case FieldType of
-          ftString, ftWideString {$IFDEF VER5P},ftGuid{$ENDIF}:
-          begin
-            aSize := DataLength;
-            if aSize = 0 then
-              aSize := 1;
-          end;
-          ftBytes, ftVarBytes:
-            aSize := DataLength;
-          ftBlob, ftMemo, ftFmtMemo, ftGraphic:
-            aSize := SizeOf(Pointer);
-        end;
-        if FieldType <> ftUnknown then
-        begin
-          FieldDef := TFieldDef.Create(FieldDefs, Name, FieldType, aSize, Required, I+1);
-          if ReadOnly then
-            FieldDef.Attributes := FieldDef.Attributes + [DB.faReadonly];
-        end;
+        if FieldType = ftUnknown then
+          raise Exception.Create('Unkonwn data type for column: ' + FDataTable.Columns[I].Name);
+
+        FieldDef := TFieldDef.Create(FieldDefs, Name, FieldType, GetFieldDefDataSize(FieldType, DataLength), Required, I + 1);
+        if ReadOnly then
+          FieldDef.Attributes := FieldDef.Attributes + [DB.faReadonly];
       end;
     end;
   finally
@@ -1459,30 +1553,47 @@ begin
   end;
 end;
 
+procedure TCtxDataSet.CreateFieldDefsFromFields;
+var
+  I: Integer;
+  FieldDef: TFieldDef;
+  Field: TField;
+begin
+  if FieldCount > 0 then
+  begin
+    FieldDefs.Clear;
+    for I := 0 to Fields.Count - 1 do
+    if Fields[I].FieldKind = fkData then
+    begin
+      Field := Fields[I];
+      FieldDef := TFieldDef.Create(FieldDefs, Field.FieldName, Field.DataType,
+        GetFieldDefDataSize(Field.DataType, Field.Size),
+        Field.Required, I + 1);
+      if Field.ReadOnly then
+        FieldDef.Attributes := FieldDef.Attributes + [DB.faReadonly];
+    end;
+  end;
+end;
+
 procedure TCtxDataSet.CreateInternalDataColumns;
 var
   I: Integer;
   Column: TCtxDataColumn;
+  FieldDef: TFieldDef;
 begin
-  if FieldCount > 0 then
+  CreateFieldDefsFromFields;
+
+  if FIsInternal then
   begin
     FDataTable.Columns.Clear;
-    for I := 0 to Fields.Count - 1 do
-    if Fields[I].FieldKind = fkData then
-    begin
-      Column := FDataTable.Columns.Add;
-      Column.Name := Fields[I].FieldName;
-      Column.DataType := GetCtxDataType(Fields[I].DataType);
-      Column.DataLength := Fields[I].DataSize;
-    end;
-  end else
-  begin
     for I := 0 to FieldDefs.Count - 1 do
     begin
+      FieldDef := FieldDefs[I];
       Column := FDataTable.Columns.Add;
-      Column.Name := FieldDefs[I].Name;
-      Column.DataType := GetCtxDataType(FieldDefs[I].DataType);
-      Column.DataLength := FieldDefs[I].Size;
+      Column.Name := FieldDef.Name;
+      Column.DataType := GetCtxDataType(FieldDef.DataType);
+      Column.DataLength := FieldDef.Size;
+      Column.ReadOnly := DB.faReadonly in FieldDef.Attributes;
     end;
   end;
 end;
@@ -1496,13 +1607,19 @@ end;
 function TCtxDataSet.GetFieldData(Field: TField; Buffer: Pointer;
   NativeFormat: Boolean): Boolean;
 begin
-  Result := GetFieldData(Field, Buffer);
+  if NativeFormat or (Field.DataType in [ftDateTime, ftDate, ftTime]) then
+    Result := GetFieldData(Field, Buffer)
+  else
+    Result := inherited GetFieldData(Field, Buffer, NativeFormat);
 end;
 
 procedure TCtxDataSet.SetFieldData(Field: TField; Buffer: Pointer;
   NativeFormat: Boolean);
 begin
-  SetFieldData(Field, Buffer);
+  if NativeFormat or (Field.DataType in [ftDateTime, ftDate, ftTime]) then
+    SetFieldData(Field, Buffer)
+  else
+    inherited SetFieldData(Field, Buffer, NativeFormat);
 end;
 
 procedure TCtxDataSet.UpdateDisplayLabels;
@@ -1634,6 +1751,52 @@ begin
   Result := False;
 end;
 
+{  Data Provider Interface functions for Query/Table like access }
+
+function TCtxDataSet.FetchComplete: Boolean;
+begin
+  Result := True;
+end;
+
+function TCtxDataSet.FetchRows(FetchCount: Integer): Integer;
+begin
+  Result := 0;
+end;
+
+procedure TCtxDataSet.InsertRow(Row: TCtxDataRow);
+begin
+  // implement in descendants
+end;
+
+procedure TCtxDataSet.UpdateRow(Row: TCtxDataRow);
+begin
+  // implement in descendants
+end;
+
+procedure TCtxDataSet.DeleteRow(Row: TCtxDataRow);
+begin
+  // implement in descendants
+end;
+
+procedure TCtxDataSet.FetchRowBlobs(Row: TCtxDataRow);
+begin
+  // implement in descendants
+end;
+
+function TCtxDataSet.OpenRemoteCursor: Boolean;
+begin
+  // implement in descendants
+  Result := False;
+  // Return true if cursor is successfully opened and FieldDefs initialized and
+  // first batch of rows are loaded into FDataTable
+end;
+
+procedure TCtxDataSet.CloseRemoteCursor;
+begin
+  // implement in descendants
+end;
+
+
 { TCtxBlobStream }
 
 constructor TCtxBlobStream.Create(Field: TBlobField; Mode: TBlobStreamMode);
@@ -1670,50 +1833,24 @@ end;
 
 procedure TCtxBlobStream.LoadBlobData;
 var
-  // B: PChar;
-  // P: Pointer;
   S: AnsiString;
 begin
   SetSize(0);
+  FDataset.CheckBlobFields;
   FDataset.GetFieldData(FField, @S);
   inherited Write(S[1], Length(S));
-  (*
-  B := nil;
-  FDataset.GetActiveRecBuf(B);
-  if (B <> nil) and GetBit(B+FDataSet.FFlagOffset, FField.Index) then
-  begin
-    P := B + FDataSet.FOffsets[FField.Index];
-    S := PString(P)^;
-    inherited Write(S[1], Length(S));
-  end;
-  *)
   Position := 0;
   FModified := False;
 end;
 
 procedure TCtxBlobStream.SaveBlobData;
 var
-//  B: PChar;
-//  P: Pointer;
   S: AnsiString;
 begin
   SetLength(S, Size);
   Position := 0;
   inherited Read(S[1], Size);
   FDataset.SetFieldData(FField, @S);
-  (*
-  B := nil;
-  FDataset.GetActiveRecBuf(B);
-  if B <> nil then
-  begin
-    SetLength(S, Size);
-    Position := 0;
-    inherited Read(S[1], Size);
-    P := B + FDataSet.FOffsets[FField.Index];
-    SetBit(B + FDataSet.FFlagOffset, FField.Index, Size > 0);
-    PString(P)^ := S;
-  end;
-  *)
   FModified := False;
 end;
 
@@ -1813,6 +1950,10 @@ begin
       LocFieldDefs.Free;
   end;
 end;
+
+initialization
+  dbExtParser.StringQuotes := '"';
+finalization
 
 end.
 

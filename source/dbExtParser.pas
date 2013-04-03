@@ -182,6 +182,7 @@ var
   CommonKeywords: TStringList = nil;
   CommonFunctions: TStringList = nil;
   DecimalPoint: Char = '.';
+  StringQuotes: String = '''';
 
 resourcestring
   SIllegalExpression = 'Illegal expression';
@@ -281,7 +282,7 @@ begin
   FSymbols := asymbols;
   FKeywords := akeywords;
   FBehavior := behavior;
-  FStringQuotes := '''';
+  FStringQuotes := dbExtParser.StringQuotes;
   FIdentQuotes := '"';
   FIdentQuoteBegin := '[';
   FIdentQuoteEnd := ']';

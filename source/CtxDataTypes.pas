@@ -24,7 +24,7 @@ type
   TCtxParamType = (cptUnknown, cptInput, cptOutput, cptInputOutput, cptResult);
   TCtxDataType = (cdtUnknown, cdtSmallInt, cdtLargeInt, cdtBoolean, cdtInteger,
     cdtFloat, cdtDateTime, cdtDate, cdtTime, cdtString, cdtWideString, cdtGuid,
-    cdtMemo, cdtBlob, cdtReference);
+    cdtMemo, cdtBlob, cdtReference, cdtBCD, cdtSQLTimeStamp);
   TCtxDataRowVersion = (drvCurrent, drvOriginal);
 
   {:$ ICtxDataProvider defines common interface that should be implemented by all }
