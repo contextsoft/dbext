@@ -47,7 +47,7 @@ const
   VCLFieldTypes: array [TCtxDataType] of TFieldType = (
     ftUnknown, ftSmallInt, ftLargeInt, ftBoolean, ftInteger,
     ftFloat, ftDateTime, ftDate, ftTime, ftString, ftWideString, ftGuid,
-    ftMemo, ftBlob, ftReference
+    ftMemo, ftBlob, ftReference, ftBCD, ftTimeStamp
   );
 
 implementation
@@ -69,7 +69,7 @@ begin
       Result := cdtDateTime;
     {$IFnDEF VER130}
     ftTimeStamp:
-      Result := cdtDateTime;
+      Result := cdtSQLTimeStamp;
     {$ENDIF}
     ftDate:
       Result := cdtDate;
@@ -86,7 +86,7 @@ begin
     ftCurrency:
       Result := cdtFloat;
     ftBCD:
-      Result := cdtFloat;
+      Result := cdtBCD;
     ftGuid:
       Result := cdtGuid;
   else
