@@ -82,6 +82,7 @@ type
     FDateFormat: string;
     FDateConvert: string;
     FAllowIndexTypes: string;
+    FRecreateIndexOnFieldChange: boolean;
     procedure SetInfoSchemaValueMap(const Value: TStrings);
     procedure SetInfoSchemaFieldMap(const Value: TStrings);
     procedure SetSynonyms(const Value: TStrings);
@@ -136,6 +137,7 @@ type
 
     function HasInvalidSQLFieldTypes(Schema: TDatabaseSchema): Boolean;
     procedure ConvertSQLFieldTypes(Schema: TDatabaseSchema);
+    procedure PreprocessCompareItem(Item, ParentItem: TCompareItem);
 
     function GetObjectTemplate(AnItem: TSchemaCollectionItem): String;
 
@@ -194,6 +196,8 @@ type
     property CustomObjectTypes: TStrings read FCustomObjectTypes;
     property NamePatterns: TStrings read FNamePatterns;
     property MaxIdLength: Integer read FMaxIdLength;
+    property RecreateIndexOnFieldChange: boolean read FRecreateIndexOnFieldChange;
+
     property DisplayName: string read GetDisplayName;
     property DateFormat: string read FDateFormat write FDateFormat;
     property DateConvert: string read FDateConvert write FDateConvert;
@@ -287,6 +291,7 @@ const
   ENTRY_DATEFORMAT        = 'DateFormat';
   ENTRY_DATECONVERT       = 'DateConvert';
   ENTRY_ALLOWINDEXTYPES   = 'AllowIndexTypes';
+  ENTRY_RECREATEINDEXONFIELDCHANGE   = 'RecreateIndexOnFieldChange';
 
 const
   DefaultIdentProps = 'Name,TableName,ForeignTable,ForeignKeyFields,KeyFields,AddKeyField,AddForeignKeyField,RelationshipName';
@@ -768,6 +773,53 @@ begin
   Result := AlterDatabaseSQL(nil, Schema);
 end;
 
+procedure TDBEngineProfile.PreprocessCompareItem(Item, ParentItem: TCompareItem);
+var
+  I: Integer;
+  SrcFieldDef: TFieldDefinition;
+  DestFieldDef: TFieldDefinition;
+  SrcIdxDef, DestIdxDef: TIndexDefinition;
+  TempSubItem: TCompareSchemaItem;
+begin
+  if RecreateIndexOnFieldChange
+    and (Item.Operation = ioAlter)
+    and Item.GetObj.InheritsFrom(TFieldDefinition) then
+  begin
+    // Find indexes for this field
+    SrcFieldDef := TFieldDefinition(Item.SrcObj);
+    DestFieldDef := TFieldDefinition(Item.DestObj);
+    for I := 0 to SrcFieldDef.TableDef.IndexDefs.Count - 1 do
+    begin
+      SrcIdxDef := SrcFieldDef.TableDef.IndexDefs[I];
+      if SrcIdxDef.HasField(SrcFieldDef.Name) and (ParentItem.IndexOfSrcObj(SrcIdxDef) < 0) then
+      begin
+        DestIdxDef := DestFieldDef.TableDef.IndexDefs.Find(SrcIdxDef.Name);
+        if DestIdxDef <> nil then
+        begin
+          // drop index
+          TempSubItem := TCompareSchemaItem.Create(SrcIdxDef, nil);
+          ParentItem.SubItems.Add(TempSubItem);
+          // add index
+          TempSubItem := TCompareSchemaItem.Create(nil, DestIdxDef);
+          ParentItem.SubItems.Add(TempSubItem);
+        end;
+      end;
+    end;
+    exit;
+  end;
+
+  if Item.SubItems <> nil then
+    if Item.GetObj.InheritsFrom(TDatabaseSchema) or Item.GetObj.InheritsFrom(TTableDefinition) then
+    begin
+      I := 0;
+      while I < Item.SubItems.Count do
+      begin
+        PreprocessCompareItem(Item.SubItems[I] as TCompareItem, Item);
+        Inc(I);
+      end;
+    end;
+end;
+
 function TDBEngineProfile.AlterDatabaseSQL(SrcSchema, DestSchema: TDatabaseSchema): String;
 var
   Item: TCompareSchema;
@@ -775,6 +827,7 @@ begin
   FreeAndNil(FDropCreateTables);
   Item := TCompareSchema.Create(SrcSchema, DestSchema);
   try
+    PreprocessCompareItem(Item, nil);
     // Preprocess TCompareItem to explore dependencies and add dependant objects
     // We also need to replace all alters with drop/create and separate those
     Result := InternalGenerateSQL('schema.'+StatementNames[SchemaOperations[Item.Operation]], Item);
@@ -790,6 +843,7 @@ var
 begin
   Item := TCompareSchemaItem.Create(SrcItem, DestItem);
   try
+    PreprocessCompareItem(Item, nil);
     Result := InternalGenerateSQL(
         Item.GetItem.GetSchemaClassName +'.'+StatementNames[SchemaOperations[Item.Operation]], Item);
     Result := Result + InternalGenerateSQL(
@@ -1855,6 +1909,8 @@ begin
   FCommentFormat := EngineProps.Values[ENTRY_COMMENTFORMAT];
   if FCommentFormat = '' then
     FCommentFormat := '-- %s';
+
+  FRecreateIndexOnFieldChange := AnsiSameText(EngineProps.Values[ENTRY_RECREATEINDEXONFIELDCHANGE], 'yes');
 
   FAllowIndexTypes := EngineProps.Values[ENTRY_ALLOWINDEXTYPES]+',';
 

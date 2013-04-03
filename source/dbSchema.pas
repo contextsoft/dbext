@@ -146,6 +146,8 @@ type
 
     procedure SwapSrcDest;
     procedure CompareObjects; virtual;
+    function IndexOfSrcObj(Obj: TObject): Integer;
+    function IndexOfDestObj(Obj: TObject): Integer;
 
     property Operation: TItemOperation read GetItemOperation;
     property PropsEqual: Boolean read FPropsEqual write SetPropsEqual;
@@ -816,7 +818,7 @@ type
     procedure SetItemID(const Value: Integer); override;
     function GetIndexFieldPropStr: string;
     function FindField: TFieldDefinition;
-    function GetFieldProps: string;
+    function GetFieldDefAsStr: string;
   public
     {:$ Copies the contents from another TIndexField object. }
     procedure Assign(Source: TPersistent); override;
@@ -4189,6 +4191,22 @@ begin
   // Nothing to compare here, because objects has no child properties
 end;
 
+function TCompareItem.IndexOfSrcObj(Obj: TObject): Integer;
+begin
+  if SubItems <> nil then
+  for Result := 0 to SubItems.Count - 1 do
+    if TCompareItem(SubItems[Result]).SrcObj = Obj then exit;
+  Result := -1;
+end;
+
+function TCompareItem.IndexOfDestObj(Obj: TObject): Integer;
+begin
+  if SubItems <> nil then
+  for Result := 0 to SubItems.Count - 1 do
+    if TCompareItem(SubItems[Result]).DestObj = Obj then exit;
+  Result := -1;
+end;
+
 function TCompareItem.GetObj: TObject;
 begin
   Result := DestObj;
@@ -5999,13 +6017,6 @@ begin
     and (CaseInsensitive = TIndexField(Dest.DestItem).CaseInsensitive)
     and (Descending = TIndexField(Dest.DestItem).Descending);
 
-  // Compare type and size of the correspoding field
-{
-  if Result then
-    Result := FieldTypeSize = TIndexField(Dest.DestItem).FieldTypeSize;
-
-}
-
   // We need to compare ItemID of the associated fields if found!
   if Result then
     if Schema.SchemaID = Dest.DestItem.Schema.SchemaID then
@@ -6064,8 +6075,7 @@ begin
     Props.CommaText;
 end;
 
-
-function TIndexField.GetFieldProps: string;
+function TIndexField.GetFieldDefAsStr: string;
 var
   Fld: TFieldDefinition;
 begin
@@ -6074,8 +6084,7 @@ begin
   begin
     Result := Fld.GetDisplayFieldTypeSize;
     if Fld.Required then
-      Result := Result + '|NN' else
-      Result := Result + '|N';
+      Result := Result + ' NOT NULL';
   end else
     Result := '';
 end;
