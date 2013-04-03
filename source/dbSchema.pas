@@ -154,7 +154,6 @@ type
     function GetPropValue(AObj: TObject; const PropName: String): String; virtual;
     function GetDefaultPropValue(AObj: TObject; const PropName: String): String; virtual;
     class procedure SwapSrcDestList(List: TList);
-
   end;
 
   TCompareSchema = class (TCompareItem)
@@ -816,6 +815,8 @@ type
     function GetItemID: Integer; override;
     procedure SetItemID(const Value: Integer); override;
     function GetIndexFieldPropStr: string;
+    function FindField: TFieldDefinition;
+    function GetFieldProps: string;
   public
     {:$ Copies the contents from another TIndexField object. }
     procedure Assign(Source: TPersistent); override;
@@ -2434,7 +2435,6 @@ uses
   ActiveX,
 {$ENDIF}
   DbConsts, Math, dbSQLLexer, StrUtils;
-
 {$I CtxD2009.inc}
 
 { Routines }
@@ -5999,6 +5999,13 @@ begin
     and (CaseInsensitive = TIndexField(Dest.DestItem).CaseInsensitive)
     and (Descending = TIndexField(Dest.DestItem).Descending);
 
+  // Compare type and size of the correspoding field
+{
+  if Result then
+    Result := FieldTypeSize = TIndexField(Dest.DestItem).FieldTypeSize;
+
+}
+
   // We need to compare ItemID of the associated fields if found!
   if Result then
     if Schema.SchemaID = Dest.DestItem.Schema.SchemaID then
@@ -6008,11 +6015,16 @@ begin
   Dest.PropsEqual := Result;
 end;
 
+function TIndexField.FindField: TFieldDefinition;
+begin
+  Result := IndexDef.TableDef.FieldDefs.Find(Name);
+end;
+
 function TIndexField.GetFieldID: Integer;
 var
   Fld: TFieldDefinition;
 begin
-  Fld := IndexDef.TableDef.FieldDefs.Find(Name);
+  Fld  := FindField;
   if Fld <> nil then
     Result := Fld.ItemID
   else Result := 0;
@@ -6052,6 +6064,21 @@ begin
     Props.CommaText;
 end;
 
+
+function TIndexField.GetFieldProps: string;
+var
+  Fld: TFieldDefinition;
+begin
+  Fld  := FindField;
+  if Fld <> nil then
+  begin
+    Result := Fld.GetDisplayFieldTypeSize;
+    if Fld.Required then
+      Result := Result + '|NN' else
+      Result := Result + '|N';
+  end else
+    Result := '';
+end;
 
 { TIndexFields }
 

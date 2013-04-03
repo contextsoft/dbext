@@ -207,6 +207,7 @@ type
     FIdentifiers: TStringList;
     FDisabledMessages: TStrings;
     FWrongNames: TStringList;
+    FAllowIndexTypes: string;
     FDBEngineProfile: TDBEngineProfile;
     FOnResultMessage: TOnResultMessage;
     FOnStatusMessage: TOnStatusMessage;
@@ -777,8 +778,7 @@ begin
   FDBEngineProfile := FindDBEngineProfile(Schema.TargetDB);
   if FDBEngineProfile = nil then
     raise Exception.CreateFmt(SProfileNotFound, [Schema.TargetDB]);
-
-  PrepareWrongNames;    
+  PrepareWrongNames;
 
   DoStatus(STestingSchema + Schema.SchemaName);
   ClearResults;
@@ -1036,7 +1036,9 @@ begin
         if FieldDef = nil then
           AddResult(smcIndexFieldNotFound, smoIndex, smsError, IndexDef, IndexFields[I].Name)
         else begin
-          if FieldDef.DataType in setCannotBeIndexed then
+          if (FieldDef.DataType in setCannotBeIndexed)
+            and not FDBEngineProfile.AllowIndexType(FieldDef.SQLFieldType)
+          then
             AddResult(smcIndexInvalidFieldType, smoIndex, smsError, IndexDef,
               FieldDef.Name + ': ' + FieldDef.SQLFieldType);
           if FSchema.EncloseIdentifiersInQuotes and FDBEngineProfile.NamesCaseSensitive and (FieldDef.Name <> IndexFields[I].Name) then
@@ -1488,6 +1490,7 @@ begin
   FWrongNames.Duplicates := dupIgnore;
   FWrongNames.Sorted := True;
 end;
+
 
 
 end.

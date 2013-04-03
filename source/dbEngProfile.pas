@@ -81,6 +81,7 @@ type
     FViewObjects: string;
     FDateFormat: string;
     FDateConvert: string;
+    FAllowIndexTypes: string;
     procedure SetInfoSchemaValueMap(const Value: TStrings);
     procedure SetInfoSchemaFieldMap(const Value: TStrings);
     procedure SetSynonyms(const Value: TStrings);
@@ -164,6 +165,7 @@ type
     function GetStatementDelimiter: String;
     function GetSQLHeader: String;
     function ViewSupport(AClass: TClass): boolean;
+    function AllowIndexType(const SQLFieldType: String): boolean;
 
     property FileName: String read FFileName;
     property Expressions[Idx: Integer]: TFmtExpression read GetExpressions;
@@ -284,6 +286,7 @@ const
   ENTRY_VIEWOBJECTS       = 'ViewObjects';
   ENTRY_DATEFORMAT        = 'DateFormat';
   ENTRY_DATECONVERT       = 'DateConvert';
+  ENTRY_ALLOWINDEXTYPES   = 'AllowIndexTypes';
 
 const
   DefaultIdentProps = 'Name,TableName,ForeignTable,ForeignKeyFields,KeyFields,AddKeyField,AddForeignKeyField,RelationshipName';
@@ -753,6 +756,11 @@ begin
           if AClass = TTableConstraints then
             Result := AnsiPos('CHECK', FViewObjects) > 0 else
             Result := False;
+end;
+
+function TDBEngineProfile.AllowIndexType(const SQLFieldType: String): boolean;
+begin
+  Result := Pos(UpperCase(SQLFieldType)+',', FAllowIndexTypes) > 0;
 end;
 
 function TDBEngineProfile.CreateDatabaseSQL(Schema: TDatabaseSchema): String;
@@ -1847,6 +1855,8 @@ begin
   FCommentFormat := EngineProps.Values[ENTRY_COMMENTFORMAT];
   if FCommentFormat = '' then
     FCommentFormat := '-- %s';
+
+  FAllowIndexTypes := EngineProps.Values[ENTRY_ALLOWINDEXTYPES]+',';
 
   FIdentProps.CommaText := EngineProps.Values[ENTRY_IDENTPROPS] + ',' + DefaultIdentProps;
   TStringList(FIdentProps).Duplicates := dupIgnore;

@@ -42,8 +42,7 @@ requires
   rtl,
   dbrtl,
   ibxpress,
-  adortl,
-  CtxCommonPkgD7;
+  adortl;
 
 contains
   ADOExt in '..\source\ADOExt.pas',

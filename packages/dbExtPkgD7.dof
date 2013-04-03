@@ -94,7 +94,7 @@ OutputDir=
 UnitOutputDir=
 PackageDLLOutputDir=
 PackageDCPOutputDir=
-SearchPath=E:\projects\Context\Common\source
+SearchPath=
 Packages=vcl;rtl;dbrtl;adortl;vcldb;vclx;bdertl;vcldbx;ibxpress;dsnap;cds;bdecds;qrpt;teeui;teedb;tee;dss;teeqr;visualclx;visualdbclx;dsnapcrba;dsnapcon;VclSmp;vclshlctrls;vclie;xmlrtl;inet;inetdbbde;inetdbxpress;inetdb;nmfast;webdsnap;websnap;dbexpress;dbxcds;indy;dclOffice2k;VT;db319d5r
 Conditionals=
 DebugSourceDirs=
@@ -131,7 +131,7 @@ ProductName=
 ProductVersion=1.0.0.0
 Comments=
 [Excluded Packages]
-E:\projects\Context\DBExt\lib\d7\dbExtPkgD7.bpl=Context Database Extensions
+c:\program files\borland\delphi7\Projects\Bpl\CtxQueryBuilderD7.bpl=Context Query Builder
 [HistoryLists\hlConditionals]
 Count=2
 Item0=CTX_PROPS;CTX_NODE
