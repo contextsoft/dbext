@@ -721,7 +721,7 @@ end;
 
 procedure TCtxDataSet.CheckActive;
 begin
-  // Active := True;
+  Active := True;
   inherited CheckActive;
 end;
 

@@ -1766,8 +1766,16 @@ begin
   P := 0;
   while I <= Length(AColumnNames) do
   begin
-    ColName := ExtractColumnName(AColumnNames, I, ',');
+    ColName := Trim(ExtractColumnName(AColumnNames, I, ','));
+    if ColName = '' then Continue;
     CompareOptions := [];
+    if ColName[1] = '+' then
+      System.Delete(ColName, 1, 1)
+    else if ColName[1] = '-' then
+    begin
+      System.Delete(ColName, 1, 1);
+      CompareOptions := [coDescending];
+    end;
     F := Get(ColName);
     SetLength(Result, P + 1);
     Result[P].FColumn := F;
