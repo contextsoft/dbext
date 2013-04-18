@@ -1327,7 +1327,8 @@ begin
       begin
         FieldType := GetFieldType(FDataTable.Columns[I].DataType);
         if FieldType = ftUnknown then
-          raise Exception.Create('Unkonwn data type for column: ' + FDataTable.Columns[I].Name);
+          continue;
+          // raise Exception.Create('Unkonwn data type for column: ' + FDataTable.Columns[I].Name);
 
         FieldDef := TFieldDef.Create(FieldDefs, Name, FieldType, GetFieldDefDataSize(FieldType, DataLength), Required, I + 1);
         if ReadOnly then
