@@ -732,7 +732,9 @@ end;
 
 procedure TCtxDataSet.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
-  PRecInfo(Buffer)^ := PRecInfo(Data)^;
+  // PRecInfo(Buffer)^ := PRecInfo(Data)^;
+  PRecInfo(Buffer)^.Idx := PRecInfo(Data)^.Idx;
+  PRecInfo(Buffer)^.Flag := PRecInfo(Data)^.Flag;
 end;
 
 function TCtxDataSet.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
