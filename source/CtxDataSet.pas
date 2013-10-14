@@ -1249,37 +1249,50 @@ end;
 
 procedure TCtxDataSet.InternalPost;
 var
-  I: PRecInfo;
-  T: Integer;
+  RecInfo: PRecInfo;
+  SaveIdx: Integer;
+  NewPos: Integer;
+  Row: TCtxDataRow;
 begin
   if not (State in dsEditModes) then
     DatabaseError(SNotEditing);
-  // Insert or Update Object +++
-  I := PRecInfo(ActiveBuffer);
+  // Insert or Update Row
+  RecInfo := PRecInfo(ActiveBuffer);
+  Row := RecInfo.Obj;
   if State = dsInsert then
   begin
-    ASSERT(I.Obj = FInsertedRow);
+    ASSERT(Row = FInsertedRow);
+
+    // Validate row so that insert won't fail afterwards
+    NewPos := FDataTable.ValidateRow(Row, drsInserted);
 
     // Insert Row into Database and read it back
-    InsertRow(I.Obj);
+    InsertRow(Row);
 
-    FDataTable.Insert(I.Obj);
+    // Insert row into table
+    FDataTable.InsertRow(Row, NewPos);
     FInsertedRow := nil;
   end else
   begin
-    if not PRecInfo(ActiveBuffer)^.Obj.Editing then
+    if not Row.Editing then
       DatabaseError(SNotEditing);
 
-    // Update PRecInfo(ActiveBuffer)^.Obj to Database and read it back
-    UpdateRow(PRecInfo(ActiveBuffer)^.Obj);
+    // Validate row so that insert won't fail afterwards
+    FDataTable.ValidateRow(Row, drsUpdated);
 
-    // End editing row
-    PRecInfo(ActiveBuffer)^.Obj.EndEdit;
+    // Update Row to Database and read it back
+    if Row.Inserted then
+      InsertRow(Row)
+    else
+      UpdateRow(Row);
+
+    // Update row
+    FDataTable.UpdateRow(Row);
   end;
-  I.Idx := FCursor.IndexOfRow(I.Obj);
-  T := I.Idx;
+  RecInfo.Idx := FCursor.IndexOfRow(Row);
+  SaveIdx := RecInfo.Idx;
   Resync([]);
-  FCurRec := T;
+  FCurRec := SaveIdx;
 end;
 
 procedure TCtxDataSet.InternalCancel;
@@ -1953,10 +1966,6 @@ begin
       LocFieldDefs.Free;
   end;
 end;
-
-initialization
-  dbExtParser.StringQuotes := '"';
-finalization
 
 end.
 

@@ -405,7 +405,6 @@ type
     function CheckFKErrorConstrants(ARow: TCtxDataRow; IsDelete: Boolean): TCtxDataRelation;
     procedure ProcessFKUpdateConstraints(ARow: TCtxDataRow);
     procedure ProcessFKDeleteConstraints(ARow: TCtxDataRow);
-    function ValidateRow(ARow: TCtxDataRow; Operation: TCtxDataRowState): Integer; virtual;
     procedure InternalMoveRow(OldIndex, NewIndex: Integer);
 
     procedure NotifyEvent(Context: TObject; DataEvent: TCtxDataEventType);
@@ -491,6 +490,12 @@ type
     {:$ created and added to the table. This method returns the row that has been inserted }
     {:$ into the data table or raises exception if insertion fails. }
     function Insert(const ARow: TCtxDataRow = nil; const AIndex: Integer = -1): TCtxDataRow;
+    {:$ Validates Row before inserting or updateing it. This procedure is internal and should not be called directly. }
+    function ValidateRow(ARow: TCtxDataRow; Operation: TCtxDataRowState): Integer; virtual;
+    {:$ Inserts data row into this table at given index. This procedure is internal and should not be called directly. }
+    function InsertRow(const ARow: TCtxDataRow; NewPos: Integer; const AIndex: Integer = -1): TCtxDataRow;
+    {:$ Update row into this table. This procedure is internal and should not be called directly. }
+    function UpdateRow(const ARow: TCtxDataRow): TCtxDataRow;
     {:$ Inserts an empty primary key into this data table. All other field values are }
     {:$ not assigned and integrity checks will be ignored for this row until it is }
     {:$ reloaded/refreshed from the database. This method effectively creates a placeholder }
@@ -1926,6 +1931,13 @@ begin
     Result := ARow;
 
   NewPos := ValidateRow(Result, drsInserted);
+
+  Result := InsertRow(Result, NewPos, AIndex);
+end;
+
+function TCtxDataTable.InsertRow(const ARow: TCtxDataRow; NewPos: Integer; const AIndex: Integer = -1): TCtxDataRow;
+begin
+  Result := ARow;
   if NewPos < 0 then
   begin
     if Result.Deleted then
@@ -1945,6 +1957,18 @@ begin
     Result.SetState(drsInserted, True);
   if not IsUpdating then
     RowChanged(Result, nil, cdeRowInserted);
+end;
+
+function TCtxDataTable.UpdateRow(const ARow: TCtxDataRow): TCtxDataRow;
+begin
+  Result := ARow;
+  Result.SetState(drsEditing, False);
+  Result.SetState(drsUpdated, True);
+  try
+    RowChanged(Result, nil, cdeRowModified);
+  finally
+    FreeAndNil(Result.FOldRow);
+  end;
 end;
 
 function TCtxDataTable.InsertKey(const KeyValue: Variant): TCtxDataRow;
@@ -3849,15 +3873,9 @@ begin
     raise Exception.Create(SRowNotInEditingState);
 
   // ValidateRow performs transactional processing of related rows
-  FDataTable.ValidateRow(Self, drsUpdated);
+  DataTable.ValidateRow(Self, drsUpdated);
 
-  SetState(drsEditing, False);
-  SetState(drsUpdated, True);
-  try
-    DataTable.RowChanged(Self, nil, cdeRowModified);
-  finally
-    FreeAndNil(FOldRow);
-  end;  
+  DataTable.UpdateRow(Self);
 end;
 
 procedure TCtxDataRow.Delete;
