@@ -13,7 +13,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbEnum.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.31
+(*  VERSION     : 3.32
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -395,7 +395,7 @@ end;
 
 function TDBCustomEnumeration.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
 begin
-  if (ActiveBuffer = nil) or (Field.FieldNo < 1) or (Field.FieldNo > 4) then
+  if (PByte(ActiveBuffer) = nil) or (Field.FieldNo < 1) or (Field.FieldNo > 4) then
   begin
     Result := False;
   end

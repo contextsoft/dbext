@@ -168,10 +168,16 @@ type
     destructor Destroy; override;
 
     {:$ Retrieves the current value of a field into a buffer. }
-    function GetFieldData(Field: TField; Buffer: Pointer): Boolean; override;
+    {$IFDEF D2014_ORLATER}
+    function GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean; overload; override;
+    {$ENDIF}
+    function GetFieldData(Field: TField; Buffer: Pointer): Boolean; overload; override;
     {:$ Retrieves the current value of a field into a buffer. }
     function GetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean): Boolean; override;
-    procedure SetFieldData(Field: TField; Buffer: Pointer); override;
+    {$IFDEF D2014_ORLATER}
+    procedure SetFieldData(Field: TField; Buffer: TValueBuffer); overload; override;
+    {$ENDIF}
+    procedure SetFieldData(Field: TField; Buffer: Pointer); overload; override;
     procedure SetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean); override;
 
     {:$ Retrieves the row referenced by value in the specified Column. }
@@ -688,7 +694,7 @@ begin
   Result := False;
   RowIdx := FCursor.IndexOfRow(ARow);
   if (RowIdx < 0) or ARow.Deleted then exit;
-  if (ABuf <> TempBuffer) and (RowIdx < 0) then exit;
+  if (ABuf <> TRecordBuffer(TempBuffer)) and (RowIdx < 0) then exit;
   _FreeRecordPointers(ABuf);
   // Initialize record info for buffer, so that we have access to fields
   PRecInfo(ABuf).Obj := ARow;
@@ -706,7 +712,7 @@ begin
   Result := False;
   RowIdx := FDataTable.IndexOfRow(ARow); // MB: 101309 was ARow.Index; which may cause A/V if row is invalid
   if (RowIdx < 0) or ARow.Deleted then exit;
-  if (ABuf <> TempBuffer) and (RowIdx < 0) then exit;
+  if (ABuf <> TRecordBuffer(TempBuffer)) and (RowIdx < 0) then exit;
   _FreeRecordPointers(ABuf);
   // Initialize record info for buffer, so that we have access to fields
   PRecInfo(ABuf).Obj := ARow;
@@ -755,6 +761,13 @@ begin
   if GetActiveRecBuf(B) and PRecInfo(B).Obj.BlobsNotFetched then
     FetchRowBlobs(PRecInfo(B).Obj);
 end;
+
+{$IFDEF D2014_ORLATER}
+function TCtxDataSet.GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean;
+begin
+  Result := Self.GetFieldData(Field, @Buffer[0]);
+end;
+{$ENDIF}
 
 function TCtxDataSet.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
 var
@@ -817,6 +830,13 @@ begin
     end;
   end;
 end;
+
+{$IFDEF D2014_ORLATER}
+procedure TCtxDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer);
+begin
+  Self.SetFieldData(Field, @Buffer[0]);
+end;
+{$ENDIF}
 
 procedure TCtxDataSet.SetFieldData(Field: TField; Buffer: Pointer);
 var
@@ -959,15 +979,15 @@ begin
     dsBlockRead, dsBrowse:
       if IsEmpty then
         RecBuf := nil
-      else RecBuf := ActiveBuffer;
+      else RecBuf := TRecordBuffer(ActiveBuffer);
     dsEdit, dsInsert:
-      RecBuf := ActiveBuffer;
+      RecBuf := TRecordBuffer(ActiveBuffer);
     dsCalcFields:
-      RecBuf := CalcBuffer;
+      RecBuf := TRecordBuffer(CalcBuffer);
     dsFilter:
-      RecBuf := TempBuffer;
+      RecBuf := TRecordBuffer(TempBuffer);
     dsNewValue:
-      RecBuf := ActiveBuffer;
+      RecBuf := TRecordBuffer(ActiveBuffer);
     dsOldValue:;
     dsSetKey:;
   else
@@ -988,7 +1008,7 @@ begin
     SaveState := SetTempState(dsFilter);
     SaveModified := Modified;
     try
-      B := TempBuffer;
+      B := TRecordBuffer(TempBuffer);
       with PRecInfo(B)^ do
       begin
         Flag := bfCurrent;
@@ -1506,7 +1526,7 @@ begin
 
   if Obj <> nil then
   begin
-    B := TempBuffer;
+    B := TRecordBuffer(TempBuffer);
     // if not CheckRowBuffer(Obj, B) then exit;
 
     if Obj.Deleted then exit;

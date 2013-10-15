@@ -9,4 +9,5 @@
 @call build_d2011.bat
 @call build_dXE2.bat
 @call build_dXE3.bat
+@call build_dXE4.bat
 

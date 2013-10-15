@@ -15,7 +15,7 @@ unit CtxDataTypes;
 
 interface
 
-uses SysUtils, Classes {$IFnDEF VER130}, Variants{$ENDIF};
+uses SysUtils, {$IFDEF D2014_ORLATER}Types,{$ENDIF} Classes {$IFnDEF VER130}, Variants{$ENDIF};
 
 type
   TCtxDataCommand = class;

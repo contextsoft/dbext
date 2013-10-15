@@ -11,7 +11,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbEngProfile.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.31
+(*  VERSION     : 3.32
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -21,7 +21,7 @@ unit dbEngProfile;
 
 interface
 
-uses Classes, Contnrs, SysUtils, DB, dbSchema;
+uses Classes, Contnrs, SysUtils, DB, dbSchema{$IFDEF D2014_ORLATER}, System.Types{$ENDIF};
 
 type
   TFmtExpression = class;

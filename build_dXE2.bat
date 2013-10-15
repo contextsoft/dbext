@@ -13,6 +13,8 @@ set buildto=..\lib\dXE2
 
 "%dpath%\RAD Studio\9.0\bin\dcc32.exe" -JL -NS%ns% -I%include% -U%include% -LE%buildto% -LN%buildto% -N%buildto% -B %package%dXE2.dpk
 
+pause
+
 move ..\source\*.hpp %buildto%
 move ..\source\*.obj %buildto%
 move ..\source\designtime\*.hpp %buildto%

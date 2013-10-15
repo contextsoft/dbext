@@ -12,7 +12,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbRecord.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.31
+(*  VERSION     : 3.32
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -281,7 +281,7 @@ begin
   if State in dsEditModes then
   begin
     // replace data with new data
-    Move(ActiveBuffer^, FRecord^, FRecordSize);
+    Move(PByte(ActiveBuffer)^, FRecord^, FRecordSize);
     Move(FRecord^, FOldRecord^, FRecordSize);
   end;
 end;
@@ -320,9 +320,9 @@ begin
     dsEdit,
     dsInsert,
     dsNewValue:
-      RecBuf := ActiveBuffer;
+      RecBuf := TRecordBuffer(ActiveBuffer);
     dsCalcFields:
-      RecBuf := CalcBuffer;
+      RecBuf := TRecordBuffer(CalcBuffer);
     dsOldValue:
       RecBuf := FOldRecord;
     else

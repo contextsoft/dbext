@@ -14,7 +14,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchemaTest.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.31
+(*  VERSION     : 3.32
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -207,7 +207,6 @@ type
     FIdentifiers: TStringList;
     FDisabledMessages: TStrings;
     FWrongNames: TStringList;
-    FAllowIndexTypes: string;
     FDBEngineProfile: TDBEngineProfile;
     FOnResultMessage: TOnResultMessage;
     FOnStatusMessage: TOnStatusMessage;
