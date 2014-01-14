@@ -130,8 +130,6 @@ OriginalFilename=
 ProductName=
 ProductVersion=1.0.0.0
 Comments=
-[Excluded Packages]
-c:\program files\borland\delphi7\Projects\Bpl\CtxQueryBuilderD7.bpl=Context Query Builder
 [HistoryLists\hlConditionals]
 Count=2
 Item0=CTX_PROPS;CTX_NODE
