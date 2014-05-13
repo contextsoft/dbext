@@ -325,6 +325,7 @@ var
       Delete(PropName, Length(PropName), 1);
 
     if PropName = '' then exit;
+    if PropName[1] = '#' then exit;
     if PropName = '__ignore' then exit;
 
     // Remove postfix if any
@@ -1090,7 +1091,7 @@ var
               // Skip and do nothing
             end else if AnsiSameText(Value, 'dummy') then
             begin
-              // Skip dummy value
+              // Skip dummy or calculated value
               if not KeyToken then
               begin
                 Result := True;

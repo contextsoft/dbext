@@ -49,6 +49,7 @@ type
     FInfoSchemaSQL: TStrings;
     FInfoSchemaValueMap: TStrings;
     FInfoSchemaFieldMap: TStrings;
+    FCalcExpresssions: TStrings;
     FSynonyms: TStrings;
     FKeywords: TStrings;
     FFileName: String;
@@ -95,6 +96,7 @@ type
     procedure SetEngineName(const Value: String);
     procedure SetFieldTypeMap(const Value: TStrings);
     procedure SetStatements(const Value: TStrings);
+    procedure SetCalcExpresssions(const Value: TStrings);
     function GetKeywords: TStrings;
 
     function OnObjectField(const FieldText: String; Data: Pointer): String;
@@ -169,6 +171,9 @@ type
     function ViewSupport(AClass: TClass): boolean;
     function AllowIndexType(const SQLFieldType: String): boolean;
 
+    function EvaluateCalcExpression(const Expr: String; Item: TCompareItem): String;
+    function GetCalcExpression(const ExprName: String): String;
+
     property FileName: String read FFileName;
     property Expressions[Idx: Integer]: TFmtExpression read GetExpressions;
     property ExpressionCount: Integer read GetExpressionCount;
@@ -211,6 +216,7 @@ type
     property InfoSchemaSQL: TStrings read FInfoSchemaSQL write SetInfoSchemaSQL;
     property InfoSchemaValueMap: TStrings read FInfoSchemaValueMap write SetInfoSchemaValueMap;
     property InfoSchemaFieldMap: TStrings read FInfoSchemaFieldMap write SetInfoSchemaFieldMap;
+    property CalcExpresssions: TStrings read FCalcExpresssions write SetCalcExpresssions;
   end;
 
   { Format Expression Parsing }
@@ -261,6 +267,7 @@ const
   SECTION_INFOSCHEMASQLLIGHT   = 'InfoSchemaSQLLight';
   SECTION_INFOSCHEMAVALUEMAP = 'InfoSchemaValueMap';
   SECTION_INFOSCHEMAFIELDMAP = 'InfoSchemaFieldMap';
+  SECTION_CALCEXPRESSIONS = 'Expressions';
 
   ENTRY_ENGINENAME        = 'EngineName';
   ENTRY_DISPLAYNAME       = 'DisplayName';
@@ -309,7 +316,7 @@ resourcestring
 
 implementation
 
-uses Forms,{$IFnDEF VER130}dbSQLParser,{$ENDIF} TypInfo, Masks;
+uses Forms,{$IFnDEF VER130}dbSQLParser,{$ENDIF} TypInfo, Masks, dbExtParser;
 
 {$I CtxD2009.inc}
 
@@ -652,6 +659,8 @@ begin
   FInfoSchemaSQL := TStringList.Create;
   FInfoSchemaValueMap := TStringList.Create;
   FInfoSchemaFieldMap := TStringList.Create;
+  FCalcExpresssions := TStringList.Create;
+
   FStatements := TStringList.Create;
   FParentStatements := TStringList.Create;
   FFieldTypeMap := TStringList.Create;
@@ -667,7 +676,7 @@ begin
   TStringList(FInfoSchemaValueMap).OnChange := StatementChanged;
   TStringList(FInfoSchemaFieldMap).OnChange := StatementChanged;
   TStringList(FInfoSchemaSQL).OnChange := StatementChanged;
-
+  TStringList(FCalcExpresssions).OnChange := StatementChanged;
 
   FCustomObjectTypes := TStringList.Create;
   FNamePatterns := TStringList.Create;
@@ -692,7 +701,8 @@ begin
   FProperties.Free;
   FInfoSchemaSQL.Free;
   FInfoSchemaValueMap.Free;
-  FInfoSchemaFieldMap.Free;  
+  FInfoSchemaFieldMap.Free;
+  FCalcExpresssions.Free;
   FEngineProps.Free;
   FTopLevelObjects.Free;
   FParentStatements.Free;
@@ -1298,6 +1308,17 @@ begin
   begin
     if Item.Operation = ioDrop then
       Item.PropsEqual := False;
+  end else if PropName[1] = '#' then
+  begin
+    try
+      PropName := copy(PropName, 2, MaxInt);
+      TempRes := EvaluateCalcExpression(GetCalcExpression(PropName), Item);
+      if IsIdentProp(PropName) then
+        TempRes := FormatName(TempRes);
+    except
+      TempRes := '!Error in ' + PropName;
+    end;
+    // Item.PropsEqual := True;
   end else with Item do
   begin
     // extract and then append postfix
@@ -1693,6 +1714,8 @@ begin
     ReadSection(SECTION_INFOSCHEMASQL, TempList, FInfoSchemaSQL);
     ReadSection(SECTION_INFOSCHEMAVALUEMAP, TempList, FInfoSchemaValueMap);
     ReadSection(SECTION_INFOSCHEMAFIELDMAP, TempList, FInfoSchemaFieldMap);
+    ReadSection(SECTION_CALCEXPRESSIONS, TempList, FCalcExpresssions);
+
     FParentStatements.Clear;
   finally
     TempList.Free;
@@ -1742,6 +1765,7 @@ begin
     ReplaceSection(SECTION_INFOSCHEMASQL, TempList, FInfoSchemaSQL);
     ReplaceSection(SECTION_INFOSCHEMAVALUEMAP, TempList, FInfoSchemaValueMap);
     ReplaceSection(SECTION_INFOSCHEMAFIELDMAP, TempList, FInfoSchemaFieldMap);
+    ReplaceSection(SECTION_CALCEXPRESSIONS, TempList, FCalcExpresssions);
     TempList.SaveToFile(FileName);
   finally
     TempList.Free;
@@ -2520,7 +2544,46 @@ begin
   end;
 end;
 
+type
+  TCompareItemContext = class (TExpressionContext)
+  public
+    class function GetItem(context: pointer; const name: String): variant; override;
+    // class function GetSubContext(context: pointer; const name: String; out contextClass: TContextClass): pointer; override;
+  end;
 
+function TDBEngineProfile.EvaluateCalcExpression(const Expr: String;
+  Item: TCompareItem): String;
+begin
+  // Evaluate expression
+  with TEvaluator.Create(Expr, Item, TCompareItemContext) do
+  try
+    Result := Evaluate;
+  finally
+    Free;
+  end;
+end;
+
+function TDBEngineProfile.GetCalcExpression(
+  const ExprName: String): String;
+begin
+  Result := FCalcExpresssions.Values[ExprName];
+end;
+
+procedure TDBEngineProfile.SetCalcExpresssions(const Value: TStrings);
+begin
+  FCalcExpresssions.Assign(Value);
+end;
+
+{ TCompareItemContext }
+
+class function TCompareItemContext.GetItem(context: pointer;
+  const name: String): variant;
+begin
+  with TCompareItem(context) do
+  if DestObj <> nil then
+    Result := GetPropValue(DestObj, name)
+  else Result := GetPropValue(SrcObj, name);
+end;
 
 initialization
   DBEngineProfiles := TList.Create;
