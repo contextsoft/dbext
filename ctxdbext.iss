@@ -2,7 +2,7 @@
 
 [Setup]
 AppName=Context Database Extensions
-AppVerName=Context Database Extensions v.3.33
+AppVerName=Context Database Extensions v.3.35
 AppCopyright=Copyright © 2003-2014, Michael Baytalsky
 DefaultDirName={pf}\Context Software\DBExt3
 DefaultGroupName=Context Database Extensions
@@ -31,6 +31,7 @@ Name: "libdXE2"; Description: "Delphi XE2/RAD Studio XE2 Library"; Types: Defaul
 Name: "libdXE3"; Description: "Delphi XE3/RAD Studio XE3 Library"; Types: Default
 Name: "libdXE4"; Description: "Delphi XE4/RAD Studio XE4 Library"; Types: Default
 Name: "libdXE5"; Description: "Delphi XE5/RAD Studio XE5 Library"; Types: Default
+Name: "libdXE6"; Description: "Delphi XE5/RAD Studio XE6 Library"; Types: Default
 
 Name: "sources"; Description: "Source Code"; Types: Default
 Name: "demos"; Description: "Demos"; Types: Default
@@ -82,6 +83,10 @@ Source: "source\*.*"; Excludes: "*.pas"; DestDir: "{app}\libdXE4"; Flags: recurs
 Source: "lib\dXE5\*.*"; Excludes: "CtxGridView.*,CtxProfiles.*,CtxPropView.*,CtxNode.*,CtxCustomProps.*,CtxDockPanel.*,CtxCommonUtils.*"; DestDir: "{app}\libdXE5"; Flags: ignoreversion; Components: libdXE5
 Source: "source\*.*"; Excludes: "*.pas"; DestDir: "{app}\libdXE5"; Flags: recursesubdirs ignoreversion; Components: libdXE5
 
+Source: "lib\dXE6\*.*"; Excludes: "CtxGridView.*,CtxProfiles.*,CtxPropView.*"; DestDir: "{app}\libdXE6"; Flags: ignoreversion; Components: libdXE6
+Source: "source\*.*"; Excludes: "*.pas"; DestDir: "{app}\libdXE6"; Flags: recursesubdirs ignoreversion; Components: libdXE6
+
+
 ;Source: "lib\c2006\*.*"; Excludes: "CtxGridView.*,CtxProfiles.*,CtxPropView.*"; DestDir: "{app}\libc2006"; Flags: ignoreversion; Components: libc2006
 ;Source: "source\*.*"; Excludes: "*.pas"; DestDir: "{app}\libc2006"; Flags: recursesubdirs ignoreversion; Components: libc2006
 
@@ -118,6 +123,7 @@ Root: HKCU; Subkey: "Software\Embarcadero\BDS\9.0\Known Packages"; ValueType: st
 Root: HKCU; Subkey: "Software\Embarcadero\BDS\10.0\Known Packages"; ValueType: string; ValueData: "Context Database Extensions"; ValueName: "{app}\libdXE3\DBExtPkgDXE3.bpl"; Flags: uninsdeletevalue; Components: libdXE3
 Root: HKCU; Subkey: "Software\Embarcadero\BDS\11.0\Known Packages"; ValueType: string; ValueData: "Context Database Extensions"; ValueName: "{app}\libdXE4\DBExtPkgDXE4.bpl"; Flags: uninsdeletevalue; Components: libdXE4
 Root: HKCU; Subkey: "Software\Embarcadero\BDS\12.0\Known Packages"; ValueType: string; ValueData: "Context Database Extensions"; ValueName: "{app}\libdXE5\DBExtPkgDXE5.bpl"; Flags: uninsdeletevalue; Components: libdXE5
+Root: HKCU; Subkey: "Software\Embarcadero\BDS\14.0\Known Packages"; ValueType: string; ValueData: "Context Database Extensions"; ValueName: "{app}\libdXE5\DBExtPkgDXE6.bpl"; Flags: uninsdeletevalue; Components: libdXE6
 ;Root: HKCU; Subkey: "Software\CodeGear\BDS\6.0\Known Packages"; ValueType: string; ValueData: "Context Database Extensions (C++Builder 2009)"; ValueName: "{app}\libc2009\DBExtPkgC2009.bpl"; Flags: uninsdeletevalue; Components: libc2009
 
 [Run]
@@ -132,6 +138,7 @@ Filename: "{app}\help\instlhlp.exe"; Parameters: "-IP embarcadero\bds 9.0 libdXE
 Filename: "{app}\help\instlhlp.exe"; Parameters: "-IP embarcadero\bds 10.0 libdXE3 source cpp"; StatusMsg: "Adding library paths (Delphi XE3)..."; Components: libdXE3
 Filename: "{app}\help\instlhlp.exe"; Parameters: "-IP embarcadero\bds 11.0 libdXE4 source cpp"; StatusMsg: "Adding library paths (Delphi XE4)..."; Components: libdXE4
 Filename: "{app}\help\instlhlp.exe"; Parameters: "-IP embarcadero\bds 12.0 libdXE5 source cpp"; StatusMsg: "Adding library paths (Delphi XE5)..."; Components: libdXE5
+Filename: "{app}\help\instlhlp.exe"; Parameters: "-IP embarcadero\bds 14.0 libdXE6 source cpp"; StatusMsg: "Adding library paths (Delphi XE6)..."; Components: libdXE6
 
 ;Filename: "{app}\help\instlhlp.exe"; Parameters: "-IP borland\bds 4.0 libc2006 source cpp"; StatusMsg: "Adding library paths (C++Builder 2006)..."; Components: libc2006
 ;Filename: "{app}\help\instlhlp.exe"; Parameters: "-IP codegear\bds 6.0 libc2009 source cpp"; StatusMsg: "Adding library paths (C++Builder 2009)..."; Components: libc2009
@@ -153,6 +160,7 @@ Filename: "{app}\help\instlhlp.exe"; Parameters: "-UP embarcadero\bds 9.0 libdXE
 Filename: "{app}\help\instlhlp.exe"; Parameters: "-UP embarcadero\bds 10.0 libdXE3 source cpp"; StatusMsg: "Removing library paths (Delphi XE3)..."; Components: libdXE3
 Filename: "{app}\help\instlhlp.exe"; Parameters: "-UP embarcadero\bds 11.0 libdXE4 source cpp"; StatusMsg: "Removing library paths (Delphi XE4)..."; Components: libdXE4
 Filename: "{app}\help\instlhlp.exe"; Parameters: "-UP embarcadero\bds 12.0 libdXE5 source cpp"; StatusMsg: "Removing library paths (Delphi XE5)..."; Components: libdXE5
+Filename: "{app}\help\instlhlp.exe"; Parameters: "-UP embarcadero\bds 14.0 libdXE5 source cpp"; StatusMsg: "Removing library paths (Delphi XE6)..."; Components: libdXE6
 
 ;Filename: "{app}\help\instlhlp.exe"; Parameters: "-UP borland\bds 4.0 libc2006 source cpp"; StatusMsg: "Removing library paths (C++Builder 2006)..."; Components: libc2006
 ;Filename: "{app}\help\instlhlp.exe"; Parameters: "-UP codegear\bds 6.0 libc2009 source cpp"; StatusMsg: "Adding library paths (C++Builder 2009)..."; Components: libc2009

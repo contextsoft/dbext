@@ -1,4 +1,4 @@
-package dbExtPkgD7;
+package dbExtPkgDXE5;
 
 {$R *.res}
 {$R '..\source\dbExtReg.dcr'}
@@ -8,6 +8,7 @@ package dbExtPkgD7;
 {$R '..\source\dbManager.dcr'}
 {$R '..\source\CtxDBDesigner_TLB.dcr'}
 {$R '..\source\CtxData.dcr'}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
 {$ALIGN 8}
 {$ASSERTIONS ON}
 {$BOOLEVAL OFF}
@@ -29,18 +30,20 @@ package dbExtPkgD7;
 {$WRITEABLECONST ON}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
 {$DESCRIPTION 'Context Database Extensions'}
 {$DESIGNONLY}
 {$IMPLICITBUILD OFF}
 
 requires
   vcl,
+  designide,
   vclx,
   vcldb,
-  designide,
-  bdertl,
   rtl,
   dbrtl,
+  bdertl,
   ibxpress,
   adortl;
 
@@ -75,11 +78,11 @@ contains
   fDataExplorer in '..\source\designtime\fDataExplorer.pas' {frmDataExplorer},
   fDataRelationEditor in '..\source\designtime\fDataRelationEditor.pas' {frmDataRelationEditor},
   fDataTableWizard in '..\source\designtime\fDataTableWizard.pas' {frmDataTableWizard},
-  fDBAdapterEditor in '..\source\designtime\fDBAdapterEditor.pas' {frmDBAdapterEditor},
+  fDBAdapterEditor in '..\source\designtime\fDBAdapterEditor.pas',
   fSelectCommandTypes in '..\source\designtime\fSelectCommandTypes.pas' {frmSelectCommandTypes},
-  fSelFields in '..\source\designtime\fSelFields.pas' {frmSelectFields},
+  fSelFields in '..\source\designtime\fSelFields.pas',
   CtxDBDesignerAdapter in '..\source\CtxDBDesignerAdapter.pas',
-  CtxFieldsUpdater in '..\source\CtxFieldsUpdater.pas',
-  CtxDataSetCommandBuilder in '..\source\CtxDataSetCommandBuilder.pas' {frmCtxDataSetCommandBuilder};
+  CtxDataSetCommandBuilder in '..\source\CtxDataSetCommandBuilder.pas' {frmCtxDataSetCommandBuilder},
+  CtxFieldsUpdater in '..\source\CtxFieldsUpdater.pas';
 
 end.

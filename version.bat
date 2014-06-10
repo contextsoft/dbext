@@ -1,1 +1,1 @@
-mfsr version.ini source\*.pas
+c:\utils\mfsr.exe version.ini source\*.pas
