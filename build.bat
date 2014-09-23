@@ -12,4 +12,5 @@
 @call build_dXE4.bat
 @call build_dXE5.bat
 @call build_dXE6.bat
+@call build_dXE7.bat
 

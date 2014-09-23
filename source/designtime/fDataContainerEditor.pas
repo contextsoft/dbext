@@ -14,7 +14,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ActnList, ImgList, ToolWin, ComCtrls, StdCtrls, ExtCtrls, StdActns, Menus,
-  CtxDataTypes, CtxDBIntf, CtxData, CtxDataSet, CtxProfiles, CtxGridView, CtxPropView;
+  CtxDataTypes, CtxDBIntf, CtxData, CtxDataSet, CtxProfiles, CtxGridView, CtxPropView,
+  System.Actions;
 
 type
   TfrmDataContainerEditor = class(TForm)

@@ -9,3 +9,5 @@
 @echo Building %package%_trial.iss...
 @%innosetup% %package%_trial.iss > %package%_trial.log
 @echo Done.
+
+@call release.bat 336

@@ -7,4 +7,3 @@ echo Build everything
 echo Build setup
 @call buildsetup.bat
 
-@call release.bat 335
