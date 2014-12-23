@@ -26,7 +26,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.36
+(*  VERSION     : 3.37
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 336;
+  dbSchemaLibVersion = 337;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -81,6 +81,8 @@ type
     ftNClob, ftRecRev);
 
   TItemOperation = (ioCreate, ioAlter, ioDrop, ioNone);
+
+  TOnCheckItemID = procedure (Sender: TDatabaseSchema; Item: TSchemaCollectionItem; var AItemID) of object;
 
   TOnSchemaItem = procedure (Schema: TDatabaseSchema; Item: TSchemaCollectionItem; var Abort: Boolean; Data: Pointer = nil) of object;
 
@@ -2245,6 +2247,10 @@ type
 
   function ValidObj(Obj: TSchemaCollectionItem): Boolean;
 
+
+
+
+
 const
   ANSI_DATE_SEPARATOR = '-';
   ANSI_TIME_SEPARATOR = ':';
@@ -2429,6 +2435,8 @@ const
 
 var
   GlobalSQLFieldTypeChanged: TOnSQLFieldTypeChanged;
+  GlobalCheckItemID: TOnCheckItemID;
+
 
 implementation
 
