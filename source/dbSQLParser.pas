@@ -670,7 +670,7 @@ var
         Lexer.Term := '';
       CountBeginEnd := Lexer.Term = '';
       // Lexer.Term := Term;
-      while not ((Lexer.Term <> '') and AnsiSameText(Token, Lexer.Term)) do
+      while (Lexer.Term = '') or not AnsiSameText(Token, Lexer.Term) do
       begin
         if Lexer.TokenID = tokenEOF then
           if CountBeginEnd and (BeginEndCounter > 0) then
@@ -678,6 +678,9 @@ var
           else break;
         Lexer.GetNextToken;
         Token := Lexer.Token;
+        // skip "term" that is not actually term
+        if (AnsiSameText(Token, Lexer.Term)) and (Lexer.TokenID <> tokenTerm) then
+          Token := '';
         if CountBeginEnd and (Lexer.TokenID = tokenToken) then
         begin
           if AnsiSameText(Token, 'begin') then

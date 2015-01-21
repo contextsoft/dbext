@@ -4050,13 +4050,15 @@ end;
 
 function FormatName(const Name, Fmt: String): String;
 begin
-  if AnsiSameText(Fmt, 'd') or (Fmt = '') then
+  if Fmt = '' then
     Result := AnsiQuotedStr(Name, '"')
-  else if AnsiSameText(Fmt, 'b') then
+  else if AnsiSameText(Fmt[1], 'd') then
+    Result := AnsiQuotedStr(Name, '"')
+  else if AnsiSameText(Fmt[1], 'b') then
     Result := '[' + Name + ']'
-  else if AnsiSameText(Fmt, 'a') then
+  else if AnsiSameText(Fmt[1], 'a') then
     Result := AnsiQuotedStr(Name, '`')
-  else if AnsiSameText(Fmt, 'q') then
+  else if AnsiSameText(Fmt[1], 'q') then
     Result := AnsiQuotedStr(Name, '''')
   else Result := Name;
 end;
@@ -5274,9 +5276,17 @@ begin
 end;
 
 procedure TViewDefinition.UpdateDefinition(const Value: String);
+var
+  Temp: String;
 begin
   if FDefinition.Count > 0 then
-    FDefinition.Insert(0, 'CREATE VIEW ' + Schema.FormatName(Name, Value));
+  begin
+    // if value contains 'r' then
+    Temp := '';
+    if AnsiPos('R', AnsiUpperCase(Value)) > 0 then
+      Temp := 'OR REPLACE ';
+    FDefinition.Insert(0, 'CREATE '+Temp+'VIEW ' + Schema.FormatName(Name, Value));
+  end;
 end;
 
 procedure TViewDefinition.SetPropValue(const PropName, Value: String);
@@ -5400,11 +5410,19 @@ begin
 end;
 
 procedure TStoredProcDefinition.UpdateDefinition(const Value: String);
+var
+  Temp: String;
 begin
   if FDefinition.Count = 0 then exit;
+
+  // if value contains 'r' then
+  Temp := '';
+  if AnsiPos('R', AnsiUpperCase(Value)) > 0 then
+    Temp := 'OR REPLACE ';
+
   if IsFunction then
-    FDefinition.Insert(0, 'CREATE FUNCTION ' + Schema.FormatName(Name, Value))
-  else FDefinition.Insert(0, 'CREATE PROCEDURE ' + Schema.FormatName(Name, Value));
+    FDefinition.Insert(0, 'CREATE '+Temp+'FUNCTION ' + Schema.FormatName(Name, Value))
+  else FDefinition.Insert(0, 'CREATE '+Temp+'PROCEDURE ' + Schema.FormatName(Name, Value));
 end;
 
 { TStoredProcDefinitions }
@@ -8693,9 +8711,17 @@ procedure TTriggerDefinition.UpdateDefinition(const Value: String = '');
         or AnsiSameText(TargetDB, 'DBISAM4') or AnsiSameText(TargetDB, 'Nexus1');
   end;
 
+var
+  Temp: String;
 begin
   if (FDefinition <> '') and not ClientSide then
-    FDefinition := 'CREATE TRIGGER ' + Schema.FormatName(Name, Value) + #13#10 + FDefinition;
+  begin
+    // if value contains 'r' then
+    Temp := '';
+    if AnsiPos('R', AnsiUpperCase(Value)) > 0 then
+      Temp := 'OR REPLACE ';
+    FDefinition := 'CREATE '+Temp+'TRIGGER ' + Schema.FormatName(Name, Value) + #13#10 + FDefinition;
+  end;
 end;
 
 { TTriggerDefinitions }
