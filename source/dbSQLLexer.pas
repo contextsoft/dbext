@@ -67,6 +67,7 @@ type
     FTermChar: Char;
     FOwnStream: Boolean;
     FTerm: String;
+    FFirstPositionTerm: Boolean;
     FSetTermCommand: String;
     FSizeOfChar: Integer;
     FOnPragma: TSQLLexerPragmaEvent;
@@ -106,6 +107,7 @@ type
     property LiteralPrefixes: String read GetPrefixes write SetPrefixes;
     property Term: String read FTerm write SetTerm;
     property SetTermCommand: String read FSetTermCommand write FSetTermCommand;
+    property FirstPositionTerm: Boolean read FFirstPositionTerm write FFirstPositionTerm;
 
     property LineNo: Integer read FLineNo;
     property LinePos: Integer read FLinePos;
@@ -308,6 +310,16 @@ begin
   else Result := copy(Str, P + Length(Delimiter), MaxInt);
 end;
 
+function StrContainsChar(const Str: String; const CharSet: CharSet): Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+  for I := 1 to Length(Str) do
+    if CharInSet(Str[I], CharSet) then Exit;
+  Result := False;
+end;
+
 { TSQLLexer }
 
 constructor TSQLLexer.Create(AStream: TStream; BufSize: Integer = 1024; ASizeOfChar: Integer = 1; const ATerm: string =''; const AComments: string = '');
@@ -327,6 +339,7 @@ begin
   if AComments = '' then
     Comments := DefaultCommentChars else
     Comments := AComments;
+  FFirstPositionTerm := False;
   if ATerm <> '' then
     Term := ATerm;
   FLiteralPrefixes := TStringList.Create;
@@ -525,6 +538,7 @@ function TSQLLexer.GetNextToken: Integer;
 var
   IsTerm, DotDelimitedID: Boolean;
   PrevChar: Char;
+  TokenBeginLinePos: Integer;
 begin
   Result := tokenUnknown;
   if FTokenID = tokenEOLN then
@@ -540,6 +554,7 @@ begin
   FToken := '';
   FTokenLen := 0;
   FTokenBeginPos := Position - 1;
+  TokenBeginLinePos := FLinePos;
   repeat
     case FNextChar of
       #0: Result := tokenEOF; // End of file
@@ -560,10 +575,10 @@ begin
         GetNextChar;
       end
       else begin
-        // Extract comments
         PrevChar := #0;
         if CharInSet(FNextChar, FCommentChars) and not DotDelimitedID then
         begin
+          // extract comments
           PrevChar := FNextChar;
           Result := ParseComments;
           if Result <> tokenComment then
@@ -571,6 +586,7 @@ begin
           else PrevChar := #0;
         end else if CharInSet(FNextChar, setSpecialChars) and not DotDelimitedID then
         begin
+          // extract special chars separately
           if FNextChar = FTerm then
             Result := tokenTerm
           else Result := Ord(FNextChar);
@@ -579,21 +595,27 @@ begin
 
         if (Result = tokenUnknown) or (Result = tokenIdentifier) or (Result = tokenToken) or CharInSet(PrevChar, FCommentChars) then
         begin
-          IsTerm := FNextChar = FTermChar;
+          // Get prev char
           if PrevChar > #0 then
             AddTokenChar(PrevChar);
+
+          // If first char is term this would allow us to get it
+          IsTerm := (FTokenLen = 0) and (FNextChar = FTermChar);
+
           while CharInSet(FNextChar, setTokenChars - FCommentChars) and (IsTerm or (FNextChar <> FTermChar)) do
           begin
             AddTokenChar(FNextChar);
             GetNextChar;
             if FNextChar = '.' then break;
           end;
+
           if not DotDelimitedID then
           begin
             FToken := copy(FTokenBuf, 1, FTokenLen);
-            if (FTerm <> '') and AnsiSameText(FToken, FTerm) then
+            if (FTerm <> '') and AnsiSameText(FToken, FTerm) and ((TokenBeginLinePos = 1) or not FFirstPositionTerm) then
+            begin
               Result := tokenTerm
-            else if (FLiteralPrefixes.IndexOf(FToken) >= 0) and (FNextChar = '''') then
+            end else if (FLiteralPrefixes.IndexOf(FToken) >= 0) and (FNextChar = '''') then
               Result := ExtractQuotedToken('''', tokenLiteral)
             else if (FToken <> '') and (FToken[1] = '#') then
               Result := tokenLiteral
@@ -637,6 +659,10 @@ begin
   if FTerm <> Value then
   begin
     FTerm := Value;
+
+    // By default we require that terms like / and words be only treated as terms in first position
+    FFirstPositionTerm := StrContainsChar(FTerm, ['/', 'A'..'Z', 'a'..'z', '0'..'9']);
+
     if (FTerm <> '') and CharInSet(FTerm[1], setTokenChars)
       and not CharInSet(FTerm[1], setAlphaNum)
     then
