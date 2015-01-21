@@ -4,7 +4,7 @@
 (*
 (*  Contains: TSQLLexer class implementing generic SQL lexer & parser. 
 (*
-(*  Copyright (c) 2005-2011, Context Software LLC
+(*  Copyright (c) 2005-2015, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbSQLLexer.pas
@@ -526,7 +526,11 @@ begin
         Result := tokenComment;
         exit;
       end else
+      begin
+        if FNextChar = #0 then
+          exit;
         Str := Str + FNextChar;
+      end;
       // Restart search
       I := 0;
     end else
