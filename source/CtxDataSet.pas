@@ -915,6 +915,15 @@ begin
     else
       Result := Null;
   end else
+  if (State = dsCurValue) and GetActiveRecBuf(B) then
+  begin
+    Obj := PRecInfo(B)^.Obj;
+    I := Field.Index;
+    if (Obj <> nil) and (FColumns[I] <> nil) then
+      Result := Obj.Value[FColumns[I]]
+    else
+      Result := Null;
+  end else
     Result := inherited GetStateFieldValue(State, Field);
 end;
 
@@ -1776,13 +1785,17 @@ end;
 function TCtxDataSet.IsRecordModified: Boolean;
 var
   I: Integer;
+  S: string;
 begin
   Result := True;
   if Active and not EOF and not BOF then
   begin
     for I := 0 to FieldCount - 1 do
-      if (Fields[I].FieldKind = fkData) and (Fields[I].OldValue <> Fields[I].Value) then
+      if (Fields[I].FieldKind = fkData) and (Fields[I].OldValue <> Fields[I].CurValue) then
+      begin
+        S := 'Changed: ' + Fields[I].FieldName;
         exit;
+      end;
   end;
   Result := False;
 end;
