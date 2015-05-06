@@ -310,7 +310,7 @@ begin
   else Result := copy(Str, P + Length(Delimiter), MaxInt);
 end;
 
-function StrContainsChar(const Str: String; const CharSet: CharSet): Boolean;
+function StrContainsChar(const Str: String; const CharSet: {$IFnDEF D2009_ORLATER}CharSet{$ELSE}TSysCharSet{$ENDIF}): Boolean;
 var
   I: Integer;
 begin

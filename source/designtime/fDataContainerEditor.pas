@@ -15,7 +15,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ActnList, ImgList, ToolWin, ComCtrls, StdCtrls, ExtCtrls, StdActns, Menus,
   CtxDataTypes, CtxDBIntf, CtxData, CtxDataSet, CtxProfiles, CtxGridView, CtxPropView
-  {$IFDEF VER240},System.Actions{$ENDIF};
+  {$IFDEF DXE3_ORLATER},System.Actions{$ENDIF};
 
 type
   TfrmDataContainerEditor = class(TForm)

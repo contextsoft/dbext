@@ -21,7 +21,7 @@ unit dbEngProfile;
 
 interface
 
-uses Classes, Contnrs, SysUtils, DB, dbSchema{$IFDEF D2014_ORLATER}, System.Types{$ENDIF};
+uses Classes, Contnrs, SysUtils, DB, dbSchema{$IFDEF DXE4_ORLATER}, System.Types{$ENDIF};
 
 type
   TFmtExpression = class;

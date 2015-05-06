@@ -13,7 +13,7 @@ unit CtxData;
 
 interface
 
-uses SysUtils, Classes, {$IFDEF D2014_ORLATER}Types,{$ENDIF} Contnrs, CtxDataTypes;
+uses SysUtils, Classes, {$IFDEF DXE4_ORLATER}Types,{$ENDIF} Contnrs, CtxDataTypes;
 
 type
   PObject = ^TObject;

@@ -168,13 +168,13 @@ type
     destructor Destroy; override;
 
     {:$ Retrieves the current value of a field into a buffer. }
-    {$IFDEF D2014_ORLATER}
+    {$IFDEF DXE4_ORLATER}
     function GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean; overload; override;
     {$ENDIF}
     function GetFieldData(Field: TField; Buffer: Pointer): Boolean; overload; override;
     {:$ Retrieves the current value of a field into a buffer. }
     function GetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean): Boolean; override;
-    {$IFDEF D2014_ORLATER}
+    {$IFDEF DXE4_ORLATER}
     procedure SetFieldData(Field: TField; Buffer: TValueBuffer); overload; override;
     {$ENDIF}
     procedure SetFieldData(Field: TField; Buffer: Pointer); overload; override;
@@ -762,7 +762,7 @@ begin
     FetchRowBlobs(PRecInfo(B).Obj);
 end;
 
-{$IFDEF D2014_ORLATER}
+{$IFDEF DXE4_ORLATER}
 function TCtxDataSet.GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean;
 begin
   Result := Self.GetFieldData(Field, @Buffer[0]);
@@ -831,7 +831,7 @@ begin
   end;
 end;
 
-{$IFDEF D2014_ORLATER}
+{$IFDEF DXE4_ORLATER}
 procedure TCtxDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer);
 begin
   Self.SetFieldData(Field, @Buffer[0]);

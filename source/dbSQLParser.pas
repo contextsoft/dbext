@@ -21,7 +21,7 @@ unit dbSQLParser;
 interface
 
 uses Classes, SysUtils, dbSQLLexer, DB, dbSchema, dbEngProfile, Forms
-  {$IFDEF D2014_ORLATER}, System.Types, System.Contnrs{$ENDIF};
+  {$IFDEF DXE4_ORLATER}, System.Types, System.Contnrs{$ENDIF};
 
   (*
     Trigger:
