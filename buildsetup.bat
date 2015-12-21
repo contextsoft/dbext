@@ -10,4 +10,4 @@
 @%innosetup% %package%_trial.iss > %package%_trial.log
 @echo Done.
 
-@call release.bat 338
+@call release.bat 339

@@ -26,7 +26,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.38
+(*  VERSION     : 3.39
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
 (*
 (******************************************************************************)
@@ -46,7 +46,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 338;
+  dbSchemaLibVersion = 339;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -8467,11 +8467,18 @@ begin
 end;
 
 procedure TTableDefinition.UpdateDefinition(const Value: String = '');
+var
+  Temp: String;
 begin
   if IsView and (FDefinition.Count > 0) then
-    FDefinition.Insert(0, 'CREATE VIEW ' + Schema.FormatName(Name, Value));
+  begin
+    // if value contains 'r' then
+    Temp := '';
+    if AnsiPos('R', AnsiUpperCase(Value)) > 0 then
+      Temp := 'OR REPLACE ';
+    FDefinition.Insert(0, 'CREATE '+Temp+'VIEW ' + Schema.FormatName(Name, Value));
+  end;
 end;
-
 
 { TTableDefinitions }
 

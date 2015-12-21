@@ -14,8 +14,9 @@
 @call build_dXE6.bat
 @call build_dXE7.bat
 echo on
-echo Build XE8 from W7-64 virtual machine
+echo Note ! Build XE8 from W7-64 virtual machine 
+echo Note ! Build Delphi 10 from W7-64 virtual machine 
 pause
 @echo off
-rem @call build_dXE8.bat
+
 
