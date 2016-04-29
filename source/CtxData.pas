@@ -1379,6 +1379,13 @@ begin
   AOrderByColumns[I].FOptions := AOptions;
 end;
 
+function CoalesceRow(Row1, Row2: TCtxDataRow): TCtxDataRow;
+begin
+  if Row1 <> nil then
+    Result := Row1
+  else Result := Row2;
+end;
+
 procedure SetBit(AData: Pointer; Index: Integer; Value: Boolean); assembler;
 asm
         OR      Value,Value
@@ -1538,6 +1545,9 @@ function _CompareRow(Row1, Row2: TCtxDataRow; Col1, Col2: TCtxDataColumn;
 var
   P1, P2: Pointer;
 begin
+  ASSERT(Row1 <> nil); // Both rows must exist!
+  ASSERT(Row2 <> nil);
+
   Result := 0;
   if (Row1 = nil) or (Row2 = nil) or (Col1.FDataType <> Col2.FDataType) then
     Exit;
@@ -1558,7 +1568,8 @@ var
 begin
   Result := 0;
   // MB: Simply exist if is is the same row
-  if (Row1 = Row2) and (Cols1 = Cols2) then exit;
+  if (Row1 = Row2) and (Cols1 = Cols2) then
+    Exit;
 
   for I := Low(Cols1) to High(Cols1) do
   begin
@@ -2094,7 +2105,7 @@ begin
     if (ParentTable = Self) and (ChildTable <> nil)
       and (UpdateAction = draError)
       and (IsDelete or ARow.IsModified(ParentColumns))
-      and (ChildTable.FindRow(ARow.OldRow, ChildColumns, ParentColumns, []) <> nil)
+      and (ChildTable.FindRow(CoalesceRow(ARow.OldRow, ARow), ChildColumns, ParentColumns, []) <> nil)
     then
       exit;
   end;
@@ -2160,7 +2171,7 @@ begin
         ChildRow := ChildTable.Rows[J];
         if ChildRow.Editing then
           raise Exception.Create(SRowInEditingState);
-        if CompareRows(ARow.OldRow, ChildRow, ParentColumns, ChildColumns, []) = 0 then
+        if CompareRows(CoalesceRow(ARow.OldRow, ARow), ChildRow, ParentColumns, ChildColumns, []) = 0 then
         begin
           if DeleteAction = draCascade then
             ChildRow.Delete
