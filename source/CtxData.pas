@@ -202,12 +202,12 @@ type
     {:$ Saves the content of data container object to stream in binary format. }
     procedure SaveToStream(Stream: TStream; StoreStructure: Boolean = True; StoreData: Boolean = True);
     {:$ Loads data container from stream previously created by SaveToStream method. }
-    procedure LoadFromStream(Stream: TStream);
+    procedure LoadFromStream(Stream: TStream; ImportData: Boolean = False);
 
     {:$ Saves the content of data container object to a file in binary format. }
     procedure SaveToFile(const FileName: String; StoreStructure: Boolean = True; StoreData: Boolean = True);
     {:$ Loads data container from a file previously created by SaveToFile method. }
-    procedure LoadFromFile(const FileName: String);
+    procedure LoadFromFile(const FileName: String; ImportData: Boolean = False);
 
     {:$ Fills data container from the the database using DataAdapter. }
     {:$ If DataAdapter is not specified, then the  }
@@ -2679,47 +2679,42 @@ var
   C: TCtxColumnMapInfo;
   ColMap: TObjectList;
 begin
-  BeginUpdate;
-  try
-    if Reader.ReadBoolean then
-    begin
-      DataContainer.Active := True;
-      ColMap := TObjectList.Create;
-      try
-        Reader.ReadListBegin;
-        while not Reader.EndOfList do
-        begin
-          // locate column by name
-          C := TCtxColumnMapInfo.Create;
-          try
-            C.Column := Columns.Find(Reader.ReadString);
-            C.DataType := TCtxDataType(Reader.ReadInteger);
-            // make sure that data type is the same
-            if (C.Column <> nil) and (C.Column.DataType <> C.DataType) then
-              C.Column := nil;
-            ColMap.Add(C);
-          except
-            C.Free;
-            raise;
-          end;
+  if Reader.ReadBoolean then
+  begin
+    DataContainer.Active := True;
+    ColMap := TObjectList.Create;
+    try
+      Reader.ReadListBegin;
+      while not Reader.EndOfList do
+      begin
+        // locate column by name
+        C := TCtxColumnMapInfo.Create;
+        try
+          C.Column := Columns.Find(Reader.ReadString);
+          C.DataType := TCtxDataType(Reader.ReadInteger);
+          // make sure that data type is the same
+          if (C.Column <> nil) and (C.Column.DataType <> C.DataType) then
+            C.Column := nil;
+          ColMap.Add(C);
+        except
+          C.Free;
+          raise;
         end;
-        Reader.ReadListEnd;
-
-        Reader.ReadListBegin;
-        while not Reader.EndOfList do
-        begin
-          R := NewRow;
-          R.ReadData(Reader, ColMap);
-          Insert(R);
-        end;
-        Reader.ReadListEnd;
-
-      finally
-        ColMap.Free; // All map objects will be disposed
       end;
+      Reader.ReadListEnd;
+
+      Reader.ReadListBegin;
+      while not Reader.EndOfList do
+      begin
+        R := NewRow;
+        R.ReadData(Reader, ColMap);
+        Insert(R);
+      end;
+      Reader.ReadListEnd;
+
+    finally
+      ColMap.Free; // All map objects will be disposed
     end;
-  finally
-    EndUpdate;
   end;
 end;
 
@@ -4153,13 +4148,13 @@ begin
   Result := FUpdateCounter > 0;
 end;
 
-procedure TCtxDataContainer.LoadFromFile(const FileName: String);
+procedure TCtxDataContainer.LoadFromFile(const FileName: String; ImportData: Boolean = False);
 var
   Stream: TStream;
 begin
   Stream := TFileStream.Create(FileName, fmOpenRead);
   try
-    LoadFromStream(Stream);
+    LoadFromStream(Stream, ImportData);
   finally
     Stream.Free;
   end;
@@ -4170,7 +4165,7 @@ begin
   LoadFromStream(Stream);
 end;
 
-procedure TCtxDataContainer.LoadFromStream(Stream: TStream);
+procedure TCtxDataContainer.LoadFromStream(Stream: TStream; ImportData: Boolean = False);
 var
   Reader: TReader;
   WasActive: Boolean;
@@ -4201,7 +4196,17 @@ begin
         // Read table name
         TableName := Reader.ReadString;
         // Read data with field map
-        Tables.Get(TableName).ReadData(Reader);
+        with Tables.Get(TableName) do
+        begin
+          if not ImportData then
+            BeginUpdate;
+          try
+            ReadData(Reader);
+          finally
+            if not ImportData then
+              EndUpdate;
+          end;
+        end;
       end;
       Reader.ReadListEnd;
     finally
