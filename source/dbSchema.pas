@@ -21,13 +21,14 @@
 (*                TDomains - collection of TDomain
 (*                TSQLScripts - collection of TSQLScript
 (*
-(*  Copyright (c) 2005-2011, Context Software LLC
+(*  Copyright (c) 2005-2016, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.39
-(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
+(*  VERSION     : 3.40
+(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE, XE2, XE3, XE4, 
+(*                XE5, XE6, XE7, XE8, 10, 10.1
 (*
 (******************************************************************************)
 unit dbSchema;
@@ -46,7 +47,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 339;
+  dbSchemaLibVersion = 340;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -8693,7 +8694,9 @@ end;
 procedure TTriggerDefinition.SetPropValue(const PropName, Value: String);
 begin
   if AnsiSameText(PropName, 'AddDefinition') then
-    FDefinition := FDefinition + #13#10 + Value
+    FDefinition := FDefinition + #13#10 + Value else
+  if AnsiSameText(PropName, 'AddDefinitionInLine') then
+    FDefinition := FDefinition + Value
   else inherited;
 end;
 

@@ -4,7 +4,7 @@
 (*
 (*  ICtxDatabase - common interface implemented by all database adapters
 (*
-(*  Copyright (c) 2005-2011, Context Software LLC
+(*  Copyright (c) 2005-2016, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxDBIntf;
@@ -38,6 +38,9 @@ type
     { Schema information }
     procedure GetTableNames(List: TStrings; SystemTables: Boolean = False);
     function GetIndexDefs(DataSet: TDataSet): TIndexDefs;
+
+    { Plan information }
+    function GetQueryPlan(Query: TDataSet): String;
   end;
 
   function FindCtxDatabase(const DatabaseName: String): TComponent;

@@ -1,6 +1,6 @@
 ================================================================
 Context Database Extensions Suite 3 for Delphi
-Copyright (C) 2003-2015, Michael Baytalsky
+Copyright (C) 2003-2016, Michael Baytalsky
 All Rights Reserved
 ----------------------------------------------------------------
 

@@ -6,13 +6,14 @@
 (*  Contains:
 (*                TDBEngineProfile
 (*
-(*  Copyright (c) 2005-2011, Context Software LLC
+(*  Copyright (c) 2005-2016, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbEngProfile.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.39
-(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
+(*  VERSION     : 3.40
+(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE, XE2, XE3, XE4, 
+(*                XE5, XE6, XE7, XE8, 10, 10.1
 (*
 (******************************************************************************)
 unit dbEngProfile;
@@ -47,10 +48,12 @@ type
     FStatements: TStrings;
     FProperties: TStrings;
     FInfoSchemaSQL: TStrings;
+    FExplainPlan: TStrings;
     FInfoSchemaValueMap: TStrings;
     FInfoSchemaFieldMap: TStrings;
     FCalcExpresssions: TStrings;
     FSynonyms: TStrings;
+    FInternalFunctions: TStrings;
     FKeywords: TStrings;
     FFileName: String;
     FLastAlterOperations: TList;
@@ -87,7 +90,10 @@ type
     procedure SetInfoSchemaValueMap(const Value: TStrings);
     procedure SetInfoSchemaFieldMap(const Value: TStrings);
     procedure SetSynonyms(const Value: TStrings);
+    procedure SetInternalFunctions(const Value: TStrings);
     procedure SetInfoSchemaSQL(const Value: TStrings);
+    procedure SetExplainPlan(const Value: TStrings);
+    function GetSupportExplainPlan: Boolean;
     function GetSupportsInfoSchema: Boolean;
     procedure SetEngineProps(const Value: TStrings);
     procedure SetProperties(const Value: TStrings);
@@ -213,7 +219,10 @@ type
     property Statements: TStrings read FStatements write SetStatements;
     property FieldTypeMap: TStrings read FFieldTypeMap write SetFieldTypeMap;
     property Synonyms: TStrings read FSynonyms write SetSynonyms;
+    property InternalFunctions: TStrings read FInternalFunctions write SetInternalFunctions;
     property InfoSchemaSQL: TStrings read FInfoSchemaSQL write SetInfoSchemaSQL;
+    property ExplainPlan: TStrings read FExplainPlan write SetExplainPlan;
+    property SupportExplainPlan: Boolean read GetSupportExplainPlan;
     property InfoSchemaValueMap: TStrings read FInfoSchemaValueMap write SetInfoSchemaValueMap;
     property InfoSchemaFieldMap: TStrings read FInfoSchemaFieldMap write SetInfoSchemaFieldMap;
     property CalcExpresssions: TStrings read FCalcExpresssions write SetCalcExpresssions;
@@ -261,9 +270,11 @@ const
   SECTION_ENGINE          = 'Engine';
   SECTION_FIELDTYPES      = 'FieldTypes';
   SECTION_SYNONYMS        = 'Synonyms';
+  SECTION_INTERNALFUNCTIONS = 'InternalFunctions';
   SECTION_STATEMENTS      = 'Statements';
   SECTION_PROPERTIES      = 'Properties';
   SECTION_INFOSCHEMASQL   = 'InfoSchemaSQL';
+  SECTION_EXPLAINPLAN     = 'ExplainPlan';
   SECTION_INFOSCHEMASQLLIGHT   = 'InfoSchemaSQLLight';
   SECTION_INFOSCHEMAVALUEMAP = 'InfoSchemaValueMap';
   SECTION_INFOSCHEMAFIELDMAP = 'InfoSchemaFieldMap';
@@ -657,6 +668,7 @@ begin
   FEngineProps := TStringList.Create;
   FProperties := TStringList.Create;
   FInfoSchemaSQL := TStringList.Create;
+  FExplainPlan := TStringList.Create;
   FInfoSchemaValueMap := TStringList.Create;
   FInfoSchemaFieldMap := TStringList.Create;
   FCalcExpresssions := TStringList.Create;
@@ -665,6 +677,7 @@ begin
   FParentStatements := TStringList.Create;
   FFieldTypeMap := TStringList.Create;
   FSynonyms := TStringList.Create;
+  FInternalFunctions := TStringList.Create;
   FKeywords := TStringList.Create;
   TStringList(FKeywords).Sorted := True;
   TStringList(FKeywords).Duplicates := dupIgnore;
@@ -673,6 +686,7 @@ begin
   TStringList(FParentStatements).OnChange := StatementChanged;
   TStringList(FFieldTypeMap).OnChange := StatementChanged;
   TStringList(FSynonyms).OnChange := StatementChanged;
+  TStringList(FInternalFunctions).OnChange := StatementChanged;
   TStringList(FInfoSchemaValueMap).OnChange := StatementChanged;
   TStringList(FInfoSchemaFieldMap).OnChange := StatementChanged;
   TStringList(FInfoSchemaSQL).OnChange := StatementChanged;
@@ -697,6 +711,7 @@ begin
   UnRegisterDBEngineProfile(Self);
   FFieldTypeMap.Free;
   FSynonyms.Free;
+  FInternalFunctions.Free;
   FStatements.Free;
   FProperties.Free;
   FInfoSchemaSQL.Free;
@@ -1711,7 +1726,9 @@ begin
     ReadSection(SECTION_STATEMENTS, TempList, FStatements);
     ReadSection(SECTION_FIELDTYPES, TempList, FFieldTypeMap);
     ReadSection(SECTION_SYNONYMS, TempList, FSynonyms);
+    ReadSection(SECTION_INTERNALFUNCTIONS, TempList, FInternalFunctions);
     ReadSection(SECTION_INFOSCHEMASQL, TempList, FInfoSchemaSQL);
+    ReadSection(SECTION_EXPLAINPLAN, TempList, FExplainPlan);
     ReadSection(SECTION_INFOSCHEMAVALUEMAP, TempList, FInfoSchemaValueMap);
     ReadSection(SECTION_INFOSCHEMAFIELDMAP, TempList, FInfoSchemaFieldMap);
     ReadSection(SECTION_CALCEXPRESSIONS, TempList, FCalcExpresssions);
@@ -1762,7 +1779,9 @@ begin
     ReplaceSection(SECTION_STATEMENTS, TempList, FStatements);
     ReplaceSection(SECTION_FIELDTYPES, TempList, FFieldTypeMap);
     ReplaceSection(SECTION_SYNONYMS, TempList, FSynonyms);
+    ReplaceSection(SECTION_INTERNALFUNCTIONS, TempList, FInternalFunctions);
     ReplaceSection(SECTION_INFOSCHEMASQL, TempList, FInfoSchemaSQL);
+    ReplaceSection(SECTION_EXPLAINPLAN, TempList, FExplainPlan);
     ReplaceSection(SECTION_INFOSCHEMAVALUEMAP, TempList, FInfoSchemaValueMap);
     ReplaceSection(SECTION_INFOSCHEMAFIELDMAP, TempList, FInfoSchemaFieldMap);
     ReplaceSection(SECTION_CALCEXPRESSIONS, TempList, FCalcExpresssions);
@@ -2022,6 +2041,11 @@ begin
   FInfoSchemaSQL.Assign(Value);
 end;
 
+procedure TDBEngineProfile.SetExplainPlan(const Value: TStrings);
+begin
+  FExplainPlan.Assign(Value);
+end;
+
 procedure TDBEngineProfile.SetSynonyms(const Value: TStrings);
 begin
   FSynonyms.Assign(Value);
@@ -2222,6 +2246,8 @@ begin
       // Update relationships in case relations where affected by previous parse operation
       Schema.UpdateRelationships;
 
+      if Pos('!', ObjPath) = 1 then
+        Continue else
       if Pos('*', ObjPath) = 1 then
         ImpType := itList else
       if Pos('+', ObjPath) = 1 then
@@ -2572,6 +2598,16 @@ end;
 procedure TDBEngineProfile.SetCalcExpresssions(const Value: TStrings);
 begin
   FCalcExpresssions.Assign(Value);
+end;
+
+function TDBEngineProfile.GetSupportExplainPlan: Boolean;
+begin
+  Result := (ExplainPlan.Count > 0) and (Length(ExplainPlan.Values['select']) > 0); 
+end;
+
+procedure TDBEngineProfile.SetInternalFunctions(const Value: TStrings);
+begin
+  FInternalFunctions.Assign(Value);
 end;
 
 { TCompareItemContext }

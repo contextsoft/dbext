@@ -16,6 +16,7 @@
 echo on
 echo Note ! Build XE8 from W7-64 virtual machine 
 echo Note ! Build Delphi 10 from W7-64 virtual machine 
+echo Note ! Build Delphi 10.1 from W7-64 virtual machine 
 pause
 @echo off
 

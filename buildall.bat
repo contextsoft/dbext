@@ -1,5 +1,5 @@
 echo Clean up everything
-@call cleanup.bat
+rem @call cleanup.bat
 
 echo Build everything
 @call build.bat > build.log

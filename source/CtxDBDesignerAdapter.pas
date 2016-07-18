@@ -4,7 +4,7 @@
 (*
 (*  ICtxDBDesignerAdapter - interface implemented by database designer adapters
 (*
-(*  Copyright (c) 2005-2011, Context Software LLC
+(*  Copyright (c) 2005-2016, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxDBDesignerAdapter;
@@ -32,7 +32,7 @@ const
   dvExecuteSQL = 5;
   dvGetSystemTableName = 6;
   dvSetSystemTableName = 7;
-
+  dvGetQueryPlan = 8;
   
 implementation
 

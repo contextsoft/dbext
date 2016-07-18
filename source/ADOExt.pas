@@ -4,13 +4,14 @@
 (*
 (*  Contains: TADOConnectionExt component.
 (*
-(*  Copyright (c) 2005-2011, Context Software LLC
+(*  Copyright (c) 2005-2016, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : ADOExt.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.39
-(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
+(*  VERSION     : 3.40
+(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE, XE2, XE3, XE4, 
+(*                XE5, XE6, XE7, XE8, 10, 10.1
 (*
 (******************************************************************************)
 unit ADOExt;
@@ -121,6 +122,9 @@ type
     { Parent object is always a table or schema. }
     function GetIndexDefs(DataSet: TDataSet): TIndexDefs;
     function GetSystemTableName: String;
+
+    { Plan informaion }
+    function GetQueryPlan(Query: TDataSet): String;
   published
     { Published properties }
     {:$ Reference to a TDatabaseSchema component. }
@@ -1024,6 +1028,11 @@ end;
 function TADOConnectionExt.CreateCommand: TCtxDataCommand;
 begin
   Result := TCtxDataSetCommand.Create(Self);
+end;
+
+function TADOConnectionExt.GetQueryPlan(Query: TDataSet): String;
+begin
+  Result := ''; // not implemented
 end;
 
 end.

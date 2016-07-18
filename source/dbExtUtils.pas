@@ -4,12 +4,13 @@
 (*
 (*  Common database utilities
 (*
-(*  Copyright (c) 2005-2011, Context Software LLC
+(*  Copyright (c) 2005-2016, Context Software LLC
 (*  ------------------------------------------------------------
 (*  FILE        : dbExtUtils.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.39
-(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE
+(*  VERSION     : 3.40
+(*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE, XE2, XE3, XE4, 
+(*                XE5, XE6, XE7, XE8, 10, 10.1
 (*
 (******************************************************************************)
 unit dbExtUtils;
@@ -211,6 +212,7 @@ type
 
   procedure SetVersion(Database: IDatabaseExt; const Value: TSchemaVersion);
   function GetVersion(Database: IDatabaseExt): TSchemaVersion;
+  function GetQueryPlan(Database: ICtxDatabase; const Statement: String): String;
 
   {:$ Writes field (Field) value into stream using Writer. }
   procedure WriteFieldValue(Writer: TWriter; Field: TField);
@@ -271,7 +273,7 @@ resourcestring
   SDatabaseMustBeAssigned = 'Database must be assigned.';
   SSystemTableNotFound = 'System table not found. It is required for change tracking and replications.';
 
-  SOperationNotSupported = 'Selected operation is not supported by %s adapter';
+  SOperationNotSupported = 'Selected operation is not supported for the selected database';
   SInvalidDatabaseHandle = 'The database is not found or inactive';
 
 implementation
@@ -1157,6 +1159,18 @@ begin
   end;
 end;
 
+function GetQueryPlan(Database: ICtxDatabase; const Statement: String): String;
+var
+  Query: TDataSet;
+begin
+  Query := Database.CreateQuery(Statement);
+  try
+    Result := Database.GetQueryPlan(Query);
+  finally
+    Query.Free;
+  end;
+end;
+
 (*
 function UpdateDatabase(Database: IDatabaseExt): Boolean;
 var
@@ -1475,6 +1489,7 @@ const
   dvExecuteSQL = 5;
   dvGetSystemTableName = 6;
   dvSetSystemTableName = 7;
+  dvGetQueryPlan = 8;
 
 var
   Idx: Integer;
@@ -1510,6 +1525,7 @@ begin
         ExecuteStatement(Data, @ResultSet);
         Data := Integer(ResultSet);
       end;
+      dvGetQueryPlan: Data := dbExtUtils.GetQueryPlan(DB, VarToStr(Data));
       else
         DatabaseError(SOperationNotSupported);
     end;
