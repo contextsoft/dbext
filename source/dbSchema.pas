@@ -21,12 +21,12 @@
 (*                TDomains - collection of TDomain
 (*                TSQLScripts - collection of TSQLScript
 (*
-(*  Copyright (c) 2005-2016, Context Software LLC
+(*  Copyright (c) 2005-2017, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbSchema.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.40
+(*  VERSION     : 3.41
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE, XE2, XE3, XE4, 
 (*                XE5, XE6, XE7, XE8, 10, 10.1
 (*
@@ -47,7 +47,7 @@ uses
   DB, CtxDBIntf;
 
 const
-  dbSchemaLibVersion = 340;
+  dbSchemaLibVersion = 341;
 
 {$IFDEF D2009_ORLATER}
 type
@@ -2445,7 +2445,8 @@ uses
 {$IFDEF VER130}
   ActiveX,
 {$ENDIF}
-  DbConsts, Math, dbSQLLexer, StrUtils;
+  DbConsts, Math, dbSQLLexer, StrUtils
+{$IFDEF DXE3_ORLATER}, System.Generics.Defaults, System.Generics.Collections {$ENDIF};
 {$I CtxD2009.inc}
 
 { Routines }
@@ -4862,7 +4863,7 @@ type
   TPrivateCollection = class(TPersistent)
   private
     FItemClass: TCollectionItemClass;
-    FItems: TList;
+    FItems: TList{$IFDEF DXE3_ORLATER}<TCollectionItem>{$ENDIF};
   end;
 {$HINTS ON}
 
@@ -4872,12 +4873,24 @@ begin
 end;
 
 procedure TSchemaItemsCollection.Sort(CompareFunc: TListSortCompare = nil);
+{$IFDEF DXE3_ORLATER}
+var
+  Comparison: TComparison<TCollectionItem>;
+{$ENDIF}
 begin
   BeginUpdate;
   try
     if not Assigned(CompareFunc) then
       CompareFunc := @CompareSchemaItems;
+{$IFDEF DXE3_ORLATER}
+    Comparison := function(const Left, Right: TCollectionItem): Integer
+    begin
+      Result := CompareFunc(Left, Right);
+    end;
+    TPrivateCollection(Self).FItems.Sort(TComparer<TCollectionItem>.Construct(Comparison));
+{$ELSE}
     TPrivateCollection(Self).FItems.Sort(CompareFunc);
+{$ENDIF}
   finally
     EndUpdate;
   end;

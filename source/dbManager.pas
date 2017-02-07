@@ -5,12 +5,12 @@
 (*  Database manager component (TDBManager), responsible for functionality like
 (*  database replication, reverse engineering, etc.
 (*
-(*  Copyright (c) 2005-2016, Context Software LLC
+(*  Copyright (c) 2005-2017, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbManager.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.40
+(*  VERSION     : 3.41
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE, XE2, XE3, XE4, 
 (*                XE5, XE6, XE7, XE8, 10, 10.1
 (*

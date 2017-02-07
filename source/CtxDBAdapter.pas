@@ -5,7 +5,7 @@
 (*  TCtxDBAdapter - a generic final implementation of data adapter, which works
 (*                with data providers, via ICtxDataProvider interface.
 (*
-(*  Copyright (c) 2005-2016, Context Software LLC
+(*  Copyright (c) 2005-2017, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxDBAdapter;

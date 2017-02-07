@@ -4,7 +4,7 @@
 (*
 (*  Simple command builder.
 (*
-(*  Copyright (c) 2005-2016, Context Software LLC
+(*  Copyright (c) 2005-2017, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxBasicCommandBuilder;
