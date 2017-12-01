@@ -371,6 +371,12 @@ begin
 end;
 
 procedure TCtxParameters.AssignValues(Values: Variant);
+
+  procedure AssignItem(Idx: Integer; Val: Variant);
+  begin
+    Items[Idx].FValue := Val;
+  end;
+
 var
   I: Integer;
 begin
@@ -382,11 +388,11 @@ begin
   if VarIsArray(Values) then
   begin
     for I := 0 to Min(Count - 1, VarArrayHighBound(Values, 1)) do
-      Items[I].Value := Values[I];
+      AssignItem(I, Values[I]);
   end else
   begin
     if Count > 0 then
-      Items[0].Value := Values;
+      AssignItem(0, Values);
   end;
 end;
 
