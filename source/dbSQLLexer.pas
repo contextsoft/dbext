@@ -4,14 +4,14 @@
 (*
 (*  Contains: TSQLLexer class implementing generic SQL lexer & parser. 
 (*
-(*  Copyright (c) 2005-2015, Context Software LLC
+(*  Copyright (c) 2005-2018, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : dbSQLLexer.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
 (*  VERSION     : 3.43
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE, XE2, XE3, XE4, 
-(*                XE5, XE6, XE7, XE8, 10, 10.1
+(*                XE5, XE6, XE7, XE8, 10, 10.1, 10.2
 (*
 (******************************************************************************)
 unit dbSQLLexer;

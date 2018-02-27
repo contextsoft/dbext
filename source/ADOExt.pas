@@ -4,7 +4,7 @@
 (*
 (*  Contains: TADOConnectionExt component.
 (*
-(*  Copyright (c) 2005-2017, Context Software LLC
+(*  Copyright (c) 2005-2018, Context Software LLC
 (*
 (*  ------------------------------------------------------------
 (*  FILE        : ADOExt.pas

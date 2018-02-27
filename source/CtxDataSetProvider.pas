@@ -5,7 +5,7 @@
 (*  TCtxDataSetProvider - implementation of data provider based on a standard
 (*                        VCL DataSet descendant.
 (*
-(*  Copyright (c) 2005-2017, Context Software LLC
+(*  Copyright (c) 2005-2018, Context Software LLC
 (*
 (******************************************************************************)
 unit CtxDataSetProvider;
