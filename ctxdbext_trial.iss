@@ -2,8 +2,8 @@
 
 [Setup]
 AppName=Context Database Extensions
-AppVerName=Context Database Extensions v.3.41 Trial
-AppCopyright=Copyright © 2003-2017, Michael Baytalsky
+AppVerName=Context Database Extensions v.3.43 Trial
+AppCopyright=Copyright © 2003-2018, Michael Baytalsky
 DefaultDirName={pf}\Context Software\DBExt3
 DefaultGroupName=Context Database Extensions
 ;UninstallDisplayIcon={app}\
