@@ -5,5 +5,5 @@ echo Build everything
 @call build.bat > build.log
 
 echo Build setup
-@call buildsetup.bat
+rem @call buildsetup.bat
 

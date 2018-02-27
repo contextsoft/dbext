@@ -10,7 +10,7 @@
 (*  ------------------------------------------------------------
 (*  FILE        : dbSQLParser.pas
 (*  AUTHOR(S)   : Michael Baytalsky (mike@contextsoft.com)
-(*  VERSION     : 3.41
+(*  VERSION     : 3.43
 (*  DELPHI\BCB  : Delphi 7, 2005, 2006, 2007, 2009, 2010, XE, XE2, XE3, XE4, 
 (*                XE5, XE6, XE7, XE8, 10, 10.1
 (*
